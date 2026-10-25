@@ -133,4 +133,7 @@ ON addresses(user_id);
 -- A customer can have only one default address.
 CREATE UNIQUE INDEX idx_addresses_one_default_per_user
 ON addresses(user_id)
-WHERE is_default = TRUE;
+WHERE is_default = TRUE
+
+alter table users
+add profile_picture_link text;

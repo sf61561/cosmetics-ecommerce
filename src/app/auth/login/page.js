@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CiUser,CiLock } from "react-icons/ci";
-import { FaRegEye,FaRegEyeSlash } from "react-icons/fa";
+import { CiUser, CiLock } from "react-icons/ci";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
 function GoogleIcon() {
   return (
@@ -17,18 +17,87 @@ function GoogleIcon() {
   );
 }
 
-// ─── Login Page ───
+// ─── Helpers ───
 
+/** Returns true if the value looks like an email address. */
+const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+/** Returns true if the value looks like a phone number (7–15 digits, optional leading +). */
+const isPhone = (v) => /^\+?[0-9\s\-]{7,15}$/.test(v.trim());
+
+// ─── Login Page ───
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ identifier: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
+  // ── Validation ──
+  const validate = (fields = form) => {
+    const newErrors = {};
+
+    // identifier — required, must be a valid email or phone
+    if (!fields.identifier.trim()) {
+      newErrors.identifier = "Email or phone number is required.";
+    } else if (!isEmail(fields.identifier) && !isPhone(fields.identifier)) {
+      newErrors.identifier = "Enter a valid email address or phone number.";
+    }
+
+    // password — required, min 8 chars
+    if (!fields.password) {
+      newErrors.password = "Password is required.";
+    } else if (fields.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
+    }
+
+    return newErrors;
+  };
+
+  // ── Field change — clear error on input ──
+  const handleChange = (field) => (e) => {
+    const updated = { ...form, [field]: e.target.value };
+    setForm(updated);
+
+    // Re-validate this field live once the user has already blurred it
+    if (touched[field]) {
+      const newErrors = validate(updated);
+      setErrors((prev) => ({
+        ...prev,
+        [field]: newErrors[field],
+      }));
+    }
+  };
+
+  // ── Blur — mark field as touched and validate it ──
+  const handleBlur = (field) => () => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const newErrors = validate();
+    setErrors((prev) => ({ ...prev, [field]: newErrors[field] }));
+  };
+
+  // ── Submit ──
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: hook up authentication
-    console.log("Login:", form);
+    // Mark all fields touched so errors become visible
+    setTouched({ identifier: true, password: true });
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+    // TODO: hook up authentication API
+    console.log("Login:", form, "rememberMe:", rememberMe);
   };
+
+  // ── Field border ring helper ──
+  const fieldClass = (field) =>
+    `flex items-center gap-3 rounded-full bg-white/60 border px-4 h-12 transition-all focus-within:ring-2 ${
+      errors[field] && touched[field]
+        ? "border-red-400 focus-within:ring-red-300/50"
+        : "border-white/60 focus-within:ring-[#C47B8A]/40"
+    }`;
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex flex-col items-center justify-start pt-12 px-4">
@@ -64,44 +133,64 @@ export default function LoginPage() {
             Sign in to your account
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
 
-            {/* Email field */}
-            <div className="flex items-center gap-3 rounded-full bg-white/60 border border-white/60 px-4 h-12 focus-within:ring-2 focus-within:ring-[#C47B8A]/40">
-              <span className="text-gray-400 shrink-0">
-                <CiUser className="h-5 w-5 text-black" />
-              </span>
-              <input
-                type="text"
-                placeholder="Email or Phone Number"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
-                autoComplete="email"
-              />
+            {/* Email / Phone field */}
+            <div className="flex flex-col gap-1">
+              <div className={fieldClass("identifier")}>
+                <span className="text-gray-400 shrink-0">
+                  <CiUser className="h-5 w-5 text-black" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Email or Phone Number"
+                  value={form.identifier}
+                  onChange={handleChange("identifier")}
+                  onBlur={handleBlur("identifier")}
+                  className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
+                  autoComplete="email"
+                  aria-invalid={!!(errors.identifier && touched.identifier)}
+                  aria-describedby={errors.identifier && touched.identifier ? "identifier-error" : undefined}
+                />
+              </div>
+              {errors.identifier && touched.identifier && (
+                <p id="identifier-error" className="text-xs text-red-500 pl-4" role="alert">
+                  {errors.identifier}
+                </p>
+              )}
             </div>
 
             {/* Password field */}
-            <div className="flex items-center gap-3 rounded-full bg-white/60 border border-white/60 px-4 h-12 focus-within:ring-2 focus-within:ring-[#C47B8A]/40">
-              <span className="text-gray-400 shrink-0">
-                <CiLock className="h-5 w-5 text-black" />
-              </span>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <FaRegEye className="h-5 w-5" /> : <FaRegEyeSlash className="h-5 w-5" />}
-              </button>
+            <div className="flex flex-col gap-1">
+              <div className={fieldClass("password")}>
+                <span className="text-gray-400 shrink-0">
+                  <CiLock className="h-5 w-5 text-black" />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={handleChange("password")}
+                  onBlur={handleBlur("password")}
+                  className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
+                  autoComplete="current-password"
+                  aria-invalid={!!(errors.password && touched.password)}
+                  aria-describedby={errors.password && touched.password ? "password-error" : undefined}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FaRegEye className="h-5 w-5" /> : <FaRegEyeSlash className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.password && touched.password && (
+                <p id="password-error" className="text-xs text-red-500 pl-4" role="alert">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             {/* Remember me + Forgot password */}
