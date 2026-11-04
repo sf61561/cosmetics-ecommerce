@@ -101,7 +101,7 @@ export default function ShopPage() {
 
           <header className="mx-auto mt-6 max-w-2xl space-y-3 text-center">
             <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#9B4F5E] dark:text-pink-400">
-              THE RUPKOTHA EDIT
+              THE ELOURA EDIT
             </span>
             <h1 className="font-serif text-3xl tracking-tight text-gray-900 dark:text-white sm:text-4xl md:text-5xl">
               Shop All Products
@@ -163,7 +163,7 @@ export default function ShopPage() {
               {products.map((product) => {
                 const isAdded = addedIds.has(product.id);
                 const price = product.salePrice ?? product.price;
-                const brandName = product.brand?.name || "RUPKOTHA";
+                const brandName = product.brand?.name || "ELOURA";
 
                 return (
                   <article

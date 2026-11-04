@@ -7,7 +7,7 @@ import { useCart } from "./CartContext";
 
 const WishlistContext = createContext(null);
 
-const GUEST_WISHLIST_KEY = "rupkotha_guest_wishlist";
+const GUEST_WISHLIST_KEY = "eloura_guest_wishlist";
 
 function getGuestWishlist() {
   if (typeof window === "undefined") return [];

@@ -413,7 +413,7 @@ export default function RegisterPage() {
                 Create Your Account
               </h1>
           <p className="text-center text-sm text-gray-500 mb-5 leading-snug">
-            Join RupKotha to track your orders<br />and save your favorites
+            Join Eloura to track your orders<br />and save your favorites
           </p>
 
           {/* ── Profile Picture Upload ── */}

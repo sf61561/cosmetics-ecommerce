@@ -36,7 +36,7 @@ INSERT INTO hero_sliders
      text_alignment, text_color, overlay_opacity, text_position)
 SELECT 'Glass Skin Secrets', 'GLASS SKIN SECRETS', 'Get Up To 20% OFF
 On Best Sellers',
-       'RupKotha', 'Shop Now', '/shop', '/images/slider/slider-1.png',
+       'Eloura', 'Shop Now', '/shop', '/images/slider/slider-1.png',
        'legacy-slider-1', 0, true, 'center', 'light', 0.4, 'center'
 WHERE NOT EXISTS (SELECT 1 FROM hero_sliders WHERE internal_name = 'Glass Skin Secrets');
 
@@ -46,7 +46,7 @@ INSERT INTO hero_sliders
      text_alignment, text_color, overlay_opacity, text_position)
 SELECT 'Summer Glow Up', 'SUMMER GLOW UP', 'Flat 30% OFF
 On Sunscreen Range',
-       'RupKotha', 'Shop Now', '/shop?category=sunscreen', '/images/slider/slider-2.png',
+       'Eloura', 'Shop Now', '/shop?category=sunscreen', '/images/slider/slider-2.png',
        'legacy-slider-2', 1, true, 'center', 'light', 0.4, 'center'
 WHERE NOT EXISTS (SELECT 1 FROM hero_sliders WHERE internal_name = 'Summer Glow Up');
 
@@ -56,7 +56,7 @@ INSERT INTO hero_sliders
      text_alignment, text_color, overlay_opacity, text_position)
 SELECT 'New Arrivals', 'NEW ARRIVALS', 'Fresh Drops
 Just Landed',
-       'RupKotha', 'Explore', '/new-arrivals', '/images/slider/slider-3.png',
+       'Eloura', 'Explore', '/new-arrivals', '/images/slider/slider-3.png',
        'legacy-slider-3', 2, true, 'center', 'light', 0.4, 'center'
 WHERE NOT EXISTS (SELECT 1 FROM hero_sliders WHERE internal_name = 'New Arrivals');
 
@@ -66,6 +66,6 @@ INSERT INTO hero_sliders
      text_alignment, text_color, overlay_opacity, text_position)
 SELECT 'Bundle And Save', 'BUNDLE & SAVE', 'Buy 2 Get 1 Free
 On All Serums',
-       'RupKotha', 'Shop Now', '/shop?category=serums', '/images/slider/slider-4.png',
+       'Eloura', 'Shop Now', '/shop?category=serums', '/images/slider/slider-4.png',
        'legacy-slider-4', 3, true, 'center', 'light', 0.4, 'center'
 WHERE NOT EXISTS (SELECT 1 FROM hero_sliders WHERE internal_name = 'Bundle And Save');

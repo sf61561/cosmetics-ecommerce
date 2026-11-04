@@ -176,7 +176,7 @@ export default function ProductInfo({
             </Link>
           ) : (
             <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">
-              RupKotha Authentic
+              Eloura Authentic
             </span>
           )}
 

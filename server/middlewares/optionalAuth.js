@@ -6,7 +6,7 @@ const authService = require("../services/authService");
  * Optional Authentication & Anonymous Session Middleware:
  * 1. Checks if customer is authenticated via JWT HttpOnly cookie or Bearer header.
  * 2. If authenticated, attaches decoded user to `req.user`.
- * 3. If unauthenticated, extracts or generates a secure `rupkotha_session_id` cookie for guest personalization.
+ * 3. If unauthenticated, extracts or generates a secure `eloura_session_id` cookie for guest personalization.
  */
 async function optionalAuth(req, res, next) {
   try {
@@ -49,11 +49,11 @@ async function optionalAuth(req, res, next) {
     }
 
     // Guest Session Management
-    let sessionId = req.cookies?.rupkotha_session_id || req.headers["x-session-id"];
+    let sessionId = req.cookies?.eloura_session_id || req.headers["x-session-id"];
     if (!sessionId || typeof sessionId !== "string" || sessionId.length < 10) {
       sessionId = crypto.randomUUID();
       const isProd = process.env.NODE_ENV === "production";
-      res.cookie("rupkotha_session_id", sessionId, {
+      res.cookie("eloura_session_id", sessionId, {
         httpOnly: true,
         secure: isProd,
         sameSite: "lax",

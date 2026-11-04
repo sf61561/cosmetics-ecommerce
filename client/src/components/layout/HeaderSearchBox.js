@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import { searchService } from "@/services/searchService";
 
-const RECENT_SEARCHES_KEY = "rupkotha_recent_searches";
+const RECENT_SEARCHES_KEY = "eloura_recent_searches";
 const POPULAR_SEARCHES = [
   "Sunscreen",
   "Serum",

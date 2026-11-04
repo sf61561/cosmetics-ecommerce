@@ -207,7 +207,7 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
                   className="text-2xl text-gray-800 dark:text-gray-100"
                   style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
                 >
-                  RupKotha
+                  Eloura
                 </span>
                 <LogoFloralIcon />
               </Link>

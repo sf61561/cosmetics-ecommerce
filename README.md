@@ -1,4 +1,4 @@
-# RupKotha (রূপকথা) — Cosmetics & Skincare E-Commerce Platform
+# Eloura — Cosmetics & Skincare E-Commerce Platform
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.2-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.3.0-blue?style=flat&logo=react)](https://react.dev/)
@@ -9,7 +9,7 @@
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-Media_CDN-3448C5?style=flat&logo=cloudinary)](https://cloudinary.com/)
 [![Resend](https://img.shields.io/badge/Resend-Transactional_Email-black?style=flat&logo=resend)](https://resend.com/)
 
-**RupKotha (রূপকথা)** is a production-grade, full-stack e-commerce platform purpose-built for the premium cosmetics, skincare, and beauty market in Bangladesh. It features a high-performance Next.js App Router storefront, an Express.js backend powered by raw PostgreSQL queries (Zero-Prisma architecture), atomic inventory locking, a strict order fulfillment state machine, and a back-office administration suite.
+**Eloura** is a production-grade, full-stack e-commerce platform purpose-built for the premium cosmetics, skincare, and beauty market in Bangladesh. It features a high-performance Next.js App Router storefront, an Express.js backend powered by raw PostgreSQL queries (Zero-Prisma architecture), atomic inventory locking, a strict order fulfillment state machine, and a back-office administration suite.
 
 ---
 
@@ -261,7 +261,7 @@ npm run build --prefix client
 
 ## 📄 License & Attribution
 
-Developed with ❤️ for **RupKotha Cosmetics & Skincare**  
+Developed with ❤️ for **Eloura Cosmetics & Skincare**  
 **Author:** Syed Fahad Mahmud  
 **License:** Proprietary / All Rights Reserved
 

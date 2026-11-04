@@ -201,7 +201,7 @@ export const customerService = {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `rupkotha-customers-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `eloura-customers-${new Date().toISOString().split("T")[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);

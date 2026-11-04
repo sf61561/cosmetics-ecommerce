@@ -207,7 +207,7 @@ export default function HeroSliderForm({ initialSlide = null }) {
                 Badge / Tag Text (Optional)
                 <input
                   type="text"
-                  placeholder="e.g. RupKotha Exclusive, 20% OFF"
+                  placeholder="e.g. Eloura Exclusive, 20% OFF"
                   value={form.badgeText}
                   onChange={(e) => setField("badgeText", e.target.value)}
                   className={fieldClass}

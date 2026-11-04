@@ -388,7 +388,7 @@ export default function ProductTabs({ product }) {
                 Be the first to review this formulation
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                We only publish reviews from verified buyers who placed an order on RupKotha. Once your delivery is completed, an email invitation will be sent to rate this product.
+                We only publish reviews from verified buyers who placed an order on Eloura. Once your delivery is completed, an email invitation will be sent to rate this product.
               </p>
               <div className="pt-2">
                 <a

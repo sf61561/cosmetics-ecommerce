@@ -1,5 +1,5 @@
 /**
- * Centralized Notification Templates for RupKotha
+ * Centralized Notification Templates for Eloura
  * Defines metadata, channels, requirement constraints, and copy for all events.
  */
 
@@ -44,7 +44,7 @@ const TEMPLATES = {
     required: true,
     channels: ['in_app', 'email'],
     title: (data) => `Order Delivered`,
-    body: (data) => `Your order #${data.orderNumber || ''} has been delivered. Thank you for choosing RupKotha!`,
+    body: (data) => `Your order #${data.orderNumber || ''} has been delivered. Thank you for choosing Eloura!`,
     link: (data) => `/orders/${data.orderId || ''}`,
     actionText: 'View Details',
     icon: 'package-check',
@@ -97,7 +97,7 @@ const TEMPLATES = {
     category: 'promotions',
     required: false,
     channels: ['in_app', 'email'],
-    title: (data) => data.title || 'Special Offer at RupKotha',
+    title: (data) => data.title || 'Special Offer at Eloura',
     body: (data) => data.body || 'Exclusive skincare & beauty deals are now live. Discover our latest collections.',
     link: (data) => data.link || '/collections',
     actionText: 'Explore Offers',

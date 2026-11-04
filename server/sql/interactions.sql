@@ -1,5 +1,5 @@
 -- ========================================================
--- RUPKOTHA COSMETICS & SKINCARE — INTERACTIONS DDL
+-- ELOURA COSMETICS & SKINCARE — INTERACTIONS DDL
 -- ========================================================
 
 CREATE TABLE IF NOT EXISTS interactions (

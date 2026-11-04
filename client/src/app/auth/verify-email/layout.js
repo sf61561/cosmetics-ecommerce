@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Verify Your Email | RupKotha Cosmetics",
-  description: "Verify your email address to activate your RupKotha account.",
+  title: "Verify Your Email | Eloura Cosmetics",
+  description: "Verify your email address to activate your Eloura account.",
   referrer: "no-referrer",
 };
 

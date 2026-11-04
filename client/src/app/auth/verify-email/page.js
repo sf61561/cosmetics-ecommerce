@@ -360,7 +360,7 @@ export default function VerifyEmailPage() {
             className="text-3xl font-semibold text-gray-800 tracking-wide"
             style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
           >
-            RupKotha
+            Eloura
           </span>
           <LogoLeaf />
         </div>

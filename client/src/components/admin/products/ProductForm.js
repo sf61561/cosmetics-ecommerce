@@ -875,7 +875,7 @@ export default function ProductForm({
               </div>
               <div className="relative mt-1.5 flex rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xs overflow-hidden focus-within:border-[#9B4F5E] focus-within:ring-2 focus-within:ring-[#9B4F5E]/15">
                 <span className="inline-flex items-center bg-gray-50 dark:bg-gray-800 px-3.5 text-xs text-gray-400 border-r border-gray-200 dark:border-gray-700 select-none">
-                  rupkotha.com/products/
+                  eloura.com/products/
                 </span>
                 <input
                   type="text"
@@ -2091,7 +2091,7 @@ export default function ProductForm({
                   setSeoTitle(e.target.value);
                   setIsDirty(true);
                 }}
-                placeholder={name ? `${name} | RupKotha Bangladesh` : "Page Title in Search Results"}
+                placeholder={name ? `${name} | Eloura Bangladesh` : "Page Title in Search Results"}
                 className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden"
               />
             </div>
@@ -2118,15 +2118,15 @@ export default function ProductForm({
                 Google Search Result Preview
               </span>
               <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1 truncate">
-                https://rupkotha.com/products/{slug || "product-slug"}
+                https://eloura.com/products/{slug || "product-slug"}
               </p>
               <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer truncate">
-                {seoTitle || name || "Product Name | RupKotha Bangladesh"}
+                {seoTitle || name || "Product Name | Eloura Bangladesh"}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-0.5">
                 {seoDescription ||
                   shortDescription ||
-                  "Buy genuine cosmetics in Bangladesh at RupKotha. Authentic skincare with cash on delivery and fast express shipping nationwide."}
+                  "Buy genuine cosmetics in Bangladesh at Eloura. Authentic skincare with cash on delivery and fast express shipping nationwide."}
               </p>
             </div>
           </div>

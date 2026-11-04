@@ -5,7 +5,7 @@ const cloudinaryService = {
   /**
    * Upload an image buffer directly to Cloudinary
    */
-  async uploadImage(buffer, folder = "rupkotha/collections") {
+  async uploadImage(buffer, folder = "eloura/collections") {
     if (!buffer) {
       throw new Error("No image buffer provided for upload.");
     }

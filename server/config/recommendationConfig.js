@@ -1,5 +1,5 @@
 /**
- * RupKotha Recommendation Engine — Configuration
+ * Eloura Recommendation Engine — Configuration
  * Configurable weights, affinities, decay parameters, and safety limits.
  */
 module.exports = {

@@ -42,13 +42,13 @@ function changedFields(previous, next, keys) {
 
 class ProductService {
   /**
-   * Helper: Stream an image buffer to Cloudinary in folder 'rupkotha/products'
+   * Helper: Stream an image buffer to Cloudinary in folder 'eloura/products'
    */
   async uploadToCloudinary(fileBuffer, originalFilename = "product") {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: "rupkotha/products",
+          folder: "eloura/products",
           resource_type: "image",
           fetch_format: "auto",
           quality: "auto",

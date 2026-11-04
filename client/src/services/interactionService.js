@@ -11,7 +11,7 @@ export const interactionService = {
     try {
       const res = await fetch(`${API_BASE}/api/interactions`, {
         method: "POST",
-        credentials: "include", // Pass cookies (accessToken and rupkotha_session_id)
+        credentials: "include", // Pass cookies (accessToken and eloura_session_id)
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",

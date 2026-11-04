@@ -2,7 +2,7 @@
 
 /**
  * BrandLogo Component
- * Renders high-fidelity brand visual representations matching the exact RupKotha brand mockups.
+ * Renders high-fidelity brand visual representations matching the exact Eloura brand mockups.
  */
 export default function BrandLogo({ brand, className = "" }) {
   const slug = (brand?.slug || "").toLowerCase().trim();

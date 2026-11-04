@@ -4,9 +4,9 @@ import Footer from "@/components/layout/Footer";
 import SearchResultsView from "./SearchResultsView";
 
 export const metadata = {
-  title: "Search Results | RupKotha Cosmetics & Skincare",
+  title: "Search Results | Eloura Cosmetics & Skincare",
   description:
-    "Search authentic Korean, Japanese, and international skincare and beauty essentials at RupKotha.",
+    "Search authentic Korean, Japanese, and international skincare and beauty essentials at Eloura.",
   robots: {
     index: false,
     follow: true,

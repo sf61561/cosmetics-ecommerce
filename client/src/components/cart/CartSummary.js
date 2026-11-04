@@ -210,7 +210,7 @@ export default function CartSummary({ cart, onNotify }) {
                 suppressHydrationWarning
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Voucher code (e.g. RUPKOTHA10)"
+                placeholder="Voucher code (e.g. ELOURA10)"
                 className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#9B4F5E]"
               />
               <button

@@ -1,4 +1,4 @@
--- RupKotha delivery rules and coupon management
+-- Eloura delivery rules and coupon management
 
 CREATE TABLE IF NOT EXISTS delivery_rules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

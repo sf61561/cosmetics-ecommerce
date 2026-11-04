@@ -41,7 +41,7 @@ export default function SecurityPage() {
     if (linked) setMessage({ type: "success", text: `${linked[0].toUpperCase()}${linked.slice(1)} is now linked to your account.` });
     if (linkError) {
       const messageByCode = {
-        ACCOUNT_LINK_REQUIRED: "This provider belongs to another RupKotha account. Sign in to that account to link it.",
+        ACCOUNT_LINK_REQUIRED: "This provider belongs to another Eloura account. Sign in to that account to link it.",
         PROVIDER_ALREADY_LINKED: "This provider is already linked to your account.",
         RECENT_AUTH_REQUIRED: "Sign in again, then retry linking the provider.",
         OAUTH_CANCELLED: "Provider linking was cancelled.",
@@ -94,7 +94,7 @@ export default function SecurityPage() {
   };
 
   const unlink = async (provider) => {
-    if (!window.confirm(`Unlink ${provider} from your RupKotha account?`)) return;
+    if (!window.confirm(`Unlink ${provider} from your Eloura account?`)) return;
     setMessage(null);
     setBusyProvider(provider);
     try {
@@ -120,7 +120,7 @@ export default function SecurityPage() {
   );
   const hasPassword = Boolean(security?.hasPassword);
 
-  return <ProfileLayout title="Security & sign-in" description="Manage the ways you can access your RupKotha account.">
+  return <ProfileLayout title="Security & sign-in" description="Manage the ways you can access your Eloura account.">
     <div className="grid gap-6">
       <section className="rounded-3xl border border-[#eee6ee] bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-lg font-bold text-gray-900">Password</h2>

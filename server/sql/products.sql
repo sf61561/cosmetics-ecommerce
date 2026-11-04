@@ -1,5 +1,5 @@
 -- ========================================================
--- RUPKOTHA COSMETICS & SKINCARE — PRODUCTS & CATEGORIES DDL
+-- ELOURA COSMETICS & SKINCARE — PRODUCTS & CATEGORIES DDL
 -- ========================================================
 
 -- 1. CATEGORIES TABLE

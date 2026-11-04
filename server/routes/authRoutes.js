@@ -51,7 +51,7 @@ const handleRegisterUpload = (req, res, next) => {
           const uploadResult = await new Promise((resolve, reject) => {
             const stream = cloudinary.uploader.upload_stream(
               {
-                folder: "rupkotha/avatars",
+                folder: "eloura/avatars",
                 resource_type: "image",
                 fetch_format: "auto",
                 quality: "auto",

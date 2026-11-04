@@ -1,5 +1,5 @@
 -- ============================================================================
--- RupKotha Cosmetics & Skincare — Shopping Cart Schema
+-- Eloura Cosmetics & Skincare — Shopping Cart Schema
 -- Supports both authenticated customers (user_id) and guest shoppers (session_id)
 -- ============================================================================
 

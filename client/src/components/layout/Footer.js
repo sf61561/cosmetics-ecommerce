@@ -18,7 +18,7 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2 group">
               <span className="font-serif text-2xl tracking-tight text-gray-900 group-hover:text-[#9B4F5E] transition-colors">
-                RupKotha
+                Eloura
               </span>
               <span className="text-[#A582B4] text-lg font-serif">✿</span>
             </Link>
@@ -145,7 +145,7 @@ export default function Footer() {
             </ul>
 
             <div className="pt-3 text-[11px] text-gray-500 space-y-1 border-t border-gray-100">
-              <p>Email: <span className="text-gray-700">hello@rupkotha.com</span></p>
+              <p>Email: <span className="text-gray-700">hello@eloura.com</span></p>
               <p>WhatsApp: <span className="text-gray-700">+880 1234-567890</span></p>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Payment Icons */}
         <div className="mt-12 pt-6 border-t border-[#F2E8E6] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-500 text-center sm:text-left">
-            © 2026 RupKotha. All rights reserved.
+            © 2026 Eloura. All rights reserved.
           </p>
 
           {/* Payment Badges */}

@@ -92,7 +92,7 @@ function OAuthSuccessContent() {
         <p className="text-xs text-[#9B4F5E] font-medium animate-pulse">
           {role === "ADMIN"
             ? "Redirecting you to the Admin Panel..."
-            : "Redirecting you to RupKotha..."}
+            : "Redirecting you to Eloura..."}
         </p>
       </div>
     </div>

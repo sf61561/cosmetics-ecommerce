@@ -62,7 +62,7 @@ app.use(requestContext);
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "ok",
-    message: "RupKotha Cosmetics Server is running",
+    message: "Eloura Cosmetics Server is running",
     timestamp: new Date().toISOString(),
   });
 });
@@ -114,7 +114,7 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   const server = app.listen(PORT, () => {
-    console.log(`🚀 RupKotha backend server listening on port ${PORT}`);
+    console.log(`🚀 Eloura backend server listening on port ${PORT}`);
     console.log(`👉 Health check: http://localhost:${PORT}/api/health`);
 
     // Start asynchronous notification outbox worker

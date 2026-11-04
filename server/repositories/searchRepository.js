@@ -126,7 +126,7 @@ class SearchRepository {
         currentPrice,
         inStock,
         stockStatus: inStock ? "in_stock" : "out_of_stock",
-        brandName: row.brand_name || "RupKotha",
+        brandName: row.brand_name || "Eloura",
         categoryName: row.category_name || null,
         thumbnailUrl: row.thumbnail_url || null,
       };
@@ -372,7 +372,7 @@ class SearchRepository {
         skinType: row.skin_type || null,
         isFeatured: row.is_featured || false,
         brand: row.brand_id ? { id: row.brand_id, name: row.brand_name, slug: row.brand_slug } : null,
-        brandName: row.brand_name || "RupKotha",
+        brandName: row.brand_name || "Eloura",
         category: row.category_id ? { id: row.category_id, name: row.category_name, slug: row.category_slug } : null,
         categoryName: row.category_name || null,
         thumbnailUrl: row.thumbnail_url || null,

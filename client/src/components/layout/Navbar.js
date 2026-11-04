@@ -113,7 +113,7 @@ export default function Navbar() {
               className="text-2xl font-semibold tracking-wide text-gray-800 lg:text-3xl"
               style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
             >
-              RupKotha
+              Eloura
             </span>
           </Link>
 

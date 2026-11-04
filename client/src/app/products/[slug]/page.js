@@ -5,18 +5,18 @@ import ProductNotFoundState from "@/components/product/ProductNotFoundState";
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
-  if (!slug) return { title: "Product | RupKotha" };
+  if (!slug) return { title: "Product | Eloura" };
 
   try {
     const res = await productService.getProductBySlug(slug);
     if (!res?.success || !res?.data) {
       return {
-        title: "Product Not Found | RupKotha",
+        title: "Product Not Found | Eloura",
         description: "The requested cosmetics and skincare formulation was not found.",
       };
     }
     const product = res.data;
-    const title = product.seoTitle || `${product.name} | RupKotha Bangladesh`;
+    const title = product.seoTitle || `${product.name} | Eloura Bangladesh`;
     const description =
       product.seoDescription || product.shortDescription || product.description;
     const ogImage = product.images?.[0]?.imageUrl || product.thumbnailUrl;
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }) {
     };
   } catch {
     return {
-      title: "Product | RupKotha",
+      title: "Product | Eloura",
     };
   }
 }
@@ -83,11 +83,11 @@ export default async function ProductDetailPage({ params }) {
     mpn: product.barcode,
     brand: {
       "@type": "Brand",
-      name: product.brand?.name || "RupKotha",
+      name: product.brand?.name || "Eloura",
     },
     offers: {
       "@type": "Offer",
-      url: `https://rupkotha.com/products/${product.slug}`,
+      url: `https://eloura.com/products/${product.slug}`,
       priceCurrency: "BDT",
       price: product.salePrice || product.price,
       itemCondition: "https://schema.org/NewCondition",

@@ -113,7 +113,7 @@ router.post("/profile/avatar", profileAvatarLimiter, (req, res, next) => {
       throw validationError("Choose a JPEG, PNG, WebP, or GIF image.");
     }
 
-    uploaded = await cloudinaryService.uploadImage(req.file.buffer, "rupkotha/avatars");
+    uploaded = await cloudinaryService.uploadImage(req.file.buffer, "eloura/avatars");
     const client = await getClient();
     let previousPublicId = null;
     let updatedUser;

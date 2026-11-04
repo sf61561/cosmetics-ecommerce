@@ -93,7 +93,7 @@ class OAuthService {
     profile.provider = providerNameNormalized;
     profile.email = normalizeEmail(profile.email);
     const providedName = String(profile.name || "").trim().slice(0, 100);
-    profile.name = providedName || profile.email?.split("@")[0] || "RupKotha Customer";
+    profile.name = providedName || profile.email?.split("@")[0] || "Eloura Customer";
 
     if (flow.flow_type === "LINK") {
       return this.linkIdentity({ flow, profile, request });
@@ -117,7 +117,7 @@ class OAuthService {
 
       const linkedUser = await providerRepository.findUserByIdentity(profile.provider, profile.providerUserId, client);
       if (linkedUser && linkedUser.id !== user.id) {
-        throw serviceError("This provider account is already linked to another RupKotha account.", "PROVIDER_ALREADY_LINKED", 409);
+        throw serviceError("This provider account is already linked to another Eloura account.", "PROVIDER_ALREADY_LINKED", 409);
       }
 
       if (!linkedUser) {
@@ -151,7 +151,7 @@ class OAuthService {
       return { flowType: "LINK", user: safeUser(user), provider: profile.provider, returnTo: flow.return_to };
     } catch (error) {
       await client.query("ROLLBACK");
-      if (error.code === "23505") throw serviceError("This provider account is already linked to a RupKotha account.", "PROVIDER_ALREADY_LINKED", 409);
+      if (error.code === "23505") throw serviceError("This provider account is already linked to a Eloura account.", "PROVIDER_ALREADY_LINKED", 409);
       throw error;
     } finally {
       client.release();
@@ -181,7 +181,7 @@ class OAuthService {
             // Provider email is unverified — never link automatically
             if (!profile.emailVerified) {
               throw serviceError(
-                "This email already has a RupKotha account. Sign in to it, then link this provider in Security settings.",
+                "This email already has a Eloura account. Sign in to it, then link this provider in Security settings.",
                 "ACCOUNT_LINK_REQUIRED",
                 409
               );
@@ -235,7 +235,7 @@ class OAuthService {
               // the user should link from Settings (we can't silently merge two
               // fully established accounts without user consent).
               throw serviceError(
-                "This email already has a RupKotha account. Sign in to it, then link this provider in Security settings.",
+                "This email already has a Eloura account. Sign in to it, then link this provider in Security settings.",
                 "ACCOUNT_LINK_REQUIRED",
                 409
               );
@@ -307,7 +307,7 @@ class OAuthService {
         const existingEmail = profile.email ? await query("SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1", [profile.email]) : null;
         if (existingEmail?.rows[0]) {
           throw serviceError(
-            "This email already has a RupKotha account. Sign in to it, then link this provider in Security settings.",
+            "This email already has a Eloura account. Sign in to it, then link this provider in Security settings.",
             "ACCOUNT_LINK_REQUIRED",
             409
           );

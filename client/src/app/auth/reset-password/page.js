@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
       <main className="flex min-h-screen items-center justify-center bg-[#FBF7F8] px-4 py-10">
         <section className="w-full max-w-md rounded-3xl border border-[#eee6ee] bg-white p-7 shadow-sm sm:p-9">
           <Link href="/" className="font-serif text-lg font-semibold text-[#9B4F5E]">
-            RupKotha
+            Eloura
           </Link>
           <h1 className="mt-5 text-2xl font-bold text-gray-900">
             {complete

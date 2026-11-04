@@ -66,7 +66,7 @@ const sampleBrands = [
 ];
 
 async function seed() {
-  console.log("Seeding sample brands into RupKotha database...");
+  console.log("Seeding sample brands into Eloura database...");
   try {
     for (const b of sampleBrands) {
       await query(

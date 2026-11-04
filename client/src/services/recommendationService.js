@@ -23,7 +23,7 @@ export const recommendationService = {
   async getPersonalizedRecommendations(limit = 12) {
     const res = await fetch(`${API_BASE}/api/recommendations?limit=${limit}`, {
       method: "GET",
-      credentials: "include", // Pass cookies (accessToken and rupkotha_session_id)
+      credentials: "include", // Pass cookies (accessToken and eloura_session_id)
       headers: { Accept: "application/json" },
       cache: "no-store",
     });

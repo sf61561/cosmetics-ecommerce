@@ -53,7 +53,7 @@ function validateImage(file, field) {
 }
 
 function deleteManagedImage(publicId) {
-  return publicId && publicId.startsWith("rupkotha/hero-sliders/")
+  return publicId && publicId.startsWith("eloura/hero-sliders/")
     ? cloudinaryService.deleteImage(publicId)
     : Promise.resolve();
 }
@@ -164,13 +164,13 @@ class HeroSliderService {
     const uploaded = [];
     try {
       if (normalized.desktop) {
-        const result = await cloudinaryService.uploadImage(normalized.desktop.buffer, "rupkotha/hero-sliders");
+        const result = await cloudinaryService.uploadImage(normalized.desktop.buffer, "eloura/hero-sliders");
         normalized.desktopImageUrl = result.url;
         normalized.desktopImagePublicId = result.publicId;
         uploaded.push(result.publicId);
       }
       if (normalized.mobile) {
-        const result = await cloudinaryService.uploadImage(normalized.mobile.buffer, "rupkotha/hero-sliders");
+        const result = await cloudinaryService.uploadImage(normalized.mobile.buffer, "eloura/hero-sliders");
         normalized.mobileImageUrl = result.url;
         normalized.mobileImagePublicId = result.publicId;
         uploaded.push(result.publicId);

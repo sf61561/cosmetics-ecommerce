@@ -5,11 +5,11 @@ require("dotenv").config();
 const ACCESS_SECRET =
   process.env.ACCESS_TOKEN_SECRET ||
   process.env.JWT_SECRET ||
-  "rupkotha_default_access_secret_2026";
+  "eloura_default_access_secret_2026";
 
 const REFRESH_SECRET =
   process.env.REFRESH_TOKEN_SECRET ||
-  "rupkotha_default_refresh_secret_2026";
+  "eloura_default_refresh_secret_2026";
 
 const ACCESS_EXPIRES = process.env.ACCESS_TOKEN_EXPIRES_IN || "15m";
 const REFRESH_EXPIRES = process.env.REFRESH_TOKEN_EXPIRES_IN || "7d";

@@ -46,7 +46,7 @@ const sampleCollections = [
 ];
 
 async function seed() {
-  console.log("Seeding sample collections into RupKotha database...");
+  console.log("Seeding sample collections into Eloura database...");
   try {
     for (const col of sampleCollections) {
       await query(

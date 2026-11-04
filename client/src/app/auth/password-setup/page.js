@@ -78,7 +78,7 @@ export default function PasswordSetupPage() {
 
   return <main className="flex min-h-screen items-center justify-center bg-[#FBF7F8] px-4 py-10">
     <section className="w-full max-w-md rounded-3xl border border-[#eee6ee] bg-white p-7 shadow-sm sm:p-9">
-      <Link href="/" className="text-sm font-semibold text-[#9B4F5E]">RupKotha</Link>
+      <Link href="/" className="text-sm font-semibold text-[#9B4F5E]">Eloura</Link>
       <h1 className="mt-5 text-2xl font-bold text-gray-900">{complete ? "Password set" : token ? "Set your password" : "Get a password setup link"}</h1>
       <p className="mt-2 text-sm leading-6 text-gray-500">{token ? "Choose a password for your existing account. Your linked provider will continue to work." : "For accounts without a password, enter the verified email on your account. If eligible, we’ll send a one-time link."}</p>
 

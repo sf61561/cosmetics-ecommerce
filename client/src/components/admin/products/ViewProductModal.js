@@ -571,13 +571,13 @@ export default function ViewProductModal({ isOpen, onClose, product }) {
 
             <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4 space-y-1 max-w-xl">
               <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono truncate">
-                https://rupkotha.com › products › {p.slug}
+                https://eloura.com › products › {p.slug}
               </p>
               <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400 truncate hover:underline cursor-pointer">
                 {p.seoTitle || p.name}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
-                {p.seoDescription || p.shortDescription || p.description || "Browse authentic skincare and cosmetics on RupKotha."}
+                {p.seoDescription || p.shortDescription || p.description || "Browse authentic skincare and cosmetics on Eloura."}
               </p>
             </div>
           </div>

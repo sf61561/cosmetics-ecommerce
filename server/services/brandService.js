@@ -204,7 +204,7 @@ const brandService = {
 
     if (file && file.buffer) {
       try {
-        const uploadRes = await cloudinaryService.uploadImage(file.buffer, "rupkotha/brands");
+        const uploadRes = await cloudinaryService.uploadImage(file.buffer, "eloura/brands");
         logoUrl = uploadRes.url;
         logoPublicId = uploadRes.publicId;
       } catch (uploadErr) {
@@ -354,7 +354,7 @@ const brandService = {
     // File upload (logo replacement)
     if (file && file.buffer) {
       try {
-        const uploadRes = await cloudinaryService.uploadImage(file.buffer, "rupkotha/brands");
+        const uploadRes = await cloudinaryService.uploadImage(file.buffer, "eloura/brands");
         updates.logoUrl = uploadRes.url;
         updates.logoPublicId = uploadRes.publicId;
 

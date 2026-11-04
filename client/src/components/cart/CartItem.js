@@ -104,7 +104,7 @@ export default function CartItem({ item, onUpdateQuantity, onRemove, onNotify })
             {/* Brand & Volume Header */}
             <div className="flex items-center justify-between gap-2 mb-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9B4F5E] dark:text-rose-300">
-                {item.brand?.name || "RupKotha Beauty"}
+                {item.brand?.name || "Eloura Beauty"}
               </span>
               {item.volume && (
                 <span className="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-mono">

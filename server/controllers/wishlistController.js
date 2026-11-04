@@ -93,7 +93,7 @@ class WishlistController {
     try {
       const { productId } = req.params;
       const { quantity } = req.body || {};
-      const sessionId = req.cookies?.rupkotha_cart_session || null;
+      const sessionId = req.cookies?.eloura_cart_session || null;
       const data = await wishlistService.moveToCart(req.user.id, productId, {
         quantity,
         sessionId,

@@ -8,17 +8,17 @@ class EmailService {
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
     const { error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>",
+      from: process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>",
       to: [to],
-      subject: "Set your RupKotha password",
-      html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#29252A;background:#FBF0F0;padding:32px"><main style="max-width:520px;margin:auto;background:white;border-radius:16px;padding:32px"><h1 style="color:#9B4F5E">RupKotha</h1><h2>Hello ${safeName},</h2><p>Use the button below to set a password for your existing account. Your linked sign-in provider will continue to work.</p><p><a href="${setupUrl}" style="display:inline-block;background:#9B4F5E;color:#fff;padding:13px 22px;border-radius:24px;text-decoration:none;font-weight:bold">Set password</a></p><p>This one-time link expires in 30 minutes. If you did not request it, you can ignore this email.</p></main></body></html>`,
+      subject: "Set your Eloura password",
+      html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#29252A;background:#FBF0F0;padding:32px"><main style="max-width:520px;margin:auto;background:white;border-radius:16px;padding:32px"><h1 style="color:#9B4F5E">Eloura</h1><h2>Hello ${safeName},</h2><p>Use the button below to set a password for your existing account. Your linked sign-in provider will continue to work.</p><p><a href="${setupUrl}" style="display:inline-block;background:#9B4F5E;color:#fff;padding:13px 22px;border-radius:24px;text-decoration:none;font-weight:bold">Set password</a></p><p>This one-time link expires in 30 minutes. If you did not request it, you can ignore this email.</p></main></body></html>`,
     });
     if (error) throw new Error("Password setup email delivery failed.");
     return { success: true };
   }
 
   async sendPasswordResetEmail({ to, name, resetUrl, isProviderOnly = false, providerName = "Google" }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
     const safeName = String(name || "there").replace(/[&<>\"']/g, (char) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
@@ -35,7 +35,7 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${titleText} - RupKotha</title>
+        <title>${titleText} - Eloura</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #fcf8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2d3748;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fcf8f8; padding: 40px 20px;">
@@ -45,7 +45,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
                     <h1 style="margin: 0; font-family: 'Georgia', serif; font-size: 28px; color: #374151; font-weight: 600; letter-spacing: 0.5px;">
-                      RupKotha <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
+                      Eloura <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
                     </h1>
                     <p style="margin: 4px 0 0; font-size: 13px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase;">${isProviderOnly ? "Password Setup" : "Password Reset"}</p>
                   </td>
@@ -75,7 +75,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
                     <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      &copy; ${new Date().getFullYear()} RupKotha Cosmetics. All rights reserved.
+                      &copy; ${new Date().getFullYear()} Eloura Cosmetics. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -111,7 +111,7 @@ class EmailService {
   }
 
   async sendPasswordChangedConfirmationEmail({ to, name }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
     const safeName = String(name || "there").replace(/[&<>\"']/g, (char) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
@@ -122,7 +122,7 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Changed - RupKotha</title>
+        <title>Password Changed - Eloura</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #fcf8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2d3748;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fcf8f8; padding: 40px 20px;">
@@ -132,7 +132,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
                     <h1 style="margin: 0; font-family: 'Georgia', serif; font-size: 28px; color: #374151; font-weight: 600; letter-spacing: 0.5px;">
-                      RupKotha <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
+                      Eloura <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
                     </h1>
                     <p style="margin: 4px 0 0; font-size: 13px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase;">Security Notice</p>
                   </td>
@@ -143,17 +143,17 @@ class EmailService {
                       Hello ${safeName},
                     </h2>
                     <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #4b5563;">
-                      Your RupKotha account password was recently changed. All active sessions have been invalidated for security.
+                      Your Eloura account password was recently changed. All active sessions have been invalidated for security.
                     </p>
                     <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #6b7280;">
-                      If you made this change, you can safely disregard this notice. If you did <strong>not</strong> make this change, please contact our support team immediately at <a href="mailto:support@rupkotha.com" style="color: #9B4F5E; text-decoration: underline;">support@rupkotha.com</a> to secure your account.
+                      If you made this change, you can safely disregard this notice. If you did <strong>not</strong> make this change, please contact our support team immediately at <a href="mailto:support@eloura.com" style="color: #9B4F5E; text-decoration: underline;">support@eloura.com</a> to secure your account.
                     </p>
                   </td>
                 </tr>
                 <tr>
                   <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
                     <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      &copy; ${new Date().getFullYear()} RupKotha Cosmetics. All rights reserved.
+                      &copy; ${new Date().getFullYear()} Eloura Cosmetics. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -176,7 +176,7 @@ class EmailService {
       const { data, error } = await resend.emails.send({
         from: fromAddress,
         to: [to],
-        subject: "Your RupKotha password has been changed",
+        subject: "Your Eloura password has been changed",
         html: htmlContent,
       });
       if (error) console.warn("Password change confirmation email error:", error.message);
@@ -192,7 +192,7 @@ class EmailService {
    */
   async sendVerificationEmail({ to, name, verificationUrl }) {
     const fromAddress =
-      process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>";
+      process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -200,7 +200,7 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Verify Your Email - RupKotha</title>
+        <title>Verify Your Email - Eloura</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #fcf8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2d3748;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fcf8f8; padding: 40px 20px;">
@@ -211,7 +211,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
                     <h1 style="margin: 0; font-family: 'Georgia', serif; font-size: 28px; color: #374151; font-weight: 600; letter-spacing: 0.5px;">
-                      RupKotha <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
+                      Eloura <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
                     </h1>
                     <p style="margin: 4px 0 0; font-size: 13px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase;">Cosmetics & Beauty</p>
                   </td>
@@ -224,7 +224,7 @@ class EmailService {
                       Welcome, ${name || "valued customer"}!
                     </h2>
                     <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #4b5563;">
-                      Thank you for creating an account with <strong>RupKotha</strong>. To ensure the security of your account and verify your email address, please click the button below:
+                      Thank you for creating an account with <strong>Eloura</strong>. To ensure the security of your account and verify your email address, please click the button below:
                     </p>
 
                     <!-- CTA Button -->
@@ -239,7 +239,7 @@ class EmailService {
                     </table>
 
                     <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #6b7280;">
-                      This verification link will expire in <strong>24 hours</strong>. If you did not create an account with RupKotha, you can safely ignore this email.
+                      This verification link will expire in <strong>24 hours</strong>. If you did not create an account with Eloura, you can safely ignore this email.
                     </p>
 
                     <hr style="border: none; border-top: 1px solid #f3e2e5; margin: 24px 0;" />
@@ -255,7 +255,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
                     <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      &copy; ${new Date().getFullYear()} RupKotha Cosmetics. All rights reserved.
+                      &copy; ${new Date().getFullYear()} Eloura Cosmetics. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -303,7 +303,7 @@ class EmailService {
    * Send notification to a verified user when an account registration is attempted with their email
    */
   async sendAccountExistsEmail({ to, name }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
     const safeName = String(name || "there").replace(/[&<>\"']/g, (char) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
@@ -318,7 +318,7 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Account Notice - RupKotha</title>
+        <title>Account Notice - Eloura</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #fcf8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2d3748;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fcf8f8; padding: 40px 20px;">
@@ -328,7 +328,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
                     <h1 style="margin: 0; font-family: 'Georgia', serif; font-size: 28px; color: #374151; font-weight: 600; letter-spacing: 0.5px;">
-                      RupKotha <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
+                      Eloura <span style="color: #9B7CB8; font-size: 20px;">&#10047;</span>
                     </h1>
                     <p style="margin: 4px 0 0; font-size: 13px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase;">Security Notice</p>
                   </td>
@@ -339,7 +339,7 @@ class EmailService {
                       Hello ${safeName},
                     </h2>
                     <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #4b5563;">
-                      Someone recently attempted to create a new RupKotha account using your email address (<strong>${to}</strong>).
+                      Someone recently attempted to create a new Eloura account using your email address (<strong>${to}</strong>).
                     </p>
                     <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #6b7280;">
                       Because you already have an account with us, no new account was created. If this was you, you can simply sign in below or reset your password if you’ve forgotten it.
@@ -361,7 +361,7 @@ class EmailService {
                 <tr>
                   <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
                     <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      &copy; ${new Date().getFullYear()} RupKotha Cosmetics. All rights reserved.
+                      &copy; ${new Date().getFullYear()} Eloura Cosmetics. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -384,7 +384,7 @@ class EmailService {
       const { data, error } = await resend.emails.send({
         from: fromAddress,
         to: [to],
-        subject: "RupKotha Account Notice",
+        subject: "Eloura Account Notice",
         html: htmlContent,
       });
       if (error) console.warn("Account exists notification email error:", error.message);
@@ -396,7 +396,7 @@ class EmailService {
   }
 
   async sendOrderPlacedConfirmationEmail({ to, name, orderNumber, totalAmount, items = [], address = {} }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
     const safeName = name ? String(name).trim() : "Valued Customer";
     const formattedAmount = `৳${Number(totalAmount || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
     const itemsHtml = items.map((i) => `
@@ -418,7 +418,7 @@ class EmailService {
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #f3e2e5; box-shadow: 0 4px 16px rgba(155, 79, 94, 0.08); overflow: hidden;">
           <tr>
             <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
-              <h1 style="color: #9B4F5E; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">RupKotha</h1>
+              <h1 style="color: #9B4F5E; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">Eloura</h1>
               <p style="color: #71717a; font-size: 13px; margin: 6px 0 0; text-transform: uppercase; letter-spacing: 1px;">Order Confirmation</p>
             </td>
           </tr>
@@ -450,7 +450,7 @@ class EmailService {
           </tr>
           <tr>
             <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
-              <p style="font-size: 12px; color: #71717a; margin: 0;">© ${new Date().getFullYear()} RupKotha Cosmetics. Guaranteed authentic beauty.</p>
+              <p style="font-size: 12px; color: #71717a; margin: 0;">© ${new Date().getFullYear()} Eloura Cosmetics. Guaranteed authentic beauty.</p>
             </td>
           </tr>
         </table>
@@ -469,7 +469,7 @@ class EmailService {
       const { data, error } = await resend.emails.send({
         from: fromAddress,
         to: [to],
-        subject: `RupKotha Order Confirmation: ${orderNumber}`,
+        subject: `Eloura Order Confirmation: ${orderNumber}`,
         html: htmlContent,
       });
       if (error) console.warn("Order confirmation email error:", error.message);
@@ -481,7 +481,7 @@ class EmailService {
   }
 
   async sendOrderStatusChangedEmail({ to, name, orderNumber, status, courierName, trackingNumber, note }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "RupKotha <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
     const safeName = name ? String(name).trim() : "Valued Customer";
     const statusLabels = {
       pending: "Pending Review",
@@ -502,7 +502,7 @@ class EmailService {
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #f3e2e5; box-shadow: 0 4px 16px rgba(155, 79, 94, 0.08); overflow: hidden;">
           <tr>
             <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
-              <h1 style="color: #9B4F5E; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">RupKotha</h1>
+              <h1 style="color: #9B4F5E; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">Eloura</h1>
               <p style="color: #71717a; font-size: 13px; margin: 6px 0 0; text-transform: uppercase; letter-spacing: 1px;">Order Status Update</p>
             </td>
           </tr>
@@ -525,7 +525,7 @@ class EmailService {
           </tr>
           <tr>
             <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
-              <p style="font-size: 12px; color: #71717a; margin: 0;">© ${new Date().getFullYear()} RupKotha Cosmetics.</p>
+              <p style="font-size: 12px; color: #71717a; margin: 0;">© ${new Date().getFullYear()} Eloura Cosmetics.</p>
             </td>
           </tr>
         </table>

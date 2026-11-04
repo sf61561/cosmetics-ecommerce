@@ -48,7 +48,7 @@ router.post(
       const uploadResult = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
-            folder: "rupkotha/avatars",
+            folder: "eloura/avatars",
             resource_type: "image",
             // Auto optimize quality & format
             fetch_format: "auto",

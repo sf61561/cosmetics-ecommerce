@@ -160,7 +160,7 @@ const collectionService = {
       try {
         const uploadRes = await cloudinaryService.uploadImage(
           file.buffer,
-          "rupkotha/collections"
+          "eloura/collections"
         );
         imageUrl = uploadRes.url;
         imagePublicId = uploadRes.publicId;
@@ -291,7 +291,7 @@ const collectionService = {
       try {
         const uploadRes = await cloudinaryService.uploadImage(
           file.buffer,
-          "rupkotha/collections"
+          "eloura/collections"
         );
         updates.imageUrl = uploadRes.url;
         updates.imagePublicId = uploadRes.publicId;

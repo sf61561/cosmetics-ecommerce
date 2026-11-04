@@ -7,7 +7,7 @@ import { useAdminTheme } from "@/context/AdminThemeContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { FaStore, FaSignOutAlt, FaRegUser, FaShoppingBag, FaSun, FaMoon, FaCheck } from "react-icons/fa";
 
-// ─── 3-Petal Floral Motif for RupKotha Logo ───
+// ─── 3-Petal Floral Motif for Eloura Logo ───
 function LogoFloralIcon() {
   return (
     <svg
@@ -161,14 +161,14 @@ export default function AdminNavbar({ onToggleSidebar }) {
             </button>
           )}
 
-          {/* On mobile: display RupKotha + Admin badge */}
+          {/* On mobile: display Eloura + Admin badge */}
           <div className="flex items-center gap-2 lg:hidden">
             <Link href="/admin" className="flex items-center">
               <span
                 className="text-xl text-gray-800 dark:text-gray-100"
                 style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
               >
-                RupKotha
+                Eloura
               </span>
               <LogoFloralIcon />
             </Link>
@@ -346,7 +346,7 @@ export default function AdminNavbar({ onToggleSidebar }) {
                     {user?.name || "Administrator"}
                   </p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                    {user?.email || "admin@rupkotha.com"}
+                    {user?.email || "admin@eloura.com"}
                   </p>
                   <span className="inline-block mt-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                     Administrator

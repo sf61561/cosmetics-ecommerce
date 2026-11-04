@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Migration: RupKotha Centralized Notification System
+-- Migration: Eloura Centralized Notification System
 -- Tables: notifications, notification_deliveries, notification_preferences, push_subscriptions
 -- ==============================================================================
 

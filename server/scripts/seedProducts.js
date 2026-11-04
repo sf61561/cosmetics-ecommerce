@@ -102,8 +102,8 @@ async function seedProducts() {
         countryOfOrigin: "South Korea",
         howToUse: "After cleansing and toning, apply a small amount to your entire face. Gently pat using fingertips to aid absorption, and follow with moisturizer.",
         expiryInfo: "12M PAO / Exp: 2027-11",
-        seoTitle: "COSRX Advanced Snail 96 Mucin Power Essence 100ml | RupKotha Bangladesh",
-        seoDescription: "Buy authentic COSRX Snail 96 Mucin Essence in Bangladesh at RupKotha. Genuine K-Beauty with fast home delivery and cash on delivery.",
+        seoTitle: "COSRX Advanced Snail 96 Mucin Power Essence 100ml | Eloura Bangladesh",
+        seoDescription: "Buy authentic COSRX Snail 96 Mucin Essence in Bangladesh at Eloura. Genuine K-Beauty with fast home delivery and cash on delivery.",
         collections: ["glass-skin-essentials", "hydration-heroes"],
         images: [
           {
@@ -144,7 +144,7 @@ async function seedProducts() {
         countryOfOrigin: "Canada",
         howToUse: "Apply a few drops to the entire face morning and evening before heavier creams. If topical Vitamin C is used as part of skincare, it should be applied at alternate times.",
         expiryInfo: "12M PAO",
-        seoTitle: "The Ordinary Niacinamide 10% + Zinc 1% (30ml) | Authentic at RupKotha",
+        seoTitle: "The Ordinary Niacinamide 10% + Zinc 1% (30ml) | Authentic at Eloura",
         seoDescription: "Order 100% authentic The Ordinary Niacinamide serum in Bangladesh. Combat acne, reduce pores and control sebum.",
         collections: ["acne-blemish-control"],
         images: [
@@ -180,7 +180,7 @@ async function seedProducts() {
         countryOfOrigin: "USA",
         howToUse: "Wet skin with lukewarm water. Massage cleanser into skin in a gentle, circular motion. Rinse thoroughly and pat dry.",
         expiryInfo: "Exp: 2027-08",
-        seoTitle: "CeraVe Hydrating Facial Cleanser 237ml | RupKotha BD",
+        seoTitle: "CeraVe Hydrating Facial Cleanser 237ml | Eloura BD",
         seoDescription: "Buy authentic CeraVe Hydrating Cleanser in Bangladesh. Nourishing lotion cleanser with 3 essential ceramides.",
         collections: ["hydration-heroes"],
         images: [
@@ -253,7 +253,7 @@ async function seedProducts() {
         howToUse: "Apply liberally on face, neck, and exposed skin 15 minutes before sun exposure. Reapply every 2 hours during continuous sun exposure.",
         expiryInfo: "Exp: 2027-06",
         seoTitle: "Minimalist SPF 50 Sunscreen 50g | Best Sunscreen in Bangladesh",
-        seoDescription: "Authentic Minimalist Sunscreen SPF 50 PA++++ with multivitamins at RupKotha. No white cast, lightweight, sweat-resistant.",
+        seoDescription: "Authentic Minimalist Sunscreen SPF 50 PA++++ with multivitamins at Eloura. No white cast, lightweight, sweat-resistant.",
         collections: ["sun-protection"],
         images: [
           {
@@ -288,8 +288,8 @@ async function seedProducts() {
         countryOfOrigin: "South Korea",
         howToUse: "Use morning and night after removing makeup. Begin with wet hands and face. Squeeze a proper amount onto your hand and foam up. Gently massage onto face.",
         expiryInfo: "12M PAO",
-        seoTitle: "COSRX Low pH Good Morning Gel Cleanser | RupKotha",
-        seoDescription: "Buy COSRX Low pH Cleanser in Bangladesh at RupKotha. Gentle daily gel face wash for clear, refreshed skin.",
+        seoTitle: "COSRX Low pH Good Morning Gel Cleanser | Eloura",
+        seoDescription: "Buy COSRX Low pH Cleanser in Bangladesh at Eloura. Gentle daily gel face wash for clear, refreshed skin.",
         collections: ["acne-blemish-control"],
         images: [
           {

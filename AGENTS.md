@@ -1,4 +1,4 @@
-# RupKotha Project — Agent Directives & Context Management
+# Eloura Project — Agent Directives & Context Management
 
 ---
 

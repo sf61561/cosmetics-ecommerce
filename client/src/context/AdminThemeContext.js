@@ -16,7 +16,7 @@ function subscribe(callback) {
 
 function getSnapshot() {
   try {
-    const saved = localStorage.getItem("rupkotha_admin_theme");
+    const saved = localStorage.getItem("eloura_admin_theme");
     return saved === "dark" || saved === "light" ? saved : "light";
   } catch {
     return "light";
@@ -34,7 +34,7 @@ export function AdminThemeProvider({ children }) {
   const setTheme = (newTheme) => {
     if (newTheme !== "light" && newTheme !== "dark") return;
     try {
-      localStorage.setItem("rupkotha_admin_theme", newTheme);
+      localStorage.setItem("eloura_admin_theme", newTheme);
       // Notify listeners in the current window of the theme update
       window.dispatchEvent(new Event("storage"));
     } catch {

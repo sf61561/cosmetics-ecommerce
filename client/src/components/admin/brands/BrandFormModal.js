@@ -217,7 +217,7 @@ function BrandFormContent({
             </div>
             <div className="relative mt-1.5 flex rounded-xl border border-gray-200 dark:border-gray-700 shadow-2xs overflow-hidden focus-within:border-[#9B4F5E] dark:focus-within:border-pink-500 focus-within:ring-2 focus-within:ring-[#9B4F5E]/15">
               <span className="inline-flex items-center bg-gray-50 dark:bg-gray-800 px-3.5 text-xs text-gray-400 dark:text-gray-500 border-r border-gray-200 dark:border-gray-700 select-none">
-                rupkotha.com/brands/
+                eloura.com/brands/
               </span>
               <input
                 id="brand-slug"
