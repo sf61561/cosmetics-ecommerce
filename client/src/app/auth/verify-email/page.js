@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { API_BASE } from "@/services/apiConfig";
 
 // ─── Icons ───
 function CheckIcon() {
@@ -77,9 +78,7 @@ function VerifyEmailContent() {
 
     async function verify() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL
-          ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-email`
-          : `/api/auth/verify-email`;
+        const apiUrl = `${API_BASE}/api/auth/verify-email`;
 
         // Send POST to verify token, ensuring link scanners / email crawlers don't consume GET links
         const res = await fetch(apiUrl, {
@@ -162,9 +161,7 @@ function VerifyEmailContent() {
     setResendStatus(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/resend-verification`
-        : "/api/auth/resend-verification";
+      const apiUrl = `${API_BASE}/api/auth/resend-verification`;
 
       const res = await fetch(apiUrl, {
         method: "POST",

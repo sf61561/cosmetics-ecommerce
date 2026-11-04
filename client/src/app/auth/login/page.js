@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CiUser, CiLock, CiMail } from "react-icons/ci";
 import { FaRegEye, FaRegEyeSlash, FaArrowLeft } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE } from "@/services/apiConfig";
 
 function GoogleIcon() {
   return (
@@ -114,8 +115,7 @@ export default function LoginPage() {
 
     setIsForgotSubmitting(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const response = await fetch(`${apiUrl}/api/auth/password/reset/request`, {
+      const response = await fetch(`${API_BASE}/api/auth/password/reset/request`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -156,12 +156,12 @@ export default function LoginPage() {
     return "";
   });
 
-  // Strip invalid or circular /auth redirect parameters from the address bar on load
+  // Strip invalid, circular /auth, or /admin redirect parameters from the address bar on load
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect");
-      if (redirect && !sanitizeRedirectPath(redirect)) {
+      if (redirect && (!sanitizeRedirectPath(redirect) || redirect.startsWith("/admin"))) {
         params.delete("redirect");
         const newSearch = params.toString();
         const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}${window.location.hash}`;
@@ -248,12 +248,11 @@ export default function LoginPage() {
       const rawRedirect = new URLSearchParams(window.location.search).get("redirect");
       const safeRedirect = sanitizeRedirectPath(rawRedirect);
 
-      // Keep admins on their dashboard; customers return to the requested safe relative path or home
-      if (res?.user?.role === "ADMIN") {
-        router.push(safeRedirect && safeRedirect.startsWith("/admin") ? safeRedirect : "/admin");
-      } else {
-        router.push(safeRedirect && !safeRedirect.startsWith("/admin") ? safeRedirect : "/");
-      }
+      // Force clean document navigation: admins always route directly to /admin
+      const targetPath = res?.user?.role === "ADMIN"
+        ? "/admin"
+        : (safeRedirect && !safeRedirect.startsWith("/admin") ? safeRedirect : "/");
+      window.location.href = targetPath;
     } catch (err) {
       console.error("Login error:", err);
       setServerErrorCode(err.code || "");

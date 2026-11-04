@@ -30,7 +30,9 @@ export function proxy(request) {
     // Let the client session check refresh an expired access token when possible.
     if (!accessToken && !refreshToken) {
       const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("redirect", `${pathname}${request.nextUrl.search}`);
+      if (!isAdminPath) {
+        loginUrl.searchParams.set("redirect", `${pathname}${request.nextUrl.search}`);
+      }
       return NextResponse.redirect(loginUrl);
     }
 

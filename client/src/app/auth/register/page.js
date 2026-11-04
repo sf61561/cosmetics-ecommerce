@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CiUser, CiLock, CiPhone, CiCamera, CiMail } from "react-icons/ci";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+import { API_BASE } from "@/services/apiConfig";
 
 // ─── Google Icon ───
 function GoogleIcon() {
@@ -269,9 +270,7 @@ export default function RegisterPage() {
 
     try {
       // Connect to Express backend registration endpoint
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`
-        : "/api/auth/register";
+      const apiUrl = `${API_BASE}/api/auth/register`;
 
       let response;
 

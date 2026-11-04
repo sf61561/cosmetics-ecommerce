@@ -19,7 +19,7 @@ function AdminLayoutContent({ children }) {
     // Only redirect if session expired naturally; skip if an explicit logout is in progress
     if (!isLoading && !isLoggingOut) {
       if (!user) {
-        router.replace("/auth/login?redirect=/admin");
+        router.replace("/auth/login");
       } else if (user.role !== "ADMIN") {
         router.replace("/");
       }

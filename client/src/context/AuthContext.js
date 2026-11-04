@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { API_BASE } from "@/services/apiConfig";
 
 const AuthContext = createContext({
   user: null,
@@ -54,9 +55,7 @@ export function AuthProvider({ children }) {
   // Silent refresh token handler (relies strictly on HTTP-only refreshToken cookie)
   const refreshAuth = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh-token`
-        : "/api/auth/refresh-token";
+      const apiUrl = `${API_BASE}/api/auth/refresh-token`;
 
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -85,9 +84,7 @@ export function AuthProvider({ children }) {
 
     async function checkSession() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL
-          ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`
-          : "/api/auth/me";
+        const apiUrl = `${API_BASE}/api/auth/me`;
 
         const res = await fetch(apiUrl, {
           method: "GET",
@@ -127,9 +124,7 @@ export function AuthProvider({ children }) {
    */
   const login = useCallback(
     async ({ identifier, password, rememberMe = false }) => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`
-        : "/api/auth/login";
+      const apiUrl = `${API_BASE}/api/auth/login`;
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -161,9 +156,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     setIsLoggingOut(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`
-        : "/api/auth/logout";
+      const apiUrl = `${API_BASE}/api/auth/logout`;
 
       await fetch(apiUrl, {
         method: "POST",

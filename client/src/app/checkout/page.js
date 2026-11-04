@@ -10,7 +10,7 @@ import { useCart } from "@/context/CartContext";
 import { orderService } from "@/services/orderService";
 import { promotionService } from "@/services/promotionService";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/services/apiConfig";
 const EMPTY_ADDRESS = { label: "Home", recipientName: "", phone: "", division: "", district: "", area: "", streetAddress: "", postalCode: "" };
 
 export default function CheckoutPage() {
