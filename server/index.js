@@ -30,21 +30,40 @@ const PORT = process.env.PORT || 5000;
 // Trust reverse proxies (Next.js rewrites, Nginx, Cloudflare) for accurate client IP in rate limiting
 app.set("trust proxy", 1);
 
-// Allowed frontend origins
-const allowedOrigins = [process.env.CLIENT_URL].filter(Boolean);
-if (process.env.NODE_ENV !== "production") {
-  allowedOrigins.push("http://localhost:3000", "http://127.0.0.1:3000");
-}
-const allowedOriginSet = new Set(allowedOrigins.map((origin) => {
-  try { return new URL(origin).origin; } catch { return null; }
-}).filter(Boolean));
+// Allowed frontend origins (supports comma-separated URLs and local development)
+const configuredClientUrls = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  ...configuredClientUrls,
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
+
+const allowedOriginSet = new Set(
+  allowedOrigins
+    .map((origin) => {
+      try {
+        return new URL(origin).origin;
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+);
 
 // Middlewares
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Non-browser clients may omit Origin. Browser origins must match the configured client.
+      // Non-browser clients may omit Origin. Browser origins must match configured clients.
       if (!origin || allowedOriginSet.has(origin)) {
+        return callback(null, true);
+      }
+      // Support Vercel deployment preview domains
+      if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
       return callback(null, false);

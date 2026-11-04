@@ -1,6 +1,7 @@
 const oauthService = require("../services/oauthService");
 const providerRepository = require("../repositories/providerRepository");
 const crypto = require("crypto");
+const { getSessionCookieOptions, isProductionOrCrossDomain } = require("../utils/cookieHelper");
 
 const RECENT_AUTH_SECONDS = 5 * 60;
 
@@ -33,10 +34,11 @@ function oauthStateCookieName(state) {
 }
 
 function oauthStateCookieOptions() {
+  const isCrossDomain = isProductionOrCrossDomain();
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isCrossDomain,
+    sameSite: isCrossDomain ? "none" : "lax",
     path: "/api/auth/oauth",
     maxAge: 10 * 60 * 1000,
   };
@@ -79,13 +81,8 @@ function safeErrorCode(error) {
 }
 
 function setSessionCookies(res, result) {
-  const secure = process.env.NODE_ENV === "production";
-  res.cookie("accessToken", result.accessToken, {
-    httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: 15 * 60 * 1000,
-  });
-  res.cookie("refreshToken", result.refreshToken, {
-    httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("accessToken", result.accessToken, getSessionCookieOptions(15 * 60 * 1000));
+  res.cookie("refreshToken", result.refreshToken, getSessionCookieOptions(30 * 24 * 60 * 60 * 1000));
 }
 
 class OAuthController {

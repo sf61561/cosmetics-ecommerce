@@ -2,6 +2,7 @@ const { verifyAccessToken } = require("../utils/jwtHelper");
 const authService = require("../services/authService");
 const userRepository = require("../repositories/userRepository");
 const auditService = require("../services/auditService");
+const { getSessionCookieOptions } = require("../utils/cookieHelper");
 
 async function logDenied(req, reason) {
   if (!String(req.originalUrl || req.path || "").startsWith("/api/admin")) return;
@@ -64,23 +65,9 @@ async function authenticate(req, res, next) {
     if (refreshToken) {
       try {
         const result = await authService.refreshAccessToken(refreshToken);
-        const isProd = process.env.NODE_ENV === "production";
-
         // Re-issue access token cookie
-        res.cookie("accessToken", result.accessToken, {
-          httpOnly: true,
-          secure: isProd,
-          sameSite: "lax",
-          path: "/",
-          maxAge: 15 * 60 * 1000,
-        });
-        res.cookie("refreshToken", result.refreshToken, {
-          httpOnly: true,
-          secure: isProd,
-          sameSite: "lax",
-          path: "/",
-          maxAge: result.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie("accessToken", result.accessToken, getSessionCookieOptions(15 * 60 * 1000));
+        res.cookie("refreshToken", result.refreshToken, getSessionCookieOptions(result.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000));
 
         const decoded = verifyAccessToken(result.accessToken);
         req.user = decoded;

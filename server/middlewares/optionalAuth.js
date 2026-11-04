@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { verifyAccessToken } = require("../utils/jwtHelper");
 const authService = require("../services/authService");
+const { getSessionCookieOptions } = require("../utils/cookieHelper");
 
 /**
  * Optional Authentication & Anonymous Session Middleware:
@@ -27,14 +28,7 @@ async function optionalAuth(req, res, next) {
           if (refreshToken) {
             try {
               const result = await authService.refreshAccessToken(refreshToken);
-              const isProd = process.env.NODE_ENV === "production";
-              res.cookie("accessToken", result.accessToken, {
-                httpOnly: true,
-                secure: isProd,
-                sameSite: "lax",
-                path: "/",
-                maxAge: 15 * 60 * 1000,
-              });
+              res.cookie("accessToken", result.accessToken, getSessionCookieOptions(15 * 60 * 1000));
               req.user = verifyAccessToken(result.accessToken);
             } catch {
               req.user = null;
@@ -52,14 +46,7 @@ async function optionalAuth(req, res, next) {
     let sessionId = req.cookies?.eloura_session_id || req.headers["x-session-id"];
     if (!sessionId || typeof sessionId !== "string" || sessionId.length < 10) {
       sessionId = crypto.randomUUID();
-      const isProd = process.env.NODE_ENV === "production";
-      res.cookie("eloura_session_id", sessionId, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+      res.cookie("eloura_session_id", sessionId, getSessionCookieOptions(30 * 24 * 60 * 60 * 1000));
     }
 
     req.sessionId = sessionId;

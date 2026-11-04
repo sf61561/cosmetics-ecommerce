@@ -1,9 +1,9 @@
 const authService = require("../services/authService");
 const auditService = require("../services/auditService");
+const { getSessionCookieOptions, getClearCookieOptions } = require("../utils/cookieHelper");
 
 function clearSessionCookies(res) {
-  const secure = process.env.NODE_ENV === "production";
-  const options = { httpOnly: true, secure, sameSite: "lax", path: "/" };
+  const options = getClearCookieOptions();
   res.clearCookie("accessToken", options);
   res.clearCookie("refreshToken", options);
 }
@@ -135,28 +135,15 @@ class AuthController {
         rememberMe: Boolean(rememberMe),
       }, req.auditRequest);
 
-      const isProd = process.env.NODE_ENV === "production";
       const refreshMaxAge = rememberMe
         ? 30 * 24 * 60 * 60 * 1000 // 30 days
         : 7 * 24 * 60 * 60 * 1000; // 7 days
 
       // Set secure HTTP-only accessToken cookie (15m)
-      res.cookie("accessToken", result.accessToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 15 * 60 * 1000,
-      });
+      res.cookie("accessToken", result.accessToken, getSessionCookieOptions(15 * 60 * 1000));
 
       // Set secure HTTP-only refreshToken cookie
-      res.cookie("refreshToken", result.refreshToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: "lax",
-        path: "/",
-        maxAge: refreshMaxAge,
-      });
+      res.cookie("refreshToken", result.refreshToken, getSessionCookieOptions(refreshMaxAge));
 
       // Respond without exposing tokens to frontend JavaScript
       return res.status(200).json({
