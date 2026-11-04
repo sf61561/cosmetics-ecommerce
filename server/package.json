@@ -1,0 +1,33 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "RupKotha Cosmetics Ecommerce Backend",
+  "license": "ISC",
+  "author": "Syed Fahad Mahmud",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "migrate:payments": "node scripts/migrateOrderPayments.js",
+    "migrate:auth": "node scripts/migrateUnifiedAuth.js",
+    "test:auth": "node scripts/testUnifiedAuth.js",
+    "test:audit": "node scripts/testAuditLogging.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.11.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
+    "pg": "^8.13.3",
+    "resend": "^6.34.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
