@@ -148,7 +148,10 @@ class HeroSliderService {
   }
 
   async getPublic(options = {}) {
-    const placement = options.placement || "home_hero";
+    let placement = options.placement || "home_hero";
+    if (!placement || placement === "undefined" || placement === "null" || placement === "all") {
+      placement = "home_hero";
+    }
     return heroSliderRepository.listPublic({ placement });
   }
 

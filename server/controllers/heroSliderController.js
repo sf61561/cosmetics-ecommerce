@@ -3,7 +3,10 @@ const heroSliderService = require("../services/heroSliderService");
 class HeroSliderController {
   async listPublic(req, res, next) {
     try {
-      const placement = req.query.placement || "home_hero";
+      const raw = req.query.placement;
+      const placement = (!raw || raw === "undefined" || raw === "null" || raw === "all")
+        ? "home_hero"
+        : raw;
       const data = await heroSliderService.getPublic({ placement });
       res.json({ success: true, data });
     } catch (error) {
