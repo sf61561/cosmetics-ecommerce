@@ -3,6 +3,7 @@ import { API_BASE } from "./apiConfig";
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
+    cache: "no-store",
     headers: options.body instanceof FormData ? {} : { Accept: "application/json", "Content-Type": "application/json" },
     ...options,
   });
@@ -31,8 +32,16 @@ function toFormData(values) {
 export const heroSliderService = {
   getPublic: (placement = "home_hero") =>
     request(`/api/hero-sliders?placement=${encodeURIComponent(placement)}`, { credentials: undefined, cache: "no-store" }),
-  list: (params = {}) =>
-    request(`/api/admin/hero-sliders?${new URLSearchParams(params).toString()}`),
+  list: (params = {}) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "" && value !== "all") {
+        searchParams.append(key, String(value));
+      }
+    });
+    const qs = searchParams.toString();
+    return request(`/api/admin/hero-sliders${qs ? `?${qs}` : ""}`);
+  },
   getById: (id) => request(`/api/admin/hero-sliders/${id}`),
   create: (values) => request("/api/admin/hero-sliders", { method: "POST", body: toFormData(values) }),
   update: (id, values) => request(`/api/admin/hero-sliders/${id}`, { method: "PATCH", body: toFormData(values) }),

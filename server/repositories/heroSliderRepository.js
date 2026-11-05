@@ -56,7 +56,7 @@ const heroSliderRepository = {
       conditions.push("is_active = false");
     }
 
-    if (placement && placement !== "all") {
+    if (placement && placement !== "all" && placement !== "undefined") {
       values.push(placement);
       conditions.push(`placement = $${values.length}`);
     }
