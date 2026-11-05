@@ -19,6 +19,12 @@ async function logDenied(req, reason) {
  * Verifies JWT access token strictly from HTTP-only cookie (with Authorization header fallback)
  */
 async function authenticate(req, res, next) {
+  // Prevent browser caching of protected responses
+  res.set({
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  });
   try {
     let token = req.cookies?.accessToken;
 
@@ -96,6 +102,11 @@ async function authenticate(req, res, next) {
  */
 function requireRole(...allowedRoles) {
   return async (req, res, next) => {
+    res.set({
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    });
     if (!req.user) {
       return res.status(401).json({
         success: false,

@@ -6,6 +6,10 @@ function clearSessionCookies(res) {
   const options = getClearCookieOptions();
   res.clearCookie("accessToken", options);
   res.clearCookie("refreshToken", options);
+  res.clearCookie("accessToken", { path: "/" });
+  res.clearCookie("refreshToken", { path: "/" });
+  res.clearCookie("accessToken", { path: "/", sameSite: "lax" });
+  res.clearCookie("refreshToken", { path: "/", sameSite: "lax" });
 }
 
 class AuthController {
@@ -203,34 +207,35 @@ class AuthController {
    */
   async logout(req, res, next) {
     try {
-      const token = req.cookies?.refreshToken;
+      let token = req.cookies?.refreshToken;
+      let decoded = null;
       if (token) {
-        let decoded = null;
         try {
           const { verifyRefreshToken } = require("../utils/jwtHelper");
           decoded = verifyRefreshToken(token);
         } catch {
           // Token decode error ignored on logout
         }
-        if (decoded?.id) await authService.logoutUser(decoded.id, { id: decoded.id, role: decoded.role }, req.auditRequest);
+      }
+      if (!decoded?.id && req.cookies?.accessToken) {
+        try {
+          const { verifyAccessToken } = require("../utils/jwtHelper");
+          decoded = verifyAccessToken(req.cookies.accessToken);
+        } catch {}
+      }
+      if (decoded?.id) {
+        await authService.logoutUser(decoded.id, { id: decoded.id, role: decoded.role }, req.auditRequest);
       }
 
-      const isProd = process.env.NODE_ENV === "production";
-
-      // Clear both HTTP-only cookies
-      res.clearCookie("accessToken", {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: "lax",
-        path: "/",
+      // Explicitly set no-cache headers on logout response to prevent browser back-cache
+      res.set({
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
       });
 
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: "lax",
-        path: "/",
-      });
+      // Clear both HTTP-only cookies across all configurations
+      clearSessionCookies(res);
 
       return res.status(200).json({
         success: true,

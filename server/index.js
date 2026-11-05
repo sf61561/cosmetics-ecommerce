@@ -101,7 +101,17 @@ app.post("/reset-password", (req, res, next) => {
   req.url = "/reset-password";
   authRoutes(req, res, next);
 });
-app.use("/api/admin", adminRoutes);
+// Anti-caching middleware for protected routes (prevents browser back-forward cache leaks)
+const noCache = (req, res, next) => {
+  res.set({
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  });
+  next();
+};
+
+app.use("/api/admin", noCache, adminRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/products", productRoutes);
@@ -112,7 +122,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/addresses", addressRoutes);
-app.use("/api/customer", customerAccountRoutes);
+app.use("/api/customer", noCache, customerAccountRoutes);
 app.use("/api/hero-sliders", heroSliderRoutes);
 app.use("/api/sliders", heroSliderRoutes);
 app.use("/api/wishlist", wishlistRoutes);

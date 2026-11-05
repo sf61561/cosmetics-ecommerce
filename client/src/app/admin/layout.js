@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { AdminThemeProvider, useAdminTheme } from "@/context/AdminThemeContext";
@@ -10,21 +10,41 @@ import AdminNavbar from "@/components/admin/AdminNavbar";
 import { FaShieldAlt } from "react-icons/fa";
 
 function AdminLayoutContent({ children }) {
-  const { user, isLoading, isLoggingOut } = useAuth();
+  const { user, isLoading, isLoggingOut, refreshAuth } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const { isDark } = useAdminTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // bfcache protection for admin pages: immediate re-check when restored from back/forward cache
+  useEffect(() => {
+    const handlePageShow = async (event) => {
+      if (event.persisted) {
+        try {
+          const freshUser = await refreshAuth();
+          if (!freshUser || freshUser.role !== "ADMIN") {
+            window.location.replace("/auth/login");
+          }
+        } catch {
+          window.location.replace("/auth/login");
+        }
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [refreshAuth]);
 
   useEffect(() => {
     // Only redirect if session expired naturally; skip if an explicit logout is in progress
     if (!isLoading && !isLoggingOut) {
       if (!user) {
-        router.replace("/auth/login");
+        window.location.replace("/auth/login");
       } else if (user.role !== "ADMIN") {
-        router.replace("/");
+        window.location.replace("/");
       }
     }
-  }, [user, isLoading, isLoggingOut, router]);
+  }, [user, isLoading, isLoggingOut, pathname]);
 
   // Loading state
   if (isLoading || isLoggingOut) {

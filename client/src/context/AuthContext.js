@@ -78,45 +78,56 @@ export function AuthProvider({ children }) {
     }
   }, [saveAuthSession]);
 
-  // Initial session check on app mount via HTTP-only cookie
-  useEffect(() => {
-    let isMounted = true;
+  // Session verification handler via HTTP-only cookie
+  const checkSession = useCallback(async () => {
+    try {
+      const apiUrl = `${API_BASE}/api/auth/me`;
 
-    async function checkSession() {
-      try {
-        const apiUrl = `${API_BASE}/api/auth/me`;
+      const res = await fetch(apiUrl, {
+        method: "GET",
+        credentials: "include", // browser sends HTTP-only accessToken cookie
+      });
 
-        const res = await fetch(apiUrl, {
-          method: "GET",
-          credentials: "include", // browser sends HTTP-only accessToken cookie
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.user) {
-            setUser(data.user);
-          }
-        } else {
-          // If accessToken is expired, attempt refresh via refreshToken cookie
-          const refreshedUser = await refreshAuth();
-          if (!refreshedUser && isMounted) {
-            setUser(null);
-          }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          saveAuthSession(data.user);
+          return data.user;
         }
-      } catch (err) {
-        console.warn("Session verification error:", err);
-        if (isMounted) setUser(null);
-      } finally {
-        if (isMounted) setIsLoading(false);
+      } else {
+        // If accessToken is expired, attempt refresh via refreshToken cookie
+        const refreshedUser = await refreshAuth();
+        if (!refreshedUser) {
+          saveAuthSession(null);
+        }
+        return refreshedUser;
       }
+    } catch (err) {
+      console.warn("Session verification error:", err);
+      saveAuthSession(null);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
+  }, [saveAuthSession, refreshAuth]);
 
+  // Initial session check on app mount
+  useEffect(() => {
     checkSession();
+  }, [checkSession]);
 
-    return () => {
-      isMounted = false;
+  // bfcache protection: re-validate session whenever page is restored from back/forward cache
+  useEffect(() => {
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        // Page was restored from back/forward cache (bfcache)
+        checkSession();
+      }
     };
-  }, [refreshAuth]);
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [checkSession]);
 
   /**
    * Log in user with credentials
@@ -167,9 +178,9 @@ export function AuthProvider({ children }) {
       console.warn("Logout request error:", err);
     } finally {
       saveAuthSession(null);
-      // Hard redirect to /auth/login: resets all in-memory React state cleanly and prevents guard interference
+      // Replace redirect to /auth/login: resets all in-memory React state cleanly and prevents admin page from lingering in history
       if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
+        window.location.replace("/auth/login");
       } else {
         router.replace("/auth/login");
       }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CiUser, CiLock, CiPhone, CiCamera, CiMail } from "react-icons/ci";
 import { FaRegEye, FaRegEyeSlash, FaArrowLeft } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
 import { API_BASE } from "@/services/apiConfig";
 
 // ─── Input Field Component ───
@@ -151,6 +152,18 @@ export default function RegisterPage() {
   const [isSuccessVerify, setIsSuccessVerify] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
   const router = useRouter();
+  const { user, isLoading, isLoggingOut } = useAuth();
+
+  // Reverse case: redirect already-authenticated users away from register page
+  useEffect(() => {
+    if (!isLoading && !isLoggingOut && user) {
+      if (user.role === "ADMIN") {
+        window.location.replace("/admin");
+      } else {
+        window.location.replace("/");
+      }
+    }
+  }, [user, isLoading, isLoggingOut]);
 
   // ── Avatar file change handler ──
   const handleAvatarChange = (e) => {

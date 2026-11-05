@@ -42,7 +42,19 @@ function sanitizeRedirectPath(path) {
 // ─── Login Page ───
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, isLoading, isLoggingOut } = useAuth();
+
+  // Reverse case: redirect already-authenticated users away from login page
+  useEffect(() => {
+    if (!isLoading && !isLoggingOut && user) {
+      if (user.role === "ADMIN") {
+        window.location.replace("/admin");
+      } else {
+        const safeRedirect = sanitizeRedirectPath(new URLSearchParams(window.location.search).get("redirect"));
+        window.location.replace(safeRedirect || "/");
+      }
+    }
+  }, [user, isLoading, isLoggingOut]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
