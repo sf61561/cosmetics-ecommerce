@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FaRegEye, FaRegEyeSlash, FaArrowLeft } from "react-icons/fa";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 
 import { API_BASE } from "@/services/apiConfig";
 
@@ -123,16 +123,12 @@ export default function ResetPasswordPage() {
       <meta name="referrer" content="no-referrer" />
       <main className="flex min-h-screen items-center justify-center bg-[#FBF7F8] px-4 py-10">
         <section className="w-full max-w-md rounded-3xl border border-[#eee6ee] bg-white p-7 shadow-sm sm:p-9">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-center mb-4">
             <Link
               href="/"
-              className="group inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2 min-h-[44px]"
-              aria-label="Back to Home"
+              className="font-serif text-2xl font-semibold text-gray-800 hover:text-[#9B4F5E] transition-colors"
+              aria-label="Eloura Home"
             >
-              <FaArrowLeft className="h-3.5 w-3.5 text-gray-500 group-hover:text-gray-900 transition-transform group-hover:-translate-x-0.5" />
-              <span className="font-medium hover:underline">Back to Home</span>
-            </Link>
-            <Link href="/" className="font-serif text-xl font-semibold text-gray-800 hover:text-[#9B4F5E] transition-colors">
               Eloura
             </Link>
           </div>
