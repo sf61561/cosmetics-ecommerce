@@ -10,3 +10,4 @@ DROP TABLE IF EXISTS oauth_flows CASCADE;
 -- 3. Drop OAuth indexes and columns on users table
 DROP INDEX IF EXISTS idx_users_oauth;
 ALTER TABLE users DROP COLUMN IF EXISTS oauth_id CASCADE;
+

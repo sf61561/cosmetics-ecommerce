@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { FaArrowLeft } from "react-icons/fa";
 
 import { API_BASE } from "@/services/apiConfig";
 
@@ -78,7 +79,19 @@ export default function PasswordSetupPage() {
 
   return <main className="flex min-h-screen items-center justify-center bg-[#FBF7F8] px-4 py-10">
     <section className="w-full max-w-md rounded-3xl border border-[#eee6ee] bg-white p-7 shadow-sm sm:p-9">
-      <Link href="/" className="text-sm font-semibold text-[#9B4F5E]">Eloura</Link>
+      <div className="flex items-center justify-between mb-2">
+        <Link
+          href="/"
+          className="group inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2 min-h-[44px]"
+          aria-label="Back to Home"
+        >
+          <FaArrowLeft className="h-3.5 w-3.5 text-gray-500 group-hover:text-gray-900 transition-transform group-hover:-translate-x-0.5" />
+          <span className="font-medium hover:underline">Back to Home</span>
+        </Link>
+        <Link href="/" className="font-serif text-xl font-semibold text-gray-800 hover:text-[#9B4F5E] transition-colors">
+          Eloura
+        </Link>
+      </div>
       <h1 className="mt-5 text-2xl font-bold text-gray-900">{complete ? "Password set" : token ? "Set your password" : "Get a password setup link"}</h1>
       <p className="mt-2 text-sm leading-6 text-gray-500">{token ? "Choose a password for your existing account. Your linked provider will continue to work." : "For accounts without a password, enter the verified email on your account. If eligible, we’ll send a one-time link."}</p>
 

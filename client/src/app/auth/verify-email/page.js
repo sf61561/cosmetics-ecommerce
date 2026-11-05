@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { FaArrowLeft } from "react-icons/fa";
 import { API_BASE } from "@/services/apiConfig";
 
 // ─── Icons ───
@@ -351,15 +352,23 @@ export default function VerifyEmailPage() {
 
       {/* ── Content ── */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
-        {/* Brand Logo */}
-        <div className="mb-6 flex items-center gap-0.5">
-          <span
-            className="text-3xl font-semibold text-gray-800 tracking-wide"
+        {/* Top Navigation: Back to Home & Brand Logo */}
+        <div className="w-full flex items-center justify-between mb-4 px-1">
+          <Link
+            href="/"
+            className="group inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2.5 min-h-[44px]"
+            aria-label="Back to Home"
+          >
+            <FaArrowLeft className="h-3.5 w-3.5 text-gray-500 group-hover:text-gray-900 transition-transform group-hover:-translate-x-0.5" />
+            <span className="font-medium hover:underline">Back to Home</span>
+          </Link>
+          <Link
+            href="/"
+            className="text-2xl font-semibold tracking-wide text-gray-800 hover:text-[#9B4F5E] transition-colors"
             style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
           >
             Eloura
-          </span>
-          <LogoLeaf />
+          </Link>
         </div>
 
         {/* Suspense wrapper for Next.js useSearchParams */}
