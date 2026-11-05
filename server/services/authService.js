@@ -576,16 +576,12 @@ class AuthService {
 
     const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
     const resetUrl = `${clientUrl.replace(/\/$/, "")}/auth/reset-password?token=${encodeURIComponent(rawToken)}`;
-    const isProviderOnly = !user.password_hash;
-    const providerName = user.authprovider === "google" ? "Google" : user.authprovider ? user.authprovider.charAt(0).toUpperCase() + user.authprovider.slice(1) : "Google";
 
     try {
       await emailService.sendPasswordResetEmail({
         to: user.email,
         name: user.name,
         resetUrl,
-        isProviderOnly,
-        providerName,
       });
     } catch (error) {
       console.error("Password reset email could not be sent.", error.message || "Email service unavailable.");
@@ -788,9 +784,8 @@ class AuthService {
       throw error;
     }
 
-    // OAuth-only accounts can add a password using the single-use email setup flow.
     if (!user.password_hash) {
-      const error = new Error("This account has no password yet. Sign in with a linked provider, then set one from My Profile → Security.");
+      const error = new Error("This account has no password set. Please use forgot password to set your password.");
       error.statusCode = 409;
       error.code = "PASSWORD_NOT_SET";
       throw error;

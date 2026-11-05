@@ -29,77 +29,10 @@ const userRepository = {
    */
   async findById(id) {
     const res = await query(
-      "SELECT id, name, phone, email, email_verified_at, role, status, profile_picture_link, profile_picture_public_id, agreed_to_terms, authprovider, oauth_id, password_hash, refresh_token, previous_refresh_token, refresh_token_rotated_at, created_at FROM users WHERE id = $1 LIMIT 1",
+      "SELECT id, name, phone, email, email_verified_at, role, status, profile_picture_link, profile_picture_public_id, agreed_to_terms, authprovider, password_hash, refresh_token, previous_refresh_token, refresh_token_rotated_at, created_at FROM users WHERE id = $1 LIMIT 1",
       [id]
     );
     return res.rows[0] || null;
-  },
-
-  /**
-   * Find a user by OAuth provider and OAuth ID
-   */
-  async findByOAuth(provider, oauthId) {
-    if (!provider || !oauthId) return null;
-    const res = await query(
-      "SELECT id, name, phone, email, email_verified_at, role, profile_picture_link, authprovider, oauth_id, created_at FROM users WHERE authprovider = $1 AND oauth_id = $2 LIMIT 1",
-      [provider, oauthId]
-    );
-    return res.rows[0] || null;
-  },
-
-  /**
-   * Create a new user directly from OAuth information
-   */
-  async createOAuthUser({
-    name,
-    email,
-    profilePicture = null,
-    provider,
-    oauthId,
-    emailVerified = true,
-  }) {
-    const sql = `
-      INSERT INTO users (
-        name,
-        email,
-        email_verified_at,
-        profile_picture_link,
-        authprovider,
-        oauth_id,
-        role,
-        agreed_to_terms
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, 'CUSTOMER', true)
-      RETURNING id, name, phone, email, role, email_verified_at, profile_picture_link, authprovider, oauth_id, created_at;
-    `;
-    const emailVerifiedAt = emailVerified ? new Date() : null;
-    const values = [
-      name,
-      email ? email.toLowerCase() : null,
-      emailVerifiedAt,
-      profilePicture,
-      provider,
-      oauthId,
-    ];
-    const res = await query(sql, values);
-    return res.rows[0];
-  },
-
-  /**
-   * Link OAuth credentials to an existing user
-   */
-  async linkOAuthToUser(userId, { provider, oauthId, profilePicture = null }) {
-    const sql = `
-      UPDATE users
-      SET authprovider = $2,
-          oauth_id = $3,
-          profile_picture_link = COALESCE(profile_picture_link, $4),
-          updated_at = NOW()
-      WHERE id = $1
-      RETURNING id, name, phone, email, role, email_verified_at, profile_picture_link, authprovider, oauth_id, created_at;
-    `;
-    const res = await query(sql, [userId, provider, oauthId, profilePicture]);
-    return res.rows[0];
   },
 
   /**

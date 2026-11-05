@@ -177,7 +177,7 @@ export function AuthProvider({ children }) {
   }, [router, saveAuthSession]);
 
   /**
-   * Set user profile in state (e.g., from OAuth redirect)
+   * Set user profile in state
    */
   const setAuthSession = useCallback(
     (newUser) => {

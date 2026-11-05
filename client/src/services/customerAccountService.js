@@ -39,35 +39,6 @@ export const customerAccountService = {
     if (!response.ok) throw new Error(data?.message || "Unable to request a password setup link.");
     return data;
   },
-  startProviderLink: async (provider) => {
-    const response = await fetch(`${API_BASE}/api/auth/providers/${encodeURIComponent(provider)}/link`, {
-      method: "POST",
-      credentials: "include",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = new Error(data?.message || "Unable to link this provider.");
-      error.code = data?.code;
-      throw error;
-    }
-    return data.authorizationUrl;
-  },
-  unlinkProvider: async (provider) => {
-    const response = await fetch(`${API_BASE}/api/auth/providers/${encodeURIComponent(provider)}/unlink`, {
-      method: "DELETE",
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = new Error(data?.message || "Unable to unlink this provider.");
-      error.code = data?.code;
-      throw error;
-    }
-    return data.data;
-  },
   wishlist: () => request("/api/customer/wishlist"),
   addresses: () => request("/api/addresses"),
   addAddress: (payload) => request("/api/addresses", { method: "POST", body: JSON.stringify(payload) }),

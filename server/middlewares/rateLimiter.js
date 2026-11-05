@@ -210,7 +210,6 @@ module.exports = {
   loginLimiter,
   passwordSetupLimiter,
   passwordSetupCompleteLimiter,
-  providerLinkLimiter,
   passwordChangeLimiter,
   resendVerificationLimiter,
   refreshTokenLimiter,

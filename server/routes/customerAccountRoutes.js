@@ -7,8 +7,6 @@ const auditService = require("../services/auditService");
 const upload = require("../middlewares/upload");
 const cloudinaryService = require("../services/cloudinaryService");
 const { profileAvatarLimiter, passwordChangeLimiter } = require("../middlewares/rateLimiter");
-const providerRepository = require("../repositories/providerRepository");
-const oauthService = require("../services/oauthService");
 const notificationService = require("../services/notificationService");
 
 const router = express.Router();
@@ -87,8 +85,8 @@ router.get("/security", requireRole("CUSTOMER"), async (req, res, next) => {
       success: true,
       data: {
         hasPassword: Boolean(result.rows[0].password_hash),
-        providers: await providerRepository.listForUser(req.user.id),
-        supportedProviders: oauthService.listSupportedProviders(),
+        providers: [],
+        supportedProviders: [],
       },
     });
   } catch (error) {
@@ -245,22 +243,11 @@ router.patch("/password", passwordChangeLimiter, async (req, res, next) => {
       throw error;
     }
 
-    if (user.password_hash) {
-      if (!currentPassword) throw validationError("Enter your current password and matching new passwords.");
-      if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
-        const error = validationError("Current password is incorrect.");
-        error.status = 401;
-        throw error;
-      }
-    } else {
-      const authTime = Number(req.user?.auth_time);
-      const now = Math.floor(Date.now() / 1000);
-      if (!Number.isFinite(authTime) || authTime > now + 30 || now - authTime > 5 * 60) {
-        const error = new Error("Sign in with your linked provider again before setting a password.");
-        error.status = 401;
-        error.code = "RECENT_AUTH_REQUIRED";
-        throw error;
-      }
+    if (!currentPassword) throw validationError("Enter your current password and matching new passwords.");
+    if (!user.password_hash || !(await bcrypt.compare(currentPassword, user.password_hash))) {
+      const error = validationError("Current password is incorrect.");
+      error.status = 401;
+      throw error;
     }
 
     await client.query(
@@ -276,7 +263,7 @@ router.patch("/password", passwordChangeLimiter, async (req, res, next) => {
       entityType: "USER",
       entityId: req.user.id,
       newValues: { changed: true },
-      metadata: { method: user.password_hash ? "PASSWORD_CHANGE" : "OAUTH_ACCOUNT_SETUP" },
+      metadata: { method: user.password_hash ? "PASSWORD_CHANGE" : "PASSWORD_SET" },
     }, { client, request: req.auditRequest });
     await client.query("COMMIT");
     transactionStarted = false;

@@ -1,14 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
-const oauthController = require("../controllers/oauthController");
 const { validateRegister } = require("../validators/authValidator");
 const {
   registerLimiter,
   loginLimiter,
   passwordSetupLimiter,
   passwordSetupCompleteLimiter,
-  providerLinkLimiter,
   resendVerificationLimiter,
   refreshTokenLimiter,
   passwordResetLimiter,
@@ -159,31 +157,6 @@ router.post("/verify-email", emailVerifyLimiter, (req, res, next) =>
 // POST /api/auth/resend-verification
 router.post("/resend-verification", resendVerificationLimiter, (req, res, next) =>
   authController.resendVerification(req, res, next)
-);
-
-// ─── Multi-Provider OAuth Routes ───
-
-// GET /api/auth/oauth/providers (List supported providers)
-router.get("/oauth/providers", (req, res, next) =>
-  oauthController.getProviders(req, res, next)
-);
-
-// GET /api/auth/oauth/:provider (Initiate OAuth flow, e.g. /api/auth/oauth/google)
-router.post("/providers/:provider/link", authenticate, requireRole("CUSTOMER"), providerLinkLimiter, (req, res, next) =>
-  oauthController.linkProvider(req, res, next)
-);
-
-router.delete("/providers/:provider/unlink", authenticate, requireRole("CUSTOMER"), providerLinkLimiter, (req, res, next) =>
-  oauthController.unlinkProvider(req, res, next)
-);
-
-router.get("/oauth/:provider", (req, res, next) =>
-  oauthController.initiate(req, res, next)
-);
-
-// GET /api/auth/oauth/:provider/callback (OAuth provider callback)
-router.get("/oauth/:provider/callback", (req, res, next) =>
-  oauthController.callback(req, res, next)
 );
 
 module.exports = router;
