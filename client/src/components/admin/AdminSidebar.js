@@ -159,6 +159,15 @@ function ProductRequestsIcon() {
   );
 }
 
+function TagsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
+  );
+}
+
 function LogOutIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -173,6 +182,7 @@ function LogOutIcon() {
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: DashboardIcon },
   { label: "Products", href: "/admin/products", icon: ProductsIcon },
+  { label: "Tags", href: "/admin/tags", icon: TagsIcon },
   { label: "Product Requests", href: "/admin/product-requests", icon: ProductRequestsIcon },
   { label: "Collections", href: "/admin/collections", icon: CollectionsIcon },
   { label: "Brands", href: "/admin/brands", icon: BrandsIcon },

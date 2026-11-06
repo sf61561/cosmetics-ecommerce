@@ -13,9 +13,13 @@ const adminOrderRoutes = require("./adminOrderRoutes");
 const adminAuditRoutes = require("./adminAuditRoutes");
 const { adminNotificationRouter } = require("./notificationRoutes");
 const adminProductRequestRoutes = require("./adminProductRequestRoutes");
+const adminTagRoutes = require("./adminTagRoutes");
 
 // Protect ALL routes under /api/admin with authentication + ADMIN role requirement
 router.use(authenticate, requireRole("ADMIN"));
+
+// Tags Management API
+router.use("/tags", adminTagRoutes);
 
 // Product Requests Management API
 router.use("/product-requests", adminProductRequestRoutes);
