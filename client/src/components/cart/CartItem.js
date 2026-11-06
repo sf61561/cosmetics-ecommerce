@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FaTrashAlt, FaMinus, FaPlus, FaHeart, FaExclamationTriangle, FaSpinner } from "react-icons/fa";
