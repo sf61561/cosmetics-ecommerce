@@ -21,11 +21,39 @@ export default function CartSummary({ cart, onNotify }) {
   const [couponError, setCouponError] = useState("");
   const [quote, setQuote] = useState(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [deliveryRates, setDeliveryRates] = useState({
+    INSIDE_DHAKA: { charge: 70, time: "2-3 business days" },
+    OUTSIDE_DHAKA: { charge: 130, time: "3-5 business days" },
+  });
   const subtotal = cart.subtotal || 0;
   const discountFromCoupon = quote?.couponDiscount || 0;
   const finalTotal = quote?.finalTotal ?? subtotal;
   const totalSavings = (cart.totalDiscount || 0) + discountFromCoupon;
   const appliedCode = appliedCoupon?.code || "";
+
+  useEffect(() => {
+    let isSubscribed = true;
+    promotionService.getPublicDeliveryOptions()
+      .then((res) => {
+        if (!isSubscribed || !Array.isArray(res?.data)) return;
+        const inside = res.data.find((r) => r.zone === "INSIDE_DHAKA");
+        const outside = res.data.find((r) => r.zone === "OUTSIDE_DHAKA");
+        setDeliveryRates({
+          INSIDE_DHAKA: {
+            charge: inside ? Number(inside.deliveryCharge) : 70,
+            time: inside?.estimatedDeliveryTime || "2-3 business days",
+          },
+          OUTSIDE_DHAKA: {
+            charge: outside ? Number(outside.deliveryCharge) : 130,
+            time: outside?.estimatedDeliveryTime || "3-5 business days",
+          },
+        });
+      })
+      .catch(() => {});
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -90,6 +118,16 @@ export default function CartSummary({ cart, onNotify }) {
 
   const hasUnselectedVariants = cart.items?.some((it) => it.requiresVariantSelection);
   const isCheckoutDisabled = cart.hasBlockingIssues || cart.items.length === 0;
+
+  const isFreeDeliveryCoupon = quote?.coupon?.discountType === "FREE_DELIVERY";
+  const insideCharge = deliveryZone === "dhaka" && quote
+    ? quote.deliveryCharge
+    : (isFreeDeliveryCoupon ? 0 : deliveryRates.INSIDE_DHAKA.charge);
+  const outsideCharge = deliveryZone === "outside" && quote
+    ? quote.deliveryCharge
+    : (isFreeDeliveryCoupon ? 0 : deliveryRates.OUTSIDE_DHAKA.charge);
+  const insideTime = (deliveryZone === "dhaka" && quote?.estimatedDeliveryTime) || deliveryRates.INSIDE_DHAKA.time;
+  const outsideTime = (deliveryZone === "outside" && quote?.estimatedDeliveryTime) || deliveryRates.OUTSIDE_DHAKA.time;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/80 dark:border-gray-800 p-6 shadow-sm sticky top-24">
@@ -167,11 +205,11 @@ export default function CartSummary({ cart, onNotify }) {
               <div className="flex items-center justify-between">
                 <span>Inside Dhaka</span>
                 <span className="font-bold">
-                  {deliveryZone === "dhaka" && quote ? `৳${quote.deliveryCharge.toLocaleString()}` : "—"}
+                  {insideCharge === 0 ? "FREE" : `৳${insideCharge.toLocaleString()}`}
                 </span>
               </div>
               <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">
-                {(deliveryZone === "dhaka" && quote?.estimatedDeliveryTime) || "Configured at checkout"}
+                {insideTime}
               </span>
             </button>
 
@@ -188,11 +226,11 @@ export default function CartSummary({ cart, onNotify }) {
               <div className="flex items-center justify-between">
                 <span>Outside Dhaka</span>
                 <span className="font-bold">
-                  {deliveryZone === "outside" && quote ? `৳${quote.deliveryCharge.toLocaleString()}` : "—"}
+                  {outsideCharge === 0 ? "FREE" : `৳${outsideCharge.toLocaleString()}`}
                 </span>
               </div>
               <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">
-                {(deliveryZone === "outside" && quote?.estimatedDeliveryTime) || "Configured at checkout"}
+                {outsideTime}
               </span>
             </button>
           </div>
