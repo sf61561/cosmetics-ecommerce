@@ -94,3 +94,4 @@ export function getDistrictInfo(districtName) {
   const normalized = districtName.trim().toLowerCase();
   return BD_DISTRICTS.find((d) => d.name.toLowerCase() === normalized) || null;
 }
+
