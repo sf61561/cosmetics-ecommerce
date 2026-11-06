@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { FaRegUser, FaRegHeart, FaShoppingCart, FaSearch, FaShieldAlt, FaBell, FaCheck } from "react-icons/fa";
+import { FaRegUser, FaRegHeart, FaShoppingCart, FaSearch, FaShieldAlt, FaBell, FaCheck, FaBoxOpen } from "react-icons/fa";
 import { IoMenu, IoClose } from "react-icons/io5";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useNotifications } from "@/context/NotificationContext";
+import { useProductRequest } from "@/context/ProductRequestContext";
 import HeaderSearchBox from "./HeaderSearchBox";
 
 const navLinks = [
@@ -34,6 +35,7 @@ export default function Navbar() {
   const { cartCount = 0 } = useCart();
   const { wishlistCount = 0 } = useWishlist();
   const { notifications = [], unreadCount = 0, markAsRead, markAllAsRead } = useNotifications();
+  const { openProductRequest } = useProductRequest();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -90,6 +92,15 @@ export default function Navbar() {
                 </Link>
               </li>
             ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => openProductRequest()}
+                className="text-sm font-medium text-gray-600 hover:text-[#9B4F5E] transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Request Product</span>
+              </button>
+            </li>
           </ul>
 
           {/* ── Mobile: hamburger button ── */}
@@ -459,8 +470,19 @@ export default function Navbar() {
               ))}
             </ul>
 
-            {/* Mobile Wishlist & Cart Links */}
+            {/* Mobile Wishlist, Cart & Product Request Links */}
             <div className="py-2 border-t border-gray-100 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openProductRequest();
+                }}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#9B4F5E] hover:bg-[#FBF0F0] text-left w-full cursor-pointer"
+              >
+                <FaBoxOpen className="h-4 w-4" />
+                <span>Request a Product</span>
+              </button>
               <Link
                 href="/wishlist"
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-[#FBF0F0]"

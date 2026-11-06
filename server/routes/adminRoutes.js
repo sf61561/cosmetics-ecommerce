@@ -12,9 +12,13 @@ const dashboardService = require("../services/dashboardService");
 const adminOrderRoutes = require("./adminOrderRoutes");
 const adminAuditRoutes = require("./adminAuditRoutes");
 const { adminNotificationRouter } = require("./notificationRoutes");
+const adminProductRequestRoutes = require("./adminProductRequestRoutes");
 
 // Protect ALL routes under /api/admin with authentication + ADMIN role requirement
 router.use(authenticate, requireRole("ADMIN"));
+
+// Product Requests Management API
+router.use("/product-requests", adminProductRequestRoutes);
 
 // Customers Management API
 router.use("/customers", adminCustomerRoutes);

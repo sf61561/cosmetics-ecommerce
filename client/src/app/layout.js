@@ -4,6 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { ProductRequestProvider } from "@/context/ProductRequestContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,9 @@ export default function RootLayout({ children }) {
           <CartProvider>
             <WishlistProvider>
               <NotificationProvider>
-                <main className="flex-1">{children}</main>
+                <ProductRequestProvider>
+                  <main className="flex-1">{children}</main>
+                </ProductRequestProvider>
               </NotificationProvider>
             </WishlistProvider>
           </CartProvider>

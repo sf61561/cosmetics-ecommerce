@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useProductRequest } from "@/context/ProductRequestContext";
 import {
   FaFacebookF,
   FaInstagram,
@@ -10,6 +11,8 @@ import {
 } from "react-icons/fa";
 
 export default function Footer() {
+  const { openProductRequest } = useProductRequest();
+
   return (
     <footer className="w-full bg-[#FAF7F5] border-t border-[#F2E8E6] text-gray-700">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-12">
@@ -112,6 +115,15 @@ export default function Footer() {
               Customer Support
             </h4>
             <ul className="space-y-2 text-xs text-gray-600">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => openProductRequest()}
+                  className="hover:text-[#9B4F5E] transition-colors text-left cursor-pointer font-medium text-[#9B4F5E]"
+                >
+                  Request a Product ✿
+                </button>
+              </li>
               <li>
                 <a href="#support" className="hover:text-[#9B4F5E] transition-colors">
                   Contact Us

@@ -15,6 +15,7 @@ import {
   FaMoneyBillWave,
   FaSpinner,
 } from "react-icons/fa";
+import { useProductRequest } from "@/context/ProductRequestContext";
 
 export default function ProductInfo({
   product,
@@ -27,6 +28,7 @@ export default function ProductInfo({
   isAddedToCart,
   onVariantSelected,
 }) {
+  const { openProductRequest } = useProductRequest();
   const hasVariants = Boolean(
     product.hasVariants &&
       product.options &&
@@ -465,6 +467,18 @@ export default function ProductInfo({
             ) : (
               <FaRegHeart className="h-4 w-4" />
             )}
+          </button>
+        </div>
+
+        {/* ── Need a specific variant or shade? ── */}
+        <div className="flex items-center justify-between text-xs pt-1 px-1 text-gray-500 dark:text-gray-400">
+          <span>Need an unlisted shade, size, or custom request?</span>
+          <button
+            type="button"
+            onClick={() => openProductRequest({ productName: product.name })}
+            className="text-[#9B4F5E] dark:text-pink-400 font-semibold hover:underline cursor-pointer"
+          >
+            Request this Product ✿
           </button>
         </div>
       </div>
