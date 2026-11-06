@@ -22,17 +22,18 @@ export default function AddressForm({
   hasSavedAddresses = false,
   isSubmitting = false,
 }) {
+  const isEditing = Boolean(initialValues?.id);
   const [formData, setFormData] = useState({
-    recipientName: initialValues.recipientName || "",
+    recipientName: initialValues.recipient_name || initialValues.recipientName || "",
     phone: initialValues.phone || "",
     district: initialValues.district || "Dhaka",
     division: initialValues.division || "Dhaka",
     area: initialValues.area || "",
-    streetAddress: initialValues.streetAddress || "",
+    streetAddress: initialValues.street_address || initialValues.streetAddress || "",
     landmark: initialValues.landmark || "",
-    postalCode: initialValues.postalCode || "",
+    postalCode: initialValues.postal_code || initialValues.postalCode || "",
     label: initialValues.label || "Home",
-    isDefault: initialValues.isDefault !== false,
+    isDefault: initialValues.is_default !== undefined ? initialValues.is_default : (initialValues.isDefault !== false),
     billingSameAsShipping: true,
   });
 
@@ -199,7 +200,7 @@ export default function AddressForm({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
         <div>
           <h3 className="font-serif text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-            {hasSavedAddresses ? "Add New Delivery Address" : "Delivery Address Details"}
+            {isEditing ? "Edit Delivery Address" : hasSavedAddresses ? "Add New Delivery Address" : "Delivery Address Details"}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Where should our courier deliver your beauty ritual?
@@ -530,7 +531,7 @@ export default function AddressForm({
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#9B4F5E] hover:bg-[#843F4E] text-white text-xs sm:text-sm font-semibold shadow-md transition-all cursor-pointer disabled:opacity-50"
         >
           {isSubmitting && <FaSpinner className="animate-spin text-xs" />}
-          <span>{isSubmitting ? "Saving address..." : "Deliver to this Address"}</span>
+          <span>{isSubmitting ? "Saving address..." : isEditing ? "Save Changes" : "Deliver to this Address"}</span>
         </button>
 
         {hasSavedAddresses && onCancel && (

@@ -43,5 +43,6 @@ export const customerAccountService = {
   addresses: () => request("/api/addresses"),
   addAddress: (payload) => request("/api/addresses", { method: "POST", body: JSON.stringify(payload) }),
   updateAddress: (id, payload) => request(`/api/addresses/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  setDefaultAddress: (id) => request(`/api/addresses/${id}/default`, { method: "PATCH" }),
   deleteAddress: (id) => request(`/api/addresses/${id}`, { method: "DELETE" }),
 };

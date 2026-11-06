@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { FaArrowRight, FaSpinner } from "react-icons/fa";
 import { brandService } from "@/services/brandService";
 import BrandLogo from "@/components/common/BrandLogo";
@@ -77,29 +78,47 @@ export default function FeaturedBrandsShowcase({ initialBrands = [] }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
               {brands.map((brand) => {
                 const targetHref = `/shop?brand=${encodeURIComponent(brand.slug)}`;
+                const previewImg =
+                  brand.sampleProductImage ||
+                  brand.sample_product_image ||
+                  brand.imageUrl ||
+                  brand.image_url;
 
                 return (
                   <Link
                     key={brand.id || brand.slug}
                     href={targetHref}
-                    className="group relative flex flex-col items-center justify-between text-center rounded-3xl p-8 sm:p-10 bg-linear-to-b from-[#FFF8F8] to-[#FCF2F2] dark:from-gray-900 dark:to-gray-850 border border-pink-100/80 dark:border-gray-800 shadow-2xs hover:shadow-md hover:border-pink-200 dark:hover:border-gray-700 transition-all duration-300 min-h-[220px]"
+                    className="group relative flex flex-col items-center justify-between text-center rounded-3xl p-6 sm:p-8 bg-linear-to-b from-[#FFF8F8] to-[#FCF2F2] dark:from-gray-900 dark:to-gray-850 border border-pink-100/80 dark:border-gray-800 shadow-2xs hover:shadow-md hover:border-pink-200 dark:hover:border-gray-700 transition-all duration-300"
                   >
+                    {/* Brand Featured Visual / Product Preview */}
+                    {previewImg ? (
+                      <div className="relative w-full h-40 sm:h-48 rounded-2xl bg-white dark:bg-gray-800 overflow-hidden mb-4 border border-pink-100/60 dark:border-gray-700 flex items-center justify-center p-3 shadow-2xs group-hover:shadow-sm transition-all">
+                        <Image
+                          src={previewImg}
+                          alt={`${brand.name} preview`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                    ) : null}
+
                     {/* Brand Logo / Wordmark */}
-                    <div className="flex-1 flex items-center justify-center w-full py-2">
+                    <div className="flex items-center justify-center w-full py-1">
                       <BrandLogo brand={brand} />
                     </div>
 
                     {/* Tagline */}
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-300 line-clamp-1">
+                    <div className="mt-3">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 line-clamp-2">
                         {brand.tagline || brand.description || "Authentic Korean Skincare"}
                       </p>
                     </div>
 
                     {/* Shop Link */}
-                    <div className="mt-5">
+                    <div className="mt-4 pt-1">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#9B4F5E] dark:text-pink-400 group-hover:translate-x-1 transition-transform">
-                        Shop <FaArrowRight className="h-2.5 w-2.5" />
+                        Shop {brand.name} <FaArrowRight className="h-2.5 w-2.5" />
                       </span>
                     </div>
                   </Link>

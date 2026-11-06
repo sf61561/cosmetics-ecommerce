@@ -66,6 +66,7 @@ const brandService = {
       isFeatured: Boolean(b.is_featured),
       salesCount: parseInt(b.sales_count, 10) || 0,
       productCount: parseInt(b.product_count, 10) || 0,
+      sampleProductImage: b.sample_product_image || null,
       createdAt: b.created_at,
       updatedAt: b.updated_at,
     }));
@@ -110,6 +111,7 @@ const brandService = {
       isFeatured: Boolean(b.is_featured),
       salesCount: parseInt(b.sales_count, 10) || 0,
       productCount: parseInt(b.product_count, 10) || 0,
+      sampleProductImage: b.sample_product_image || null,
       createdAt: b.created_at,
       updatedAt: b.updated_at,
     }));
@@ -145,6 +147,7 @@ const brandService = {
       isFeatured: Boolean(b.is_featured),
       salesCount: parseInt(b.sales_count, 10) || 0,
       productCount: parseInt(b.product_count, 10) || 0,
+      sampleProductImage: b.sample_product_image || null,
       createdAt: b.created_at,
       updatedAt: b.updated_at,
     };

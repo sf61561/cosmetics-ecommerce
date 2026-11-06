@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [isAddressCollapsed, setIsAddressCollapsed] = useState(false);
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
   const [zone, setZone] = useState("INSIDE_DHAKA");
   const [couponCode, setCouponCode] = useState("");
   const [customerNote, setCustomerNote] = useState("");
@@ -94,14 +95,42 @@ export default function CheckoutPage() {
     }
   }, [selectedAddressId, addresses]);
 
-  // Save new address from the AddressForm
-  const handleSaveNewAddress = async (formData) => {
+  // Set an address as default
+  const handleSetDefaultAddress = async (addressId) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/addresses/${addressId}/default`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to set default address.");
+
+      setAddresses((prev) =>
+        prev.map((a) => ({
+          ...a,
+          is_default: a.id === addressId,
+        }))
+      );
+      setSelectedAddressId(addressId);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  // Save new or update existing address from AddressForm
+  const handleSaveOrUpdateAddress = async (formData) => {
     setIsSavingAddress(true);
     setMessage(null);
 
+    const isEdit = Boolean(editingAddress?.id);
+    const url = isEdit
+      ? `${API_BASE}/api/addresses/${editingAddress.id}`
+      : `${API_BASE}/api/addresses`;
+    const method = isEdit ? "PATCH" : "POST";
+
     try {
-      const response = await fetch(`${API_BASE}/api/addresses`, {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -120,8 +149,24 @@ export default function CheckoutPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to save address.");
 
-      setAddresses((prev) => [data.data, ...prev]);
-      setSelectedAddressId(data.data.id);
+      if (isEdit) {
+        setAddresses((prev) =>
+          prev.map((a) => {
+            if (a.id === editingAddress.id) return data.data;
+            if (data.data.is_default) return { ...a, is_default: false };
+            return a;
+          })
+        );
+        setSelectedAddressId(data.data.id);
+      } else {
+        setAddresses((prev) => [
+          data.data,
+          ...(data.data.is_default ? prev.map((a) => ({ ...a, is_default: false })) : prev),
+        ]);
+        setSelectedAddressId(data.data.id);
+      }
+
+      setEditingAddress(null);
       setIsAddingNewAddress(false);
       setIsAddressCollapsed(true);
     } catch (error) {
@@ -247,15 +292,18 @@ export default function CheckoutPage() {
                   onEdit={() => {
                     setIsAddressCollapsed(false);
                     setIsAddingNewAddress(false);
+                    setEditingAddress(null);
                   }}
                 />
               ) : isAddingNewAddress || addresses.length === 0 ? (
-                /* ── State 2: Minimalist Modern Address Form ── */
+                /* ── State 2: Minimalist Modern Address Form (Create or Edit) ── */
                 <AddressForm
-                  onSubmit={handleSaveNewAddress}
+                  initialValues={editingAddress || {}}
+                  onSubmit={handleSaveOrUpdateAddress}
                   onCancel={
                     addresses.length > 0
                       ? () => {
+                          setEditingAddress(null);
                           setIsAddingNewAddress(false);
                           setIsAddressCollapsed(true);
                         }
@@ -273,7 +321,15 @@ export default function CheckoutPage() {
                     setSelectedAddressId(id);
                     setIsAddressCollapsed(true);
                   }}
-                  onAddNewAddress={() => setIsAddingNewAddress(true)}
+                  onAddNewAddress={() => {
+                    setEditingAddress(null);
+                    setIsAddingNewAddress(true);
+                  }}
+                  onEditAddress={(addr) => {
+                    setEditingAddress(addr);
+                    setIsAddingNewAddress(true);
+                  }}
+                  onSetDefault={handleSetDefaultAddress}
                 />
               )}
             </div>

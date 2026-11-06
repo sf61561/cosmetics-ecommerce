@@ -232,7 +232,15 @@ const brandRepository = {
          COALESCE(sales.units_sold, 0)::bigint AS sales_count,
          b.created_at,
          b.updated_at,
-         COALESCE(products.product_count, 0)::int AS product_count
+         COALESCE(products.product_count, 0)::int AS product_count,
+         (
+           SELECT pi.image_url
+           FROM product_images pi
+           JOIN products p ON p.id = pi.product_id
+           WHERE p.brand_id = b.id AND p.status = 'ACTIVE'
+           ORDER BY pi.is_primary DESC, pi.display_order ASC
+           LIMIT 1
+         ) AS sample_product_image
        FROM brands b
        LEFT JOIN brand_products products ON products.brand_id = b.id
        LEFT JOIN delivered_brand_sales sales ON sales.brand_id = b.id

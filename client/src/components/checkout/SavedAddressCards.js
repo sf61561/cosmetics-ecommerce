@@ -1,12 +1,23 @@
 "use client";
 
-import { FaCheckCircle, FaPlus, FaPhoneAlt, FaMapMarkerAlt, FaHome, FaBriefcase } from "react-icons/fa";
+import {
+  FaCheckCircle,
+  FaPlus,
+  FaPhoneAlt,
+  FaMapMarkerAlt,
+  FaHome,
+  FaBriefcase,
+  FaPencilAlt,
+  FaStar,
+} from "react-icons/fa";
 
 export default function SavedAddressCards({
   addresses = [],
   selectedAddressId,
   onSelectAddress,
   onAddNewAddress,
+  onEditAddress,
+  onSetDefault,
 }) {
   return (
     <div className="space-y-4">
@@ -55,8 +66,9 @@ export default function SavedAddressCards({
                     </span>
 
                     {addr.is_default && (
-                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 px-2 py-0.5 rounded-md">
-                        Default
+                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <FaStar className="text-[8px]" />
+                        <span>Default</span>
                       </span>
                     )}
                   </div>
@@ -95,13 +107,41 @@ export default function SavedAddressCards({
                 </p>
               </div>
 
-              {/* Delivery Zone Rate Pill */}
-              <div className="mt-3.5 pt-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px]">
-                <span className="text-gray-500 dark:text-gray-400">
-                  {isInside ? "Inside Dhaka (2-3 days)" : "Nationwide Delivery (3-5 days)"}
-                </span>
+              {/* Bottom Actions Bar: Edit, Set Default & Delivery Fee */}
+              <div className="mt-4 pt-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-3">
+                  {/* Edit Address Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onEditAddress) onEditAddress(addr);
+                    }}
+                    className="inline-flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300 hover:text-[#9B4F5E] dark:hover:text-rose-300 transition-colors cursor-pointer"
+                  >
+                    <FaPencilAlt className="text-[9px]" />
+                    <span>Edit</span>
+                  </button>
+
+                  {/* Set as Default Button (if not already default) */}
+                  {!addr.is_default && onSetDefault && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSetDefault(addr.id);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                    >
+                      <FaStar className="text-[9px]" />
+                      <span>Set as default</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Zone Rate Preview */}
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {isInside ? "৳70" : "৳130"}
+                  {isInside ? "Inside Dhaka (৳70)" : "Nationwide (৳130)"}
                 </span>
               </div>
             </div>
@@ -125,4 +165,3 @@ export default function SavedAddressCards({
     </div>
   );
 }
-
