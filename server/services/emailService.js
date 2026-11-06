@@ -395,20 +395,82 @@ class EmailService {
     }
   }
 
-  async sendOrderPlacedConfirmationEmail({ to, name, orderNumber, totalAmount, items = [], address = {} }) {
+  async sendOrderPlacedConfirmationEmail({ to, name, orderNumber, totalAmount, grandTotal, items = [], address = {} }) {
     const fromAddress = process.env.RESEND_FROM_EMAIL || "Eloura <onboarding@resend.dev>";
     const safeName = name ? String(name).trim() : "Valued Customer";
-    const formattedAmount = `৳${Number(totalAmount || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
-    const itemsHtml = items.map((i) => `
-      <tr>
-        <td style="padding: 8px 0; border-bottom: 1px solid #f3e2e5; font-size: 14px; color: #374151;">
-          ${i.name || i.product_name} × ${i.quantity}
-        </td>
-        <td style="padding: 8px 0; border-bottom: 1px solid #f3e2e5; font-size: 14px; color: #111827; text-align: right; font-weight: 600;">
-          ৳${Number(i.lineTotal || i.line_total || 0).toLocaleString("en-BD")}
-        </td>
-      </tr>
-    `).join("");
+
+    let finalAmount = totalAmount != null ? totalAmount : (grandTotal != null ? grandTotal : null);
+    let orderItems = Array.isArray(items) ? [...items] : [];
+    let orderAddress = address && typeof address === "object" ? { ...address } : {};
+
+    // DB Fallback: if items, amount, or address are missing/empty, query orders & order_items
+    if ((!orderItems.length || finalAmount == null || (!orderAddress.recipientName && !orderAddress.recipient_name)) && orderNumber) {
+      try {
+        const { query } = require("../config/db");
+        const orderRes = await query(
+          `SELECT id, order_number, total_amount, recipient_name, recipient_phone,
+                  delivery_division, delivery_district, delivery_area,
+                  delivery_street_address, delivery_postal_code
+           FROM orders WHERE order_number = $1 LIMIT 1`,
+          [orderNumber]
+        );
+        if (orderRes.rows.length > 0) {
+          const ord = orderRes.rows[0];
+          if (finalAmount == null) finalAmount = ord.total_amount;
+          if (!orderAddress.recipientName && !orderAddress.recipient_name) {
+            orderAddress = {
+              recipientName: ord.recipient_name,
+              phone: ord.recipient_phone,
+              streetAddress: ord.delivery_street_address,
+              area: ord.delivery_area,
+              district: ord.delivery_district,
+              division: ord.delivery_division,
+              postalCode: ord.delivery_postal_code,
+            };
+          }
+          if (!orderItems.length) {
+            const itemsRes = await query(
+              `SELECT product_name AS name, quantity, unit_price AS "unitPrice", line_total AS "lineTotal"
+               FROM order_items WHERE order_id = $1 ORDER BY id ASC`,
+              [ord.id]
+            );
+            if (itemsRes.rows.length > 0) {
+              orderItems = itemsRes.rows;
+            }
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[EmailService] Order DB fallback query warning:", dbErr.message);
+      }
+    }
+
+    const formattedAmount = `৳${Number(finalAmount || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
+
+    const itemsHtml = orderItems.length > 0
+      ? orderItems.map((i) => `
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f3e2e5; font-size: 14px; color: #374151;">
+            <div style="font-weight: 600; color: #18181b;">${i.name || i.product_name || "Product"}</div>
+            <div style="font-size: 12px; color: #71717a; margin-top: 2px;">Qty: ${i.quantity}</div>
+          </td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f3e2e5; font-size: 14px; color: #111827; text-align: right; font-weight: 600; vertical-align: top;">
+            ৳${Number(i.lineTotal || i.line_total || (Number(i.unitPrice || 0) * Number(i.quantity || 1))).toLocaleString("en-BD")}
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="2" style="padding: 12px 0; font-size: 13px; color: #71717a; text-align: center;">Order items details confirmed.</td></tr>`;
+
+    const recipientName = orderAddress.recipientName || orderAddress.recipient_name || safeName;
+    const recipientPhone = orderAddress.phone || orderAddress.recipient_phone;
+    const addressFormattedParts = [
+      orderAddress.streetAddress || orderAddress.delivery_street_address,
+      orderAddress.area || orderAddress.delivery_area,
+      orderAddress.district || orderAddress.delivery_district,
+      orderAddress.postalCode || orderAddress.delivery_postal_code,
+      orderAddress.division || orderAddress.delivery_division,
+    ].filter(Boolean).join(", ");
+
+    const hasAddress = Boolean(orderAddress.recipientName || orderAddress.recipient_name || orderAddress.streetAddress || orderAddress.delivery_street_address);
 
     const htmlContent = `
       <!doctype html>
@@ -430,20 +492,28 @@ class EmailService {
               </p>
               <div style="background-color: #faf5f6; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
                 <p style="margin: 0 0 6px; font-size: 13px; color: #71717a;">Order Number: <strong style="color: #9B4F5E;">${orderNumber}</strong></p>
-                <p style="margin: 0; font-size: 13px; color: #71717a;">Total Amount: <strong style="color: #111827;">${formattedAmount} (Cash on Delivery)</strong></p>
+                <p style="margin: 0; font-size: 13px; color: #71717a;">Total Amount: <strong style="color: #111827;">${formattedAmount}</strong></p>
               </div>
               <h3 style="font-size: 15px; font-weight: 600; color: #18181b; margin: 0 0 12px;">Items ordered:</h3>
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
                 ${itemsHtml}
               </table>
-              ${address.recipientName || address.recipient_name ? `
-                <div style="border-top: 1px solid #f3e2e5; pt-4; margin-top: 16px;">
-                  <p style="font-size: 13px; color: #71717a; margin: 12px 0 4px;">Delivery Address:</p>
-                  <p style="font-size: 14px; color: #374151; margin: 0; line-height: 1.5;">
-                    ${address.recipientName || address.recipient_name}<br />
-                    ${address.phone || address.recipient_phone}<br />
-                    ${address.streetAddress || address.delivery_street_address || ""}, ${address.area || address.delivery_area || ""}, ${address.district || address.delivery_district || ""}
+              ${hasAddress ? `
+                <div style="border-top: 1px solid #f3e2e5; margin-top: 20px; padding-top: 16px;">
+                  <p style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #9B4F5E; margin: 0 0 8px;">Delivery Details</p>
+                  <p style="font-size: 14px; color: #18181b; font-weight: 600; margin: 0 0 4px;">
+                    ${recipientName}
                   </p>
+                  ${recipientPhone ? `
+                    <p style="font-size: 13px; color: #52525b; margin: 0 0 4px;">
+                      ${recipientPhone}
+                    </p>
+                  ` : ""}
+                  ${addressFormattedParts ? `
+                    <p style="font-size: 13px; color: #52525b; margin: 0; line-height: 1.5;">
+                      ${addressFormattedParts}
+                    </p>
+                  ` : ""}
                 </div>
               ` : ""}
             </td>

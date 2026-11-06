@@ -500,11 +500,28 @@ class OrderService {
           orderId: order.id,
           orderNumber,
           total: grandTotal,
+          totalAmount: grandTotal,
+          grandTotal,
           customerName: actor?.name || addr.recipient_name,
           customerEmail: actor?.email,
           customerPhone: addr.phone || actor?.phone,
           shippingAddress: addr.address_line,
           paymentMethod: order.payment_method,
+          items: items.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            lineTotal: i.lineTotal,
+          })),
+          address: {
+            recipientName: addr.recipient_name,
+            phone: addr.phone,
+            streetAddress: addr.street_address,
+            area: addr.area,
+            district: addr.district,
+            division: addr.division,
+            postalCode: addr.postal_code,
+          },
         },
       }).catch((notifErr) => console.warn("Order placed notification error:", notifErr.message));
 

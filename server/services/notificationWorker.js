@@ -148,7 +148,14 @@ class NotificationWorker {
         to,
         name: data.customerName,
         orderNumber: data.orderNumber,
-        grandTotal: data.total,
+        totalAmount: data.totalAmount || data.total || data.grandTotal,
+        grandTotal: data.totalAmount || data.total || data.grandTotal,
+        items: data.items || [],
+        address: data.address || {
+          recipientName: data.customerName,
+          phone: data.customerPhone,
+          streetAddress: data.shippingAddress,
+        },
         shippingAddress: data.shippingAddress,
         paymentMethod: data.paymentMethod,
       });
