@@ -224,6 +224,13 @@ export default function Navbar() {
                             My Orders
                           </Link>
                           <Link
+                            href="/track-order"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                          >
+                            Track My Order
+                          </Link>
+                          <Link
                             href="/profile/wishlist"
                             onClick={() => setProfileDropdownOpen(false)}
                             className="flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
@@ -557,6 +564,13 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     My Orders
+                  </Link>
+                  <Link
+                    href="/track-order"
+                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Track My Order
                   </Link>
                   <Link
                     href="/addresses"
