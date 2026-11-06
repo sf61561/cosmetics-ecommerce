@@ -12,7 +12,7 @@ import { FaChevronRight, FaArrowLeft, FaLock, FaSpinner } from "react-icons/fa";
 
 export default function CartPage() {
   const {
-    cart,
+    cart = {},
     isLoading,
     isUpdating,
     updateQuantity,
@@ -30,7 +30,8 @@ export default function CartPage() {
     }, 3200);
   };
 
-  const isEmpty = !isLoading && (!cart?.items || cart.items.length === 0);
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+  const isEmpty = !isLoading && items.length === 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
@@ -87,8 +88,8 @@ export default function CartPage() {
                 ? "Checking your bag..."
                 : isEmpty
                 ? "Your bag is currently empty"
-                : `Review and manage your ${cart.items.length} chosen beauty ${
-                    cart.items.length === 1 ? "ritual" : "rituals"
+                : `Review and manage your ${items.length} chosen beauty ${
+                    items.length === 1 ? "ritual" : "rituals"
                   }`}
             </p>
           </div>
@@ -149,17 +150,17 @@ export default function CartPage() {
                 Estimated Total
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-white">
-                ৳{(cart.estimatedTotal || cart.subtotal || 0).toLocaleString()}
+                ৳{Number(cart?.estimatedTotal || cart?.subtotal || 0).toLocaleString()}
               </span>
             </div>
 
-            {cart.hasBlockingIssues ? (
+            {cart?.hasBlockingIssues ? (
               <button
                 type="button"
                 disabled
                 className="py-3 px-5 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 text-xs font-semibold cursor-not-allowed"
               >
-                {cart.items?.some((it) => it.requiresVariantSelection) ? "Select Options" : "Resolve Stock"}
+                {items.some((it) => it.requiresVariantSelection) ? "Select Options" : "Resolve Stock"}
               </button>
             ) : (
               <Link
@@ -178,4 +179,3 @@ export default function CartPage() {
     </div>
   );
 }
-

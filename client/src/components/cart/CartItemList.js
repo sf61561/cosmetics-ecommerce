@@ -5,7 +5,7 @@ import CartItem from "./CartItem";
 import { FaTrashAlt, FaExclamationTriangle, FaShoppingBag } from "react-icons/fa";
 
 export default function CartItemList({
-  cart,
+  cart = {},
   onUpdateQuantity,
   onUpdateVariant,
   onRemove,
@@ -15,7 +15,9 @@ export default function CartItemList({
   const [isClearing, setIsClearing] = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
 
-  const hasUnselectedVariants = cart.items?.some((it) => it.requiresVariantSelection);
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+  const itemCount = Number(cart?.itemCount || items.reduce((acc, it) => acc + (it.quantity || 0), 0));
+  const hasUnselectedVariants = Boolean(items.some((it) => it.requiresVariantSelection));
 
   const handleClearAll = async () => {
     setIsClearing(true);
@@ -39,11 +41,11 @@ export default function CartItemList({
         <div className="flex items-center gap-2">
           <FaShoppingBag className="text-gray-400 text-sm" />
           <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            {cart.items.length} {cart.items.length === 1 ? "Product" : "Products"} ({cart.itemCount} Units)
+            {items.length} {items.length === 1 ? "Product" : "Products"} ({itemCount} Units)
           </span>
         </div>
 
-        {cart.items.length > 0 && (
+        {items.length > 0 && (
           <div>
             {showConfirmClear ? (
               <div className="flex items-center gap-2">
@@ -82,7 +84,7 @@ export default function CartItemList({
       </div>
 
       {/* Global Issues Notice */}
-      {cart.hasBlockingIssues && (
+      {cart?.hasBlockingIssues && (
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3">
           <FaExclamationTriangle className="text-amber-600 dark:text-amber-400 text-base mt-0.5 shrink-0" />
           <div className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
@@ -98,7 +100,7 @@ export default function CartItemList({
 
       {/* List of Cart Items */}
       <div className="space-y-3">
-        {cart.items.map((item) => (
+        {items.map((item) => (
           <CartItem
             key={item.id}
             item={item}
@@ -112,4 +114,3 @@ export default function CartItemList({
     </div>
   );
 }
-

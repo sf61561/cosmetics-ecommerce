@@ -14,18 +14,21 @@ import {
 } from "react-icons/fa";
 import { promotionService } from "@/services/promotionService";
 
-export default function CartSummary({ cart, onNotify }) {
+const DEFAULT_DELIVERY_RATES = {
+  INSIDE_DHAKA: { charge: 70, time: "2-3 business days" },
+  OUTSIDE_DHAKA: { charge: 130, time: "3-5 business days" },
+};
+
+export default function CartSummary({ cart = {}, onNotify }) {
   const [deliveryZone, setDeliveryZone] = useState("dhaka");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
   const [quote, setQuote] = useState(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [deliveryRates, setDeliveryRates] = useState({
-    INSIDE_DHAKA: { charge: 70, time: "2-3 business days" },
-    OUTSIDE_DHAKA: { charge: 130, time: "3-5 business days" },
-  });
-  const subtotal = cart.subtotal || 0;
+  const [deliveryRates, setDeliveryRates] = useState(DEFAULT_DELIVERY_RATES);
+
+  const subtotal = Number(cart?.subtotal || 0);
   const appliedCode = appliedCoupon?.code || "";
 
   useEffect(() => {
@@ -37,11 +40,11 @@ export default function CartSummary({ cart, onNotify }) {
         const outside = res.data.find((r) => r.zone === "OUTSIDE_DHAKA");
         setDeliveryRates({
           INSIDE_DHAKA: {
-            charge: inside ? Number(inside.deliveryCharge) : 70,
+            charge: inside && inside.deliveryCharge != null ? Number(inside.deliveryCharge) : 70,
             time: inside?.estimatedDeliveryTime || "2-3 business days",
           },
           OUTSIDE_DHAKA: {
-            charge: outside ? Number(outside.deliveryCharge) : 130,
+            charge: outside && outside.deliveryCharge != null ? Number(outside.deliveryCharge) : 130,
             time: outside?.estimatedDeliveryTime || "3-5 business days",
           },
         });
@@ -55,7 +58,7 @@ export default function CartSummary({ cart, onNotify }) {
   useEffect(() => {
     let isSubscribed = true;
     async function calculateQuote() {
-      if (!cart.items?.length) {
+      if (!cart?.items?.length) {
         setQuote(null);
         return;
       }
@@ -79,7 +82,7 @@ export default function CartSummary({ cart, onNotify }) {
     return () => {
       isSubscribed = false;
     };
-  }, [cart.items, deliveryZone, appliedCode]);
+  }, [cart?.items, deliveryZone, appliedCode]);
 
   const handleApplyCoupon = async (e) => {
     e.preventDefault();
@@ -96,9 +99,9 @@ export default function CartSummary({ cart, onNotify }) {
         zone: deliveryZone === "dhaka" ? "INSIDE_DHAKA" : "OUTSIDE_DHAKA",
         code,
       });
-      setAppliedCoupon({ code: response.data.coupon.code });
+      setAppliedCoupon({ code: response.data?.coupon?.code || code });
       setQuote(response.data);
-      if (onNotify) onNotify(`Coupon ${response.data.coupon.code} applied.`);
+      if (onNotify) onNotify(`Coupon ${response.data?.coupon?.code || code} applied.`);
     } catch (error) {
       setCouponError(error.message || "Unable to apply this coupon.");
     } finally {
@@ -113,29 +116,40 @@ export default function CartSummary({ cart, onNotify }) {
     if (onNotify) onNotify("Voucher removed.");
   };
 
-  const hasUnselectedVariants = cart.items?.some((it) => it.requiresVariantSelection);
-  const isCheckoutDisabled = cart.hasBlockingIssues || cart.items.length === 0;
+  const hasUnselectedVariants = Boolean(cart?.items?.some((it) => it.requiresVariantSelection));
+  const isCheckoutDisabled = Boolean(cart?.hasBlockingIssues) || !cart?.items || cart.items.length === 0;
+
+  const insideBaseCharge = Number(
+    deliveryRates?.INSIDE_DHAKA?.charge ?? DEFAULT_DELIVERY_RATES.INSIDE_DHAKA.charge
+  );
+  const outsideBaseCharge = Number(
+    deliveryRates?.OUTSIDE_DHAKA?.charge ?? DEFAULT_DELIVERY_RATES.OUTSIDE_DHAKA.charge
+  );
+
+  const insideTime = deliveryRates?.INSIDE_DHAKA?.time || DEFAULT_DELIVERY_RATES.INSIDE_DHAKA.time;
+  const outsideTime = deliveryRates?.OUTSIDE_DHAKA?.time || DEFAULT_DELIVERY_RATES.OUTSIDE_DHAKA.time;
 
   const isFreeDeliveryCoupon = quote?.coupon?.discountType === "FREE_DELIVERY";
 
   const insideCharge = isFreeDeliveryCoupon
     ? 0
-    : (quote?.deliveryZone === "INSIDE_DHAKA" ? quote.deliveryCharge : deliveryRates.INSIDE_DHAKA.charge);
+    : (quote?.deliveryZone === "INSIDE_DHAKA" && quote.deliveryCharge != null
+        ? Number(quote.deliveryCharge)
+        : insideBaseCharge);
 
   const outsideCharge = isFreeDeliveryCoupon
     ? 0
-    : (quote?.deliveryZone === "OUTSIDE_DHAKA" ? quote.deliveryCharge : deliveryRates.OUTSIDE_DHAKA.charge);
-
-  const insideTime = deliveryRates.INSIDE_DHAKA.time;
-  const outsideTime = deliveryRates.OUTSIDE_DHAKA.time;
+    : (quote?.deliveryZone === "OUTSIDE_DHAKA" && quote.deliveryCharge != null
+        ? Number(quote.deliveryCharge)
+        : outsideBaseCharge);
 
   const activeDeliveryCharge = deliveryZone === "dhaka" ? insideCharge : outsideCharge;
-  const discountFromCoupon = quote?.couponDiscount || 0;
-  const finalTotal = Math.max(0, subtotal - discountFromCoupon + activeDeliveryCharge);
+  const discountFromCoupon = Number(quote?.couponDiscount || 0);
+  const finalTotal = Math.max(0, subtotal - discountFromCoupon + Number(activeDeliveryCharge || 0));
   const deliverySavings = isFreeDeliveryCoupon
-    ? (deliveryZone === "dhaka" ? deliveryRates.INSIDE_DHAKA.charge : deliveryRates.OUTSIDE_DHAKA.charge)
+    ? (deliveryZone === "dhaka" ? insideBaseCharge : outsideBaseCharge)
     : 0;
-  const totalSavings = (cart.totalDiscount || 0) + discountFromCoupon + deliverySavings;
+  const totalSavings = Number(cart?.totalDiscount || 0) + discountFromCoupon + deliverySavings;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/80 dark:border-gray-800 p-6 shadow-sm sticky top-24">
@@ -146,29 +160,29 @@ export default function CartSummary({ cart, onNotify }) {
       {/* Pricing Breakdown */}
       <div className="space-y-3.5 text-sm">
         {/* Original Retail (if discounts exist) */}
-        {cart.totalDiscount > 0 && (
+        {Number(cart?.totalDiscount || 0) > 0 && (
           <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
             <span>Original Total</span>
-            <span className="line-through">৳{cart.regularSubtotal?.toLocaleString()}</span>
+            <span className="line-through">৳{Number(cart.regularSubtotal || 0).toLocaleString()}</span>
           </div>
         )}
 
         {/* Bag Subtotal */}
         <div className="flex items-center justify-between text-gray-700 dark:text-gray-200">
-          <span>Subtotal ({cart.itemCount || 0} items)</span>
+          <span>Subtotal ({cart?.itemCount || 0} items)</span>
           <span className="font-semibold text-gray-900 dark:text-white">
             ৳{subtotal.toLocaleString()}
           </span>
         </div>
 
         {/* Product Catalog Savings */}
-        {cart.totalDiscount > 0 && (
+        {Number(cart?.totalDiscount || 0) > 0 && (
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
             <span className="flex items-center gap-1.5">
               <FaTag className="text-xs" />
               <span>Catalog Savings</span>
             </span>
-            <span className="font-semibold">-৳{cart.totalDiscount?.toLocaleString()}</span>
+            <span className="font-semibold">-৳{Number(cart.totalDiscount).toLocaleString()}</span>
           </div>
         )}
 
@@ -213,7 +227,7 @@ export default function CartSummary({ cart, onNotify }) {
               <div className="flex items-center justify-between">
                 <span>Inside Dhaka</span>
                 <span className="font-bold">
-                  {insideCharge === 0 ? "FREE" : `৳${insideCharge.toLocaleString()}`}
+                  {insideCharge === 0 ? "FREE" : `৳${Number(insideCharge).toLocaleString()}`}
                 </span>
               </div>
               <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">
@@ -234,7 +248,7 @@ export default function CartSummary({ cart, onNotify }) {
               <div className="flex items-center justify-between">
                 <span>Outside Dhaka</span>
                 <span className="font-bold">
-                  {outsideCharge === 0 ? "FREE" : `৳${outsideCharge.toLocaleString()}`}
+                  {outsideCharge === 0 ? "FREE" : `৳${Number(outsideCharge).toLocaleString()}`}
                 </span>
               </div>
               <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">
@@ -306,7 +320,7 @@ export default function CartSummary({ cart, onNotify }) {
             >
               <FaLock className="text-xs" />
               <span>
-                {cart.items.length === 0
+                {!cart?.items || cart.items.length === 0
                   ? "Shopping Bag is Empty"
                   : hasUnselectedVariants
                   ? "Select Options to Continue"
