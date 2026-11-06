@@ -411,16 +411,13 @@ export default function ProductInfo({
           <button
             type="button"
             suppressHydrationWarning
-            onClick={() => onAddToCart(matchedVariant)}
+            onClick={() => onAddToCart(allOptionsSelected ? matchedVariant : null)}
             disabled={
-              (hasVariants && !allOptionsSelected) ||
               isOutOfStock ||
               isAddingToCart
             }
             className={`flex-1 py-3.5 px-6 rounded-full text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-md cursor-pointer ${
-              hasVariants && !allOptionsSelected
-                ? "bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed shadow-none"
-                : isOutOfStock
+              isOutOfStock
                 ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none"
                 : isAddedToCart
                 ? "bg-emerald-600 text-white"
@@ -437,14 +434,16 @@ export default function ProductInfo({
                 <FaCheck className="h-4 w-4" />
                 <span>Added to Bag!</span>
               </>
-            ) : hasVariants && !allOptionsSelected ? (
-              <span>Select options</span>
             ) : isOutOfStock ? (
               <span>Out of Stock</span>
             ) : (
               <>
                 <FaShoppingCart className="h-4 w-4" />
-                <span>Add to Bag • ৳{(displayPrice * quantity).toLocaleString()}</span>
+                <span>
+                  {hasVariants && !allOptionsSelected
+                    ? `Add to Bag • From ৳${(displayPrice * quantity).toLocaleString()}`
+                    : `Add to Bag • ৳${(displayPrice * quantity).toLocaleString()}`}
+                </span>
               </>
             )}
           </button>

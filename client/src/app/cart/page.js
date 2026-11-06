@@ -16,6 +16,7 @@ export default function CartPage() {
     isLoading,
     isUpdating,
     updateQuantity,
+    updateVariant,
     removeFromCart,
     clearCart,
   } = useCart();
@@ -124,6 +125,7 @@ export default function CartPage() {
               <CartItemList
                 cart={cart}
                 onUpdateQuantity={updateQuantity}
+                onUpdateVariant={updateVariant}
                 onRemove={removeFromCart}
                 onClearCart={clearCart}
                 onNotify={showToast}
@@ -157,7 +159,7 @@ export default function CartPage() {
                 disabled
                 className="py-3 px-5 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 text-xs font-semibold cursor-not-allowed"
               >
-                Resolve Stock
+                {cart.items?.some((it) => it.requiresVariantSelection) ? "Select Options" : "Resolve Stock"}
               </button>
             ) : (
               <Link

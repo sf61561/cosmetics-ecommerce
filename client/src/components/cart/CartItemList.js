@@ -7,12 +7,15 @@ import { FaTrashAlt, FaExclamationTriangle, FaShoppingBag } from "react-icons/fa
 export default function CartItemList({
   cart,
   onUpdateQuantity,
+  onUpdateVariant,
   onRemove,
   onClearCart,
   onNotify,
 }) {
   const [isClearing, setIsClearing] = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+
+  const hasUnselectedVariants = cart.items?.some((it) => it.requiresVariantSelection);
 
   const handleClearAll = async () => {
     setIsClearing(true);
@@ -78,14 +81,16 @@ export default function CartItemList({
         )}
       </div>
 
-      {/* Global Stock Issues Notice */}
+      {/* Global Issues Notice */}
       {cart.hasBlockingIssues && (
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3">
           <FaExclamationTriangle className="text-amber-600 dark:text-amber-400 text-base mt-0.5 shrink-0" />
           <div className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
             <p className="font-semibold mb-0.5">Attention needed before checkout</p>
             <p>
-              Some items in your bag are currently out of stock or requested in a quantity that exceeds available stock. Please adjust quantities or remove unavailable products to complete your order.
+              {hasUnselectedVariants
+                ? "Please select your desired shade or size for marked products in your bag to unlock checkout."
+                : "Some items in your bag are currently out of stock or requested in a quantity that exceeds available stock. Please adjust quantities or remove unavailable products to complete your order."}
             </p>
           </div>
         </div>
@@ -98,6 +103,7 @@ export default function CartItemList({
             key={item.id}
             item={item}
             onUpdateQuantity={onUpdateQuantity}
+            onUpdateVariant={onUpdateVariant}
             onRemove={onRemove}
             onNotify={onNotify}
           />

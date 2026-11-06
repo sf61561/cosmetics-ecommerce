@@ -68,10 +68,6 @@ export default function ProductDetailsView({ initialProduct }) {
     if (!product || isAddingToCart) return;
 
     const variantToUse = (variantOverride && variantOverride.id) ? variantOverride : selectedVariant;
-    if (product.hasVariants && !variantToUse) {
-      showToast("Please choose options before adding to bag.");
-      return;
-    }
 
     setIsAddingToCart(true);
 
@@ -79,9 +75,13 @@ export default function ProductDetailsView({ initialProduct }) {
       const res = await addToCart(product.id, quantity, variantToUse?.id || null);
       if (res?.success) {
         setIsAddedToCart(true);
-        const vLabel = variantToUse?.variantName || variantToUse?.optionsKey;
-        const itemLabel = vLabel && vLabel !== "default" ? `"${product.name} (${vLabel})"` : `"${product.name}"`;
-        showToast(`Added ${quantity} × ${itemLabel} to your shopping bag.`);
+        if (product.hasVariants && !variantToUse) {
+          showToast(`Added to your bag! You can choose your shade/size in the bag before checkout.`);
+        } else {
+          const vLabel = variantToUse?.variantName || variantToUse?.optionsKey;
+          const itemLabel = vLabel && vLabel !== "default" ? `"${product.name} (${vLabel})"` : `"${product.name}"`;
+          showToast(`Added ${quantity} × ${itemLabel} to your shopping bag.`);
+        }
         setTimeout(() => {
           setIsAddedToCart(false);
         }, 2500);

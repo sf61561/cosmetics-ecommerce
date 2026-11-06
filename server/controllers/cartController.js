@@ -50,25 +50,63 @@ class CartController {
 
   /**
    * PATCH /api/cart/items/:id
-   * Update quantity of a cart item
+   * Update quantity or variant of a cart item
    */
   async updateQuantity(req, res, next) {
     try {
       const userId = req.user?.id || null;
       const sessionId = req.sessionId;
       const itemId = req.params.id;
-      const { quantity } = req.body;
+      const { quantity, variantId } = req.body;
 
-      const cart = await cartService.updateQuantity({
-        userId,
-        sessionId,
-        itemId,
-        quantity,
-      });
+      let cart;
+      if (variantId !== undefined && variantId !== null) {
+        cart = await cartService.updateVariant({
+          userId,
+          sessionId,
+          itemId,
+          variantId,
+        });
+      } else {
+        cart = await cartService.updateQuantity({
+          userId,
+          sessionId,
+          itemId,
+          quantity,
+        });
+      }
 
       return res.status(200).json({
         success: true,
         message: "Cart updated.",
+        data: cart,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /api/cart/items/:id/variant
+   * Update variant of a specific cart item
+   */
+  async updateVariant(req, res, next) {
+    try {
+      const userId = req.user?.id || null;
+      const sessionId = req.sessionId;
+      const itemId = req.params.id;
+      const { variantId } = req.body;
+
+      const cart = await cartService.updateVariant({
+        userId,
+        sessionId,
+        itemId,
+        variantId,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Variant updated.",
         data: cart,
       });
     } catch (error) {

@@ -88,6 +88,7 @@ export default function CartSummary({ cart, onNotify }) {
     if (onNotify) onNotify("Voucher removed.");
   };
 
+  const hasUnselectedVariants = cart.items?.some((it) => it.requiresVariantSelection);
   const isCheckoutDisabled = cart.hasBlockingIssues || cart.items.length === 0;
 
   return (
@@ -251,16 +252,27 @@ export default function CartSummary({ cart, onNotify }) {
 
         {/* Checkout Button */}
         {isCheckoutDisabled ? (
-          <button
-            type="button"
-            disabled
-            className="w-full py-4 px-6 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-semibold text-sm cursor-not-allowed flex items-center justify-center gap-2 shadow-none"
-          >
-            <FaLock className="text-xs" />
-            <span>
-              {cart.items.length === 0 ? "Shopping Bag is Empty" : "Resolve Stock Alerts to Continue"}
-            </span>
-          </button>
+          <div>
+            <button
+              type="button"
+              disabled
+              className="w-full py-4 px-6 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-semibold text-sm cursor-not-allowed flex items-center justify-center gap-2 shadow-none"
+            >
+              <FaLock className="text-xs" />
+              <span>
+                {cart.items.length === 0
+                  ? "Shopping Bag is Empty"
+                  : hasUnselectedVariants
+                  ? "Select Options to Continue"
+                  : "Resolve Stock Alerts to Continue"}
+              </span>
+            </button>
+            {hasUnselectedVariants && (
+              <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-300 text-center font-medium">
+                Please pick a shade or size for items above before checkout.
+              </p>
+            )}
+          </div>
         ) : (
           <Link
             href="/checkout"

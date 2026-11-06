@@ -17,9 +17,14 @@ router.get("/", (req, res, next) => cartController.getCart(req, res, next));
 router.post("/items", (req, res, next) => cartController.addItem(req, res, next));
 
 /**
- * PATCH /api/cart/items/:id — Update quantity of a cart item
+ * PATCH /api/cart/items/:id — Update quantity or variant of a cart item
  */
 router.patch("/items/:id", (req, res, next) => cartController.updateQuantity(req, res, next));
+
+/**
+ * PATCH /api/cart/items/:id/variant — Update variant of a cart item
+ */
+router.patch("/items/:id/variant", (req, res, next) => cartController.updateVariant(req, res, next));
 
 /**
  * DELETE /api/cart/items/:id — Remove item from cart

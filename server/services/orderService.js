@@ -226,6 +226,11 @@ class OrderService {
                 pv.id AS variant_row_id, pv.price AS variant_price, pv.compare_at_price AS variant_compare_at_price,
                 pv.is_available AS variant_is_available, pv.is_active AS variant_is_active,
                 (
+                  SELECT COUNT(*)::int
+                  FROM product_variants pvc
+                  WHERE pvc.product_id = p.id AND pvc.deleted_at IS NULL AND pvc.options_key != 'default'
+                ) AS custom_variant_count,
+                (
                   SELECT string_agg(ov.value, ' / ')
                   FROM variant_option_values vov
                   JOIN option_values ov ON ov.id = vov.option_value_id
@@ -247,6 +252,9 @@ class OrderService {
       for (const item of itemsResult.rows) {
         if (item.status !== "ACTIVE" || (item.published_at && new Date(item.published_at) > new Date())) {
           fail(`Product "${item.name}" is no longer available.`, "PRODUCT_UNAVAILABLE", 400);
+        }
+        if (Number(item.custom_variant_count) > 0 && !item.variant_id) {
+          fail(`Please select a shade or size for "${item.name}" before proceeding with checkout.`, "VARIANT_REQUIRED", 400);
         }
         if (item.variant_id) {
           if (!item.variant_row_id || !item.variant_is_active || !item.variant_is_available) {

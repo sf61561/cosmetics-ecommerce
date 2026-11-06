@@ -66,7 +66,45 @@ class CartRepository {
           WHERE product_id = p.id 
           ORDER BY is_primary DESC, display_order ASC, created_at ASC 
           LIMIT 1
-        ) AS thumbnail_url
+        ) AS thumbnail_url,
+        (
+          SELECT COUNT(*)::int
+          FROM product_variants pv_check
+          WHERE pv_check.product_id = p.id
+            AND pv_check.deleted_at IS NULL
+            AND pv_check.options_key != 'default'
+        ) AS custom_variant_count,
+        (
+          SELECT COALESCE(
+            json_agg(
+              json_build_object(
+                'id', pv_all.id,
+                'name', COALESCE(
+                  (
+                    SELECT string_agg(ov2.value, ' / ' ORDER BY po2.position ASC)
+                    FROM variant_option_values vov2
+                    JOIN option_values ov2 ON ov2.id = vov2.option_value_id
+                    JOIN product_options po2 ON po2.id = ov2.option_id
+                    WHERE vov2.variant_id = pv_all.id
+                  ),
+                  pv_all.options_key
+                ),
+                'price', pv_all.price,
+                'salePrice', pv_all.sale_price,
+                'regularPrice', pv_all.regular_price,
+                'imageUrl', pv_all.image_url,
+                'isAvailable', pv_all.is_available,
+                'isActive', pv_all.is_active
+              )
+              ORDER BY pv_all.created_at ASC
+            ),
+            '[]'::json
+          )
+          FROM product_variants pv_all
+          WHERE pv_all.product_id = p.id
+            AND pv_all.deleted_at IS NULL
+            AND pv_all.is_active = TRUE
+        ) AS available_variants
       FROM cart_items ci
       JOIN products p ON p.id = ci.product_id
       LEFT JOIN product_variants pv ON pv.id = ci.variant_id AND pv.deleted_at IS NULL
@@ -170,6 +208,20 @@ class CartRepository {
       RETURNING *;
     `;
     const res = await query(sql, [quantity, id]);
+    return res.rows[0] || null;
+  }
+
+  /**
+   * Update variant of a specific cart item
+   */
+  async updateItemVariant(id, variantId) {
+    const sql = `
+      UPDATE cart_items 
+      SET variant_id = $1, updated_at = NOW() 
+      WHERE id = $2 
+      RETURNING *;
+    `;
+    const res = await query(sql, [variantId, id]);
     return res.rows[0] || null;
   }
 

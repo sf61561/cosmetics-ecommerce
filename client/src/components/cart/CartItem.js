@@ -8,11 +8,37 @@ import { interactionService } from "@/services/interactionService";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80";
 
-export default function CartItem({ item, onUpdateQuantity, onRemove, onNotify }) {
+export default function CartItem({ item, onUpdateQuantity, onUpdateVariant, onRemove, onNotify }) {
   const [imgSrc, setImgSrc] = useState(item.thumbnailUrl || FALLBACK_IMAGE);
   const [isUpdatingQty, setIsUpdatingQty] = useState(false);
+  const [isUpdatingVariant, setIsUpdatingVariant] = useState(false);
+  const [showChangeVariant, setShowChangeVariant] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isWishlisting, setIsWishlisting] = useState(false);
+
+  useEffect(() => {
+    if (item.thumbnailUrl) {
+      setImgSrc(item.thumbnailUrl);
+    }
+  }, [item.thumbnailUrl]);
+
+  const handleVariantChange = async (targetVariantId) => {
+    if (!targetVariantId || targetVariantId === item.variantId || isUpdatingVariant) return;
+    if (typeof onUpdateVariant !== "function") return;
+
+    setIsUpdatingVariant(true);
+    try {
+      const res = await onUpdateVariant(item.id, targetVariantId);
+      if (res?.success) {
+        if (onNotify) onNotify("Shade / Size updated in your bag.");
+      } else if (res?.message) {
+        if (onNotify) onNotify(res.message);
+      }
+    } finally {
+      setIsUpdatingVariant(false);
+      setShowChangeVariant(false);
+    }
+  };
 
   const handleQuantityChange = async (delta) => {
     const newQty = item.quantity + delta;
@@ -70,7 +96,9 @@ export default function CartItem({ item, onUpdateQuantity, onRemove, onNotify })
   return (
     <div
       className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all duration-200 ${
-        isBlocked
+        item.requiresVariantSelection
+          ? "bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/80 shadow-xs"
+          : isBlocked
           ? "bg-red-50/40 dark:bg-red-950/20 border-red-200 dark:border-red-900/40"
           : item.exceedsStock
           ? "bg-amber-50/30 dark:bg-amber-950/15 border-amber-200 dark:border-amber-900/40"
@@ -121,12 +149,71 @@ export default function CartItem({ item, onUpdateQuantity, onRemove, onNotify })
               {item.name}
             </Link>
 
-            {/* Variant Combination Badge */}
+            {/* Required Variant Selector Alert Banner & Dropdown */}
+            {item.requiresVariantSelection && (
+              <div className="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs">
+                <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-200 font-semibold mb-2">
+                  <FaExclamationTriangle className="text-amber-600 dark:text-amber-400 shrink-0 text-xs" />
+                  <span>Please choose your shade or size before checkout</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    id={`variant-select-${item.id}`}
+                    value=""
+                    onChange={(e) => handleVariantChange(e.target.value)}
+                    disabled={isUpdatingVariant}
+                    className="flex-1 text-xs font-semibold rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 px-2.5 focus:outline-hidden focus:ring-2 focus:ring-[#9B4F5E] cursor-pointer"
+                  >
+                    <option value="" disabled>
+                      {isUpdatingVariant ? "Updating option..." : "— Choose Shade / Size —"}
+                    </option>
+                    {item.availableVariants?.map((v) => (
+                      <option key={v.id} value={v.id} disabled={!v.isAvailable}>
+                        {v.name} • ৳{Number(v.price).toLocaleString()} {!v.isAvailable ? "(Out of stock)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {isUpdatingVariant && (
+                    <FaSpinner className="animate-spin text-xs text-[#9B4F5E]" />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Variant Combination Badge (with Change option) */}
             {item.variantName && (
-              <div className="mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9B4F5E] dark:text-pink-300 bg-pink-50 dark:bg-pink-950/40 border border-pink-200/60 dark:border-pink-900/40 px-2 py-0.5 rounded-md">
                   {item.variantName}
                 </span>
+
+                {item.availableVariants && item.availableVariants.length > 1 && (
+                  <div className="relative inline-block">
+                    {showChangeVariant ? (
+                      <select
+                        value={item.variantId || ""}
+                        onChange={(e) => handleVariantChange(e.target.value)}
+                        disabled={isUpdatingVariant}
+                        className="text-[11px] font-medium rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-0.5 px-2 focus:outline-hidden focus:ring-1 focus:ring-[#9B4F5E] cursor-pointer"
+                      >
+                        {item.availableVariants.map((v) => (
+                          <option key={v.id} value={v.id} disabled={!v.isAvailable}>
+                            {v.name} • ৳{Number(v.price).toLocaleString()} {!v.isAvailable ? "(Out of stock)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowChangeVariant(true)}
+                        className="text-[11px] text-gray-500 hover:text-[#9B4F5E] dark:text-gray-400 dark:hover:text-pink-300 underline font-medium cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

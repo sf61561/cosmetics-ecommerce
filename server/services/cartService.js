@@ -30,6 +30,9 @@ class CartService {
       const quantity = Number(row.quantity) || 1;
       const stockQuantity = Number(row.stock_quantity) || 0;
 
+      const hasCustomVariants = Number(row.custom_variant_count) > 0;
+      const requiresVariantSelection = hasCustomVariants && !row.variant_id;
+
       const variantActive = row.variant_is_active !== false;
       const variantAvailable = row.variant_is_available !== false;
 
@@ -40,7 +43,7 @@ class CartService {
       const isOutOfStock = stockQuantity <= 0 || !variantAvailable;
       const exceedsStock = quantity > stockQuantity;
 
-      if (!isPublished || isOutOfStock || exceedsStock) {
+      if (!isPublished || isOutOfStock || exceedsStock || requiresVariantSelection) {
         hasBlockingIssues = true;
       }
 
@@ -58,6 +61,9 @@ class CartService {
         productId: row.product_id,
         variantId: row.variant_id || null,
         variantName: row.variant_name || null,
+        requiresVariantSelection,
+        hasCustomVariants,
+        availableVariants: Array.isArray(row.available_variants) ? row.available_variants : [],
         name: row.product_name,
         slug: row.product_slug,
         sku: row.product_sku,
@@ -158,25 +164,22 @@ class CartService {
     const hasCustomVariants = variants.some((v) => v.optionsKey !== "default");
 
     if (hasCustomVariants) {
-      if (!targetVariantId) {
-        const error = new Error("Please select your shade or size before adding to bag.");
-        error.status = 400;
-        error.code = "VARIANT_REQUIRED";
-        throw error;
+      if (targetVariantId) {
+        const matched = variants.find((v) => v.id === targetVariantId && v.isActive);
+        if (!matched) {
+          const error = new Error("Selected product option is not available.");
+          error.status = 404;
+          error.code = "VARIANT_NOT_FOUND";
+          throw error;
+        }
+        if (!matched.isAvailable) {
+          const error = new Error("Selected product option is currently out of stock.");
+          error.status = 400;
+          error.code = "OUT_OF_STOCK";
+          throw error;
+        }
       }
-      const matched = variants.find((v) => v.id === targetVariantId && v.isActive);
-      if (!matched) {
-        const error = new Error("Selected product option is not available.");
-        error.status = 404;
-        error.code = "VARIANT_NOT_FOUND";
-        throw error;
-      }
-      if (!matched.isAvailable) {
-        const error = new Error("Selected product option is currently out of stock.");
-        error.status = 400;
-        error.code = "OUT_OF_STOCK";
-        throw error;
-      }
+      // If targetVariantId is null, allow adding to cart without pre-selecting variant
     } else if (!targetVariantId && variants.length > 0) {
       // Single product: auto-select default variant
       const defaultVar = variants.find((v) => v.optionsKey === "default") || variants[0];
@@ -277,6 +280,72 @@ class CartService {
     }
 
     await cartRepository.updateItemQuantity(itemId, parsedQty);
+    return this.getCart({ userId, sessionId });
+  }
+
+  /**
+   * Update variant of an existing cart item
+   */
+  async updateVariant({ userId = null, sessionId = null, itemId, variantId }) {
+    if (!itemId) {
+      const error = new Error("Cart item ID is required.");
+      error.status = 400;
+      throw error;
+    }
+    if (!variantId) {
+      const error = new Error("Variant ID is required.");
+      error.status = 400;
+      throw error;
+    }
+
+    const item = await cartRepository.findItemById(itemId);
+    if (!item) {
+      const error = new Error("Cart item not found.");
+      error.status = 404;
+      throw error;
+    }
+
+    // Verify ownership
+    const isOwner =
+      (userId && item.user_id === userId) ||
+      (!userId && sessionId && item.session_id === sessionId);
+
+    if (!isOwner) {
+      const error = new Error("Unauthorized to modify this cart item.");
+      error.status = 403;
+      throw error;
+    }
+
+    // Verify variant belongs to this product and is available
+    const variant = await variantRepository.findVariantById(variantId);
+    if (!variant || variant.productId !== item.product_id || !variant.isActive) {
+      const error = new Error("Selected variant is invalid or unavailable.");
+      error.status = 404;
+      throw error;
+    }
+    if (!variant.isAvailable) {
+      const error = new Error("Selected variant is currently out of stock.");
+      error.status = 400;
+      error.code = "OUT_OF_STOCK";
+      throw error;
+    }
+
+    // Check if another cart item already exists with this same variant for this user/session
+    const existing = await cartRepository.findExistingItem({
+      userId,
+      sessionId,
+      productId: item.product_id,
+      variantId,
+    });
+
+    if (existing && existing.id !== itemId) {
+      const mergedQty = existing.quantity + item.quantity;
+      await cartRepository.updateItemQuantity(existing.id, mergedQty);
+      await cartRepository.removeItem(itemId);
+    } else {
+      await cartRepository.updateItemVariant(itemId, variantId);
+    }
+
     return this.getCart({ userId, sessionId });
   }
 

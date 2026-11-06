@@ -188,6 +188,25 @@ export function CartProvider({ children }) {
   };
 
   /**
+   * Update variant of an existing item in the cart
+   */
+  const updateVariant = async (itemId, variantId) => {
+    setIsUpdating(true);
+    try {
+      const res = await cartService.updateVariant(itemId, variantId);
+      if (res?.success && res.data) {
+        setCart(res.data);
+        return { success: true, message: res.message || "Option updated." };
+      }
+      return { success: false, message: "Failed to update option." };
+    } catch (err) {
+      return { success: false, message: err.message || "Failed to update option." };
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  /**
    * Clear all items in the cart
    */
   const clearCart = async () => {
@@ -216,6 +235,7 @@ export function CartProvider({ children }) {
         error,
         addToCart,
         updateQuantity,
+        updateVariant,
         removeFromCart,
         clearCart,
         refreshCart,

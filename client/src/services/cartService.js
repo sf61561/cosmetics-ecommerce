@@ -74,6 +74,22 @@ export const cartService = {
   },
 
   /**
+   * Update variant of an existing item in the cart
+   */
+  async updateVariant(cartItemId, variantId) {
+    const res = await fetch(`${API_BASE}/api/cart/items/${cartItemId}/variant`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ variantId }),
+    });
+    return handleResponse(res);
+  },
+
+  /**
    * Remove an item from the cart
    */
   async removeItem(cartItemId) {

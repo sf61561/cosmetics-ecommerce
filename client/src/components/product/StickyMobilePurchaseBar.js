@@ -28,10 +28,6 @@ export default function StickyMobilePurchaseBar({
     "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80";
 
   const handleBarClick = () => {
-    if (isSelectionRequired) {
-      window.scrollTo({ top: 350, behavior: "smooth" });
-      return;
-    }
     onAddToCart(selectedVariant);
   };
 
@@ -67,11 +63,9 @@ export default function StickyMobilePurchaseBar({
           type="button"
           suppressHydrationWarning
           onClick={handleBarClick}
-          disabled={(!isSelectionRequired && isOutOfStock) || isAddingToCart}
+          disabled={isOutOfStock || isAddingToCart}
           className={`py-2.5 px-5 rounded-full text-xs font-semibold shrink-0 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md cursor-pointer ${
-            isSelectionRequired
-              ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700"
-              : isOutOfStock
+            isOutOfStock
               ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed shadow-none"
               : isAddedToCart
               ? "bg-emerald-600 text-white"
@@ -88,8 +82,6 @@ export default function StickyMobilePurchaseBar({
               <FaCheck className="h-3 w-3" />
               <span>Added!</span>
             </>
-          ) : isSelectionRequired ? (
-            <span>Select Options</span>
           ) : isOutOfStock ? (
             <span>Out of Stock</span>
           ) : (
