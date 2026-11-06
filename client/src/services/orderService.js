@@ -16,4 +16,5 @@ export const orderService = {
   create: (payload) => request("/api/orders", { method: "POST", body: JSON.stringify(payload) }),
   getById: (id) => request(`/api/orders/${id}`),
   cancel: (id, note = "") => request(`/api/orders/${id}/cancel`, { method: "PATCH", body: JSON.stringify({ note }) }),
+  track: (code) => request(`/api/orders/track/${encodeURIComponent(code)}`),
 };

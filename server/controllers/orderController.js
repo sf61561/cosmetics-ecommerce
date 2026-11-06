@@ -46,6 +46,22 @@ class OrderController {
       next(error);
     }
   }
+
+  async track(req, res, next) {
+    try {
+      const code = (req.params.code || req.query.code || req.query.q || req.query.trackingNumber || req.query.orderNumber || "").trim();
+      if (!code) {
+        return res.status(400).json({ success: false, message: "Please provide an order number or tracking number." });
+      }
+      const data = await orderService.trackOrder(code);
+      if (!data) {
+        return res.status(404).json({ success: false, message: "No order found matching this tracking or order number." });
+      }
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new OrderController();

@@ -859,6 +859,109 @@ class OrderService {
 
     return res.rows[0];
   }
+
+  async trackOrder(code) {
+    if (!code || typeof code !== "string") return null;
+    const cleanCode = code.trim();
+
+    const result = await query(
+      `SELECT o.id, o.order_number, o.status, o.order_status, o.payment_status, o.payment_method,
+              o.subtotal, o.discount_total, o.shipping_fee, o.grand_total, o.currency,
+              o.total_amount, o.delivery_fee, o.product_subtotal, o.product_discount,
+              o.courier_name, o.tracking_number, o.placed_at, o.created_at, o.updated_at, o.delivered_at,
+              COALESCE(o.shipping_name, o.recipient_name) AS recipient_name,
+              COALESCE(o.shipping_phone, o.recipient_phone) AS recipient_phone,
+              COALESCE(o.shipping_city, o.delivery_district) AS delivery_city,
+              COALESCE(o.shipping_area, o.delivery_area) AS delivery_area,
+              COALESCE(o.shipping_address, o.delivery_street_address) AS delivery_address,
+              o.delivery_zone
+       FROM orders o
+       WHERE LOWER(o.order_number) = LOWER($1)
+          OR LOWER(COALESCE(o.tracking_number, '')) = LOWER($1)
+          OR (o.id::text = $1)
+       LIMIT 1`,
+      [cleanCode]
+    );
+
+    if (!result.rows[0]) return null;
+    const order = result.rows[0];
+    const canonicalStatus = normalizeStatus(order.status || order.order_status);
+
+    const items = await query(
+      `SELECT oi.id, oi.product_id, oi.variant_id, oi.product_name, oi.sku, oi.quantity, oi.unit_price,
+              oi.product_discount, oi.line_total, COALESCE(pv.image_url, pi.image_url) AS image_url
+       FROM order_items oi
+       LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+       LEFT JOIN LATERAL (
+         SELECT image_url FROM product_images
+         WHERE product_id = oi.product_id
+         ORDER BY is_primary DESC, display_order ASC LIMIT 1
+       ) pi ON true
+       WHERE oi.order_id = $1 ORDER BY oi.id`,
+      [order.id]
+    );
+
+    const history = await query(
+      `SELECT id, from_status, to_status, note, created_at
+       FROM order_status_history
+       WHERE order_id = $1
+       ORDER BY created_at ASC, id ASC`,
+      [order.id]
+    );
+
+    const rawPhone = (order.recipient_phone || "").trim();
+    const maskedPhone =
+      rawPhone.length > 6
+        ? rawPhone.slice(0, 4) + "****" + rawPhone.slice(-3)
+        : rawPhone;
+
+    return {
+      id: order.id,
+      orderNumber: order.order_number,
+      status: canonicalStatus,
+      orderStatus: canonicalStatus.toUpperCase(),
+      paymentStatus: order.payment_status || "unpaid",
+      paymentMethod: order.payment_method || "cod",
+      subtotal: Number(order.subtotal ?? order.product_subtotal ?? 0),
+      discountTotal: Number(order.discount_total ?? 0),
+      shippingFee: Number(order.shipping_fee ?? order.delivery_fee ?? 0),
+      grandTotal: Number(order.grand_total ?? order.total_amount ?? 0),
+      currency: order.currency || "BDT",
+      courierName: order.courier_name || null,
+      trackingNumber: order.tracking_number || null,
+      placedAt: order.placed_at || order.created_at,
+      deliveredAt: order.delivered_at || null,
+      updatedAt: order.updated_at,
+      shipping: {
+        recipientName: order.recipient_name || "Customer",
+        phone: maskedPhone,
+        city: order.delivery_city || "Dhaka",
+        area: order.delivery_area || "",
+        zone:
+          order.delivery_zone ||
+          (order.delivery_city && /dhaka/i.test(order.delivery_city)
+            ? "INSIDE_DHAKA"
+            : "OUTSIDE_DHAKA"),
+      },
+      items: items.rows.map((row) => ({
+        id: row.id,
+        productId: row.product_id,
+        productName: row.product_name,
+        sku: row.sku,
+        quantity: Number(row.quantity),
+        unitPrice: Number(row.unit_price),
+        lineTotal: Number(row.line_total),
+        imageUrl: row.image_url,
+      })),
+      history: history.rows.map((h) => ({
+        id: h.id,
+        fromStatus: h.from_status ? normalizeStatus(h.from_status) : null,
+        toStatus: normalizeStatus(h.to_status),
+        note: h.note,
+        createdAt: h.created_at,
+      })),
+    };
+  }
 }
 
 module.exports = new OrderService();

@@ -100,7 +100,7 @@ export default function OrderConfirmationPage() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href={`/orders/${order.id}`}
+                href={`/track-order?code=${order.trackingNumber || order.orderNumber || order.id}`}
                 className="rounded-full bg-[#9B4F5E] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#843F4E]"
               >
                 Track order & view timeline
