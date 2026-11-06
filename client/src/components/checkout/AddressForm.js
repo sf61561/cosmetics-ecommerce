@@ -330,20 +330,11 @@ export default function AddressForm({
               onBlur={() => handleBlur("district")}
               className="w-full appearance-none rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:ring-2 focus:ring-[#9B4F5E]/20 focus:outline-hidden cursor-pointer"
             >
-              <optgroup label="Popular Delivery Destinations">
-                {BD_DISTRICTS.filter((d) => d.popular).map((d) => (
-                  <option key={d.name} value={d.name}>
-                    {d.name} {d.zone === "INSIDE_DHAKA" ? "(Inside Dhaka)" : "(Outside Dhaka)"}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="All 64 Bangladesh Districts">
-                {BD_DISTRICTS.filter((d) => !d.popular).map((d) => (
-                  <option key={d.name} value={d.name}>
-                    {d.name}
-                  </option>
-                ))}
-              </optgroup>
+              {BD_DISTRICTS.map((d) => (
+                <option key={d.name} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
             </select>
             <FaChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
           </div>

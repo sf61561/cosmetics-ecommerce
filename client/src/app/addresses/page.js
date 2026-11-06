@@ -245,20 +245,11 @@ export default function AddressesPage() {
                 onChange={(e) => handleDistrictChange(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer"
               >
-                <optgroup label="Popular Delivery Districts">
-                  {BD_DISTRICTS.filter((d) => d.popular).map((d) => (
-                    <option key={d.name} value={d.name}>
-                      {d.name} {d.zone === "INSIDE_DHAKA" ? "(Inside Dhaka)" : "(Outside Dhaka)"}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="All 64 Districts">
-                  {BD_DISTRICTS.filter((d) => !d.popular).map((d) => (
-                    <option key={d.name} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-                </optgroup>
+                {BD_DISTRICTS.map((d) => (
+                  <option key={d.name} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
               </select>
             </div>
 
