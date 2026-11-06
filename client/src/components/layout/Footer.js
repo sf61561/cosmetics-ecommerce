@@ -168,30 +168,11 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar: Copyright & Payment Icons */}
-        <div className="mt-12 pt-6 border-t border-[#F2E8E6] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-500 text-center sm:text-left">
-            © 2026 Eloura. All rights reserved.
+        {/* Bottom Bar: Copyright */}
+        <div className="mt-12 pt-6 border-t border-[#F2E8E6] flex items-center justify-center">
+          <p className="text-xs text-gray-500 text-center">
+            © {new Date().getFullYear()} Eloura. All rights reserved.
           </p>
-
-          {/* Payment Badges */}
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-gray-700 border border-gray-200 shadow-2xs">
-              VISA
-            </span>
-            <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-gray-700 border border-gray-200 shadow-2xs">
-              Mastercard
-            </span>
-            <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-pink-600 border border-gray-200 shadow-2xs">
-              bKash
-            </span>
-            <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-orange-600 border border-gray-200 shadow-2xs">
-              Nagad
-            </span>
-            <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-emerald-700 border border-gray-200 shadow-2xs">
-              COD
-            </span>
-          </div>
         </div>
       </div>
     </footer>
