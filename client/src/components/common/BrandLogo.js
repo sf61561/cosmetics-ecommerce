@@ -1,25 +1,48 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
+
 /**
  * BrandLogo Component
- * Renders high-fidelity brand visual representations matching the exact Eloura brand mockups.
+ * Prioritizes the uploaded brand logo image (Cloudinary or local URL).
+ * Falls back to stylized brand wordmarks or typography if no image is present.
  */
-export default function BrandLogo({ brand, className = "" }) {
+export default function BrandLogo({ brand, className = "", imageClassName = "" }) {
+  const [imgError, setImgError] = useState(false);
+  const logoUrl = brand?.logoUrl || brand?.logo_url || brand?.imageUrl || brand?.image_url;
   const slug = (brand?.slug || "").toLowerCase().trim();
   const name = brand?.name || "Brand";
 
-  // 1. Beauty of Joseon
+  // 1. Primary: If brand has an uploaded logo image, render it
+  if (logoUrl && !imgError) {
+    return (
+      <div className={`relative flex items-center justify-center ${className}`}>
+        <div className="relative h-12 sm:h-14 w-36 sm:w-44 flex items-center justify-center">
+          <Image
+            src={logoUrl}
+            alt={name}
+            fill
+            sizes="176px"
+            className={`object-contain transition-transform duration-300 group-hover:scale-105 ${imageClassName}`}
+            onError={() => setImgError(true)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Stylized typography fallbacks when no logo image is uploaded
+  // Beauty of Joseon
   if (slug === "beauty-of-joseon") {
     return (
       <div className={`flex flex-col items-center justify-center ${className}`}>
-        {/* Hanbang Calligraphy Emblem with Red Seal */}
         <div className="relative mb-1 flex items-center justify-center">
           <svg
             className="h-10 w-10 text-gray-900 dark:text-gray-100"
             viewBox="0 0 100 100"
             fill="currentColor"
           >
-            {/* Traditional Hanja stylized brush strokes */}
             <path d="M48 10 C46 15, 42 28, 40 38 C39 42, 45 40, 52 38 C56 36, 58 35, 60 40 C62 46, 55 50, 48 52 C42 54, 38 62, 36 75 C35 82, 38 88, 44 88 C48 88, 52 82, 55 70 C56 66, 62 68, 60 74 C56 86, 48 94, 40 94 C30 94, 25 84, 27 72 C29 58, 35 48, 41 44 C45 42, 46 38, 48 28 C50 16, 52 10, 48 10 Z" />
             <path d="M58 20 C64 22, 68 28, 66 34 C64 38, 60 36, 58 32 C56 26, 54 22, 58 20 Z" />
             <circle cx="76" cy="42" r="5" fill="#DC2626" />
@@ -32,7 +55,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 2. COSRX
+  // COSRX
   if (slug === "cosrx") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -43,7 +66,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 3. Anua
+  // Anua
   if (slug === "anua") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -51,7 +74,6 @@ export default function BrandLogo({ brand, className = "" }) {
           <span className="font-serif text-2xl sm:text-3xl font-normal text-gray-900 dark:text-gray-100 tracking-normal">
             Anua
           </span>
-          {/* Delicate botanical sprout above 'a' */}
           <svg
             className="absolute -top-2.5 -right-3 h-4 w-4 text-emerald-700/80 dark:text-emerald-400"
             viewBox="0 0 24 24"
@@ -64,7 +86,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 4. SKIN1004
+  // SKIN1004
   if (slug === "skin1004") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -75,7 +97,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 5. Sulwhasoo
+  // Sulwhasoo
   if (slug === "sulwhasoo") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -86,7 +108,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 6. ROUND LAB
+  // ROUND LAB
   if (slug === "round-lab") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -97,7 +119,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 7. Isntree
+  // Isntree
   if (slug === "isntree") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -117,7 +139,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 8. iUNIK
+  // iUNIK
   if (slug === "iunik") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -133,7 +155,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 9. Laneige
+  // Laneige
   if (slug === "laneige") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -144,7 +166,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 10. MISSHA
+  // MISSHA
   if (slug === "missha") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -155,7 +177,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 11. SOME BY MI
+  // SOME BY MI
   if (slug === "some-by-mi") {
     return (
       <div className={`flex items-center justify-center ${className}`}>
@@ -166,7 +188,7 @@ export default function BrandLogo({ brand, className = "" }) {
     );
   }
 
-  // 12. the lab by blanc doux
+  // the lab by blanc doux
   if (slug === "the-lab-by-blanc-doux") {
     return (
       <div className={`flex flex-col items-center justify-center text-center ${className}`}>
@@ -189,4 +211,3 @@ export default function BrandLogo({ brand, className = "" }) {
     </div>
   );
 }
-

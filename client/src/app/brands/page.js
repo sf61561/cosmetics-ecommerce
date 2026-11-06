@@ -224,7 +224,7 @@ export default function BrandsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {brands.map((brand) => {
-                  const targetHref = `/brands?brand=${brand.slug}`;
+                  const targetHref = `/shop?brand=${encodeURIComponent(brand.slug)}`;
 
                   return (
                     <div
