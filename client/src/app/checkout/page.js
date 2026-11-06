@@ -417,7 +417,7 @@ export default function CheckoutPage() {
               {reviewOpen && (
                 <div className="mt-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 p-4 text-xs space-y-2 animate-in fade-in">
                   <p className="font-bold text-gray-900 dark:text-gray-100">
-                    Ready to place your Cash on Delivery order?
+                    Ready to place order now?
                   </p>
                   <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
                     Delivering to{" "}
