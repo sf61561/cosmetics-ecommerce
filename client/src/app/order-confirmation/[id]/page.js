@@ -6,19 +6,24 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { orderService } from "@/services/orderService";
+import { useCart } from "@/context/CartContext";
 
 const money = (value) => `৳${Number(value || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
 
 export default function OrderConfirmationPage() {
   const { id } = useParams();
+  const { refreshCart } = useCart();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Sync cart to ensure bag is empty in client state
+    refreshCart().catch(() => {});
+
     orderService.getById(id)
       .then(setOrder)
       .catch((requestError) => setError(requestError.message));
-  }, [id]);
+  }, [id, refreshCart]);
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">

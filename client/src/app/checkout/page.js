@@ -17,7 +17,7 @@ import AddressSummaryCard from "@/components/checkout/AddressSummaryCard";
 
 export default function CheckoutPage() {
   const { user, isLoading: authLoading, isLoggingOut } = useAuth();
-  const { cart, isLoading: cartLoading } = useCart();
+  const { cart, isLoading: cartLoading, refreshCart } = useCart();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState([]);
@@ -222,6 +222,9 @@ export default function CheckoutPage() {
         sessionStorage.removeItem("pendingOrderKey");
         sessionStorage.removeItem("appliedCouponCode");
       }
+
+      // Immediately synchronize and clear client CartContext state
+      await refreshCart().catch(() => {});
 
       router.push(`/order-confirmation/${data.id}`);
     } catch (error) {
