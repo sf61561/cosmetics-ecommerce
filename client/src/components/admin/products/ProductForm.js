@@ -20,7 +20,71 @@ import {
   FaTimes,
   FaSyncAlt,
   FaBolt,
+  FaImages,
+  FaRulerCombined,
 } from "react-icons/fa";
+
+const SIZE_UNITS = ["ml", "g", "oz", "fl oz", "pcs", "kg", "l"];
+
+const BEAUTY_SHADES = [
+  { name: "Fair Ivory", hex: "#FDF4EC" },
+  { name: "Warm Porcelain", hex: "#F7E6D7" },
+  { name: "Natural Beige", hex: "#E9CDAE" },
+  { name: "Warm Honey", hex: "#D6A575" },
+  { name: "Golden Tan", hex: "#BA8759" },
+  { name: "Caramel", hex: "#9C6239" },
+  { name: "Mocha", hex: "#704225" },
+  { name: "Espresso", hex: "#432818" },
+  { name: "Soft Nude", hex: "#E2B5A5" },
+  { name: "Warm Nude", hex: "#D39E82" },
+  { name: "Rose Pink", hex: "#E8A0B4" },
+  { name: "Blush Pink", hex: "#F4C2C2" },
+  { name: "Coral Rose", hex: "#FF6F61" },
+  { name: "Peach Glow", hex: "#FFBE76" },
+  { name: "Ruby Red", hex: "#E74C3C" },
+  { name: "Crimson Red", hex: "#C0392B" },
+  { name: "Deep Berry", hex: "#880E4F" },
+  { name: "Plum Wine", hex: "#8E44AD" },
+  { name: "Burgundy", hex: "#6B1D2F" },
+  { name: "Mauve", hex: "#B784A7" },
+  { name: "Cherry Bomb", hex: "#990033" },
+  { name: "Pure White", hex: "#FFFFFF" },
+  { name: "True Black", hex: "#000000" },
+];
+
+function hexToRgb(hex) {
+  let c = (hex || "#000000").replace("#", "");
+  if (c.length === 3) {
+    c = c.split("").map((ch) => ch + ch).join("");
+  }
+  const num = parseInt(c, 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+
+function getClosestShadeName(hex) {
+  if (!hex) return "Rose Pink";
+  const target = hexToRgb(hex);
+  let closest = BEAUTY_SHADES[0];
+  let minDistance = Infinity;
+
+  for (const shade of BEAUTY_SHADES) {
+    const sRgb = hexToRgb(shade.hex);
+    const d = Math.sqrt(
+      Math.pow(target.r - sRgb.r, 2) +
+      Math.pow(target.g - sRgb.g, 2) +
+      Math.pow(target.b - sRgb.b, 2)
+    );
+    if (d < minDistance) {
+      minDistance = d;
+      closest = shade;
+    }
+  }
+  return closest.name;
+}
 
 function slugify(text) {
   if (!text) return "";
@@ -105,330 +169,614 @@ export default function ProductForm({
   // newlyAddedFiles: [{ file, previewUrl, isPrimary }]
   const [newlyAddedFiles, setNewlyAddedFiles] = useState([]);
 
-  // Product Variants & Options
-  const [hasVariants, setHasVariants] = useState(
-    Boolean(
-      initialProduct?.hasVariants ||
-        (initialProduct?.variants && initialProduct.variants.some((v) => v.optionsKey !== "default"))
-    )
-  );
-
-  // Option Type Selector & Direct Variants
-  const [variantTypeName, setVariantTypeName] = useState(() => {
-    return initialProduct?.options?.[0]?.name || "Shade";
+  // Product Variants State
+  // variantType: "shade_only" | "size_only" | "size_shade" | null
+  const [variantType, setVariantType] = useState(() => {
+    if (!initialProduct) return null;
+    const opts = initialProduct.options || [];
+    if (opts.length >= 2) return "size_shade";
+    if (opts.length === 1) {
+      const oName = (opts[0].name || "").toLowerCase();
+      if (oName.includes("shade") || opts[0].type === "swatch") return "shade_only";
+      if (oName.includes("size")) return "size_only";
+    }
+    if (initialProduct.hasVariants) return "shade_only";
+    return null;
   });
-  const [variantTypeDisplay, setVariantTypeDisplay] = useState(() => {
-    return initialProduct?.options?.[0]?.type || "swatch";
-  });
 
-  const VARIANT_TYPE_PRESETS = [
-    { label: "Shade / Color", name: "Shade", display: "swatch", icon: "🎨" },
-    { label: "Size / Volume", name: "Size", display: "button", icon: "📏" },
-    { label: "Finish / Formula", name: "Finish", display: "dropdown", icon: "✨" },
-    { label: "Custom", name: "Custom", display: "button", icon: "⚙️" },
-  ];
-
-  const COLOR_NAME_PRESETS = {
-    black: "#000000",
-    white: "#FFFFFF",
-    red: "#E74C3C",
-    crimson: "#C0392B",
-    nude: "#D39E82",
-    rose: "#D9534F",
-    pink: "#FF69B4",
-    coral: "#FF6F61",
-    brown: "#795548",
-    plum: "#8E44AD",
-    berry: "#880E4F",
-    peach: "#FFBE76",
-    orange: "#E67E22",
-    gold: "#F1C40F",
-    bronze: "#CD7F32",
-    beige: "#F5F5DC",
-  };
-
-  const [variants, setVariants] = useState(() => {
-    if (
-      initialProduct?.variants &&
-      initialProduct.variants.length > 0 &&
-      initialProduct.variants.some((v) => v.optionsKey !== "default")
-    ) {
-      return initialProduct.variants.map((v) => {
-        const regularPrice =
-          v.regularPrice !== undefined && v.regularPrice !== null
-            ? v.regularPrice.toString()
-            : v.compareAtPrice !== null && v.compareAtPrice !== undefined
-            ? v.compareAtPrice.toString()
-            : v.price !== undefined && v.price !== null
-            ? v.price.toString()
-            : "";
-        const salePrice =
-          v.salePrice !== undefined && v.salePrice !== null
-            ? v.salePrice.toString()
-            : v.compareAtPrice && v.price && Number(v.compareAtPrice) > Number(v.price)
-            ? v.price.toString()
-            : "";
-        const costPrice =
-          v.costPrice !== undefined && v.costPrice !== null
-            ? v.costPrice.toString()
-            : v.cost_price !== undefined && v.cost_price !== null
-            ? v.cost_price.toString()
-            : "";
-        const val = v.selectedOptions?.[0]?.value || v.optionsKey || "";
-        const swatchHex =
-          v.selectedOptions?.[0]?.swatchHex ||
-          initialProduct.options?.[0]?.values?.find((valItem) => valItem.value === val)?.swatchHex ||
-          "#D9534F";
-
-        return {
-          id: v.id,
-          value: val,
-          optionsKey: val,
-          swatchHex,
-          regularPrice,
-          salePrice,
-          costPrice,
-          price: v.price !== undefined && v.price !== null ? v.price.toString() : "",
-          compareAtPrice: v.compareAtPrice !== null && v.compareAtPrice !== undefined ? v.compareAtPrice.toString() : "",
-          sizeValue: v.sizeValue !== null && v.sizeValue !== undefined ? v.sizeValue.toString() : "",
-          sizeUnit: v.sizeUnit || "ml",
-          imageUrl: v.imageUrl || "",
-          isAvailable: v.isAvailable ?? true,
-          isActive: v.isActive ?? true,
-        };
-      });
+  // Mode 1: Shade only state
+  const [shades, setShades] = useState(() => {
+    if (initialProduct?.options) {
+      const shadeOpt = initialProduct.options.find(
+        (o) => (o.name || "").toLowerCase().includes("shade") || o.type === "swatch"
+      );
+      if (shadeOpt && initialProduct.variants?.length > 0) {
+        return initialProduct.variants
+          .filter((v) => v.optionsKey !== "default")
+          .map((v, idx) => {
+            const val = v.selectedOptions?.[0]?.value || v.optionsKey || "";
+            const swatchHex =
+              v.selectedOptions?.[0]?.swatchHex ||
+              shadeOpt.values?.find((valItem) => valItem.value === val)?.swatchHex ||
+              "#E8A0B4";
+            const reg =
+              v.regularPrice !== undefined && v.regularPrice !== null
+                ? v.regularPrice.toString()
+                : v.price !== undefined && v.price !== null
+                ? v.price.toString()
+                : "";
+            const cost =
+              v.costPrice !== undefined && v.costPrice !== null
+                ? v.costPrice.toString()
+                : v.cost_price !== undefined && v.cost_price !== null
+                ? v.cost_price.toString()
+                : "";
+            const imgs = Array.isArray(v.imageUrls)
+              ? v.imageUrls
+              : v.imageUrl
+              ? [v.imageUrl]
+              : [];
+            return {
+              id: v.id || `shade_${idx + 1}`,
+              shadeColor: swatchHex,
+              shadeName: val || getClosestShadeName(swatchHex),
+              regularPrice: reg,
+              costPrice: cost,
+              imageUrls: imgs,
+            };
+          });
+      }
     }
     return [
       {
-        value: "01 Rose",
-        optionsKey: "01 Rose",
-        swatchHex: "#D9534F",
+        id: "shade_1",
+        shadeColor: "#E8A0B4",
+        shadeName: "Rose Pink",
         regularPrice: "",
-        salePrice: "",
         costPrice: "",
-        price: "",
-        compareAtPrice: "",
-        sizeValue: "",
-        sizeUnit: "ml",
-        imageUrl: "",
-        isAvailable: true,
-        isActive: true,
-      },
-      {
-        value: "02 Nude",
-        optionsKey: "02 Nude",
-        swatchHex: "#C98A7D",
-        regularPrice: "",
-        salePrice: "",
-        costPrice: "",
-        price: "",
-        compareAtPrice: "",
-        sizeValue: "",
-        sizeUnit: "ml",
-        imageUrl: "",
-        isAvailable: true,
-        isActive: true,
+        imageUrls: [],
       },
     ];
   });
 
+  // Mode 2: Size only state
+  const [sizes, setSizes] = useState(() => {
+    if (initialProduct?.options) {
+      const sizeOpt = initialProduct.options.find(
+        (o) => (o.name || "").toLowerCase().includes("size") || o.type === "button"
+      );
+      if (sizeOpt && initialProduct.variants?.length > 0) {
+        return initialProduct.variants
+          .filter((v) => v.optionsKey !== "default")
+          .map((v, idx) => {
+            const val = v.selectedOptions?.[0]?.value || v.optionsKey || "";
+            const match = val.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
+            const sizeVal =
+              v.sizeValue !== null && v.sizeValue !== undefined
+                ? v.sizeValue.toString()
+                : match
+                ? match[1]
+                : val;
+            const sizeU = v.sizeUnit || (match ? match[2] : "ml");
+            const reg =
+              v.regularPrice !== undefined && v.regularPrice !== null
+                ? v.regularPrice.toString()
+                : v.price !== undefined && v.price !== null
+                ? v.price.toString()
+                : "";
+            const cost =
+              v.costPrice !== undefined && v.costPrice !== null
+                ? v.costPrice.toString()
+                : v.cost_price !== undefined && v.cost_price !== null
+                ? v.cost_price.toString()
+                : "";
+            const imgs = Array.isArray(v.imageUrls)
+              ? v.imageUrls
+              : v.imageUrl
+              ? [v.imageUrl]
+              : [];
+            return {
+              id: v.id || `size_${idx + 1}`,
+              sizeValue: sizeVal,
+              sizeUnit: sizeU,
+              regularPrice: reg,
+              costPrice: cost,
+              imageUrls: imgs,
+            };
+          });
+      }
+    }
+    return [
+      {
+        id: "size_1",
+        sizeValue: "50",
+        sizeUnit: "ml",
+        regularPrice: "",
+        costPrice: "",
+        imageUrls: [],
+      },
+    ];
+  });
+
+  // Mode 3: Size + Shade state
+  const [comboSizes, setComboSizes] = useState(() => {
+    if (initialProduct?.options?.length >= 2) {
+      const sizeOpt = initialProduct.options.find(
+        (o) => (o.name || "").toLowerCase().includes("size")
+      );
+      if (sizeOpt?.values?.length > 0) {
+        return sizeOpt.values.map((valObj, idx) => {
+          const val = valObj.value;
+          const match = val.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
+          return {
+            id: `cs_${idx + 1}`,
+            sizeValue: match ? match[1] : val,
+            sizeUnit: match ? match[2] : "ml",
+          };
+        });
+      }
+    }
+    return [{ id: "cs_1", sizeValue: "50", sizeUnit: "ml" }];
+  });
+  const [newSizeValue, setNewSizeValue] = useState("");
+  const [newSizeUnit, setNewSizeUnit] = useState("ml");
+
+  const [comboShades, setComboShades] = useState(() => {
+    if (initialProduct?.options?.length >= 2) {
+      const shadeOpt = initialProduct.options.find(
+        (o) => (o.name || "").toLowerCase().includes("shade") || o.type === "swatch"
+      );
+      if (shadeOpt?.values?.length > 0) {
+        return shadeOpt.values.map((valObj, idx) => ({
+          id: `csh_${idx + 1}`,
+          shadeColor: valObj.swatchHex || "#E8A0B4",
+          shadeName: valObj.value || getClosestShadeName(valObj.swatchHex),
+        }));
+      }
+    }
+    return [{ id: "csh_1", shadeColor: "#E8A0B4", shadeName: "Rose Pink" }];
+  });
+  const [newShadeColor, setNewShadeColor] = useState("#E8A0B4");
+  const [newShadeName, setNewShadeName] = useState("Rose Pink");
+
+  const [combinations, setCombinations] = useState(() => {
+    if (initialProduct?.options?.length >= 2 && initialProduct.variants?.length > 0) {
+      return initialProduct.variants
+        .filter((v) => v.optionsKey !== "default")
+        .map((v, idx) => {
+          const sizeOptVal =
+            v.selectedOptions?.find((so) =>
+              (so.optionName || "").toLowerCase().includes("size")
+            )?.value || "";
+          const shadeOptObj = v.selectedOptions?.find((so) =>
+            (so.optionName || "").toLowerCase().includes("shade")
+          );
+          const match = sizeOptVal.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
+          const sizeVal =
+            v.sizeValue !== null && v.sizeValue !== undefined
+              ? v.sizeValue.toString()
+              : match
+              ? match[1]
+              : sizeOptVal;
+          const sizeU = v.sizeUnit || (match ? match[2] : "ml");
+          const shadeName = shadeOptObj?.value || "Rose Pink";
+          const shadeColor = shadeOptObj?.swatchHex || "#E8A0B4";
+          const reg =
+            v.regularPrice !== undefined && v.regularPrice !== null
+              ? v.regularPrice.toString()
+              : v.price !== undefined && v.price !== null
+              ? v.price.toString()
+              : "";
+          const cost =
+            v.costPrice !== undefined && v.costPrice !== null
+              ? v.costPrice.toString()
+              : v.cost_price !== undefined && v.cost_price !== null
+              ? v.cost_price.toString()
+              : "";
+          const imgs = Array.isArray(v.imageUrls)
+            ? v.imageUrls
+            : v.imageUrl
+            ? [v.imageUrl]
+            : [];
+          return {
+            id: v.id || `combo_${idx + 1}`,
+            sizeValue: sizeVal,
+            sizeUnit: sizeU,
+            shadeColor,
+            shadeName,
+            regularPrice: reg,
+            costPrice: cost,
+            imageUrls: imgs,
+          };
+        });
+    }
+    return [];
+  });
+
   const [bulkRegularPrice, setBulkRegularPrice] = useState("");
-  const [bulkSalePrice, setBulkSalePrice] = useState("");
   const [bulkCostPrice, setBulkCostPrice] = useState("");
 
-  const handleToggleHasVariants = (e) => {
-    const checked = e.target.checked;
-    setHasVariants(checked);
-    setIsDirty(true);
-    if (checked && variants.length === 0) {
-      setVariants([
+  // Modals & Confirmation States
+  const [switchConfirmModalOpen, setSwitchConfirmModalOpen] = useState(false);
+  const [pendingVariantType, setPendingVariantType] = useState(null);
+  const [imageModalTarget, setImageModalTarget] = useState(null);
+  // target: { type: "shade_only" | "size_only" | "size_shade", index: number }
+  const [deleteComboConfirmIndex, setDeleteComboConfirmIndex] = useState(null);
+
+  // Check if current variant type has entered data before switching
+  const hasEnteredVariantData = (type) => {
+    if (type === "shade_only") {
+      return shades.some(
+        (s) =>
+          (s.shadeName && s.shadeName.trim() !== "Rose Pink") ||
+          (s.regularPrice && s.regularPrice.trim() !== "") ||
+          (s.costPrice && s.costPrice.trim() !== "") ||
+          (s.imageUrls && s.imageUrls.length > 0)
+      );
+    }
+    if (type === "size_only") {
+      return sizes.some(
+        (s) =>
+          (s.sizeValue && s.sizeValue.trim() !== "50") ||
+          (s.regularPrice && s.regularPrice.trim() !== "") ||
+          (s.costPrice && s.costPrice.trim() !== "") ||
+          (s.imageUrls && s.imageUrls.length > 0)
+      );
+    }
+    if (type === "size_shade") {
+      return (
+        combinations.some(
+          (c) =>
+            (c.regularPrice && c.regularPrice.trim() !== "") ||
+            (c.costPrice && c.costPrice.trim() !== "") ||
+            (c.imageUrls && c.imageUrls.length > 0)
+        ) ||
+        comboSizes.length > 1 ||
+        comboShades.length > 1
+      );
+    }
+    return false;
+  };
+
+  const handleSelectVariantType = (nextType) => {
+    if (nextType === variantType) return;
+    if (variantType && hasEnteredVariantData(variantType)) {
+      setPendingVariantType(nextType);
+      setSwitchConfirmModalOpen(true);
+    } else {
+      setVariantType(nextType);
+      setIsDirty(true);
+      if (clientErrors.variantType) {
+        setClientErrors((p) => ({ ...p, variantType: null, form: null }));
+      }
+    }
+  };
+
+  const handleConfirmSwitchType = () => {
+    if (pendingVariantType) {
+      setVariantType(pendingVariantType);
+      setShades([
         {
-          value: variantTypeName === "Size" ? "50 ml" : "01 Rose",
-          optionsKey: variantTypeName === "Size" ? "50 ml" : "01 Rose",
-          swatchHex: variantTypeDisplay === "swatch" ? "#D9534F" : null,
-          regularPrice: price || "",
-          salePrice: salePrice || "",
-          costPrice: costPrice || "",
-          price: salePrice && Number(salePrice) < Number(price) ? salePrice : (price || ""),
-          compareAtPrice: salePrice && Number(salePrice) < Number(price) ? price : "",
-          sizeValue: variantTypeName === "Size" ? "50" : "",
-          sizeUnit: "ml",
-          imageUrl: "",
-          isAvailable: true,
-          isActive: true,
+          id: "shade_1",
+          shadeColor: "#E8A0B4",
+          shadeName: "Rose Pink",
+          regularPrice: "",
+          costPrice: "",
+          imageUrls: [],
         },
       ]);
+      setSizes([
+        {
+          id: "size_1",
+          sizeValue: "50",
+          sizeUnit: "ml",
+          regularPrice: "",
+          costPrice: "",
+          imageUrls: [],
+        },
+      ]);
+      setComboSizes([{ id: "cs_1", sizeValue: "50", sizeUnit: "ml" }]);
+      setComboShades([{ id: "csh_1", shadeColor: "#E8A0B4", shadeName: "Rose Pink" }]);
+      setCombinations([]);
+      setPendingVariantType(null);
+      setIsDirty(true);
+      setClientErrors({});
     }
+    setSwitchConfirmModalOpen(false);
   };
 
-  const handleSelectPresetType = (preset) => {
-    setVariantTypeName(preset.name === "Custom" ? "Option" : preset.name);
-    setVariantTypeDisplay(preset.display);
-    if (preset.display === "swatch") {
-      setVariants((prev) =>
-        prev.map((v, idx) => ({
-          ...v,
-          swatchHex: v.swatchHex || (idx === 0 ? "#D9534F" : idx === 1 ? "#C98A7D" : "#E74C3C"),
-        }))
-      );
-    }
-    setIsDirty(true);
-  };
+  // Available Images gathered strictly from Section 2
+  const availableProductImages = [
+    ...existingImages.map((img) => ({
+      id: `existing_${img.id}`,
+      url: img.imageUrl,
+      isPrimary: Boolean(img.isPrimary),
+    })),
+    ...newlyAddedFiles.map((item, idx) => ({
+      id: `new_${idx}`,
+      url: item.previewUrl,
+      isPrimary: Boolean(item.isPrimary),
+    })),
+  ];
 
-  const handleVariantTypeDisplayChange = (newDisplay) => {
-    setVariantTypeDisplay(newDisplay);
-    if (newDisplay === "swatch") {
-      setVariants((prev) =>
-        prev.map((v, idx) => ({
-          ...v,
-          swatchHex: v.swatchHex || (idx === 0 ? "#D9534F" : idx === 1 ? "#C98A7D" : "#E74C3C"),
-        }))
-      );
-    }
-    setIsDirty(true);
-  };
+  // Helper to toggle image selection for targeted variant
+  const handleToggleImageForTarget = (url) => {
+    if (!imageModalTarget) return;
+    const { type, index } = imageModalTarget;
 
-  const handleAddVariant = () => {
-    const nextIdx = variants.length + 1;
-    const isShade = variantTypeName.toLowerCase().includes("shade") || variantTypeDisplay === "swatch";
-    const isSize = variantTypeName.toLowerCase().includes("size");
-    const defaultValue = isShade
-      ? `Shade 0${nextIdx}`
-      : isSize
-      ? `${nextIdx * 30} ml`
-      : `Variant ${nextIdx}`;
-
-    const newVar = {
-      value: defaultValue,
-      optionsKey: defaultValue,
-      swatchHex: isShade ? "#D9534F" : null,
-      regularPrice: price || "",
-      salePrice: salePrice || "",
-      costPrice: costPrice || "",
-      price: salePrice && Number(salePrice) < Number(price) ? salePrice : (price || ""),
-      compareAtPrice: salePrice && Number(salePrice) < Number(price) ? price : "",
-      sizeValue: isSize ? `${nextIdx * 30}` : "",
-      sizeUnit: "ml",
-      imageUrl: "",
-      isAvailable: true,
-      isActive: true,
+    const updater = (prevList) => {
+      const copy = [...prevList];
+      const row = { ...copy[index] };
+      const curr = row.imageUrls || [];
+      if (curr.includes(url)) {
+        row.imageUrls = curr.filter((u) => u !== url);
+      } else {
+        row.imageUrls = [...curr, url];
+      }
+      copy[index] = row;
+      return copy;
     };
-    setVariants([...variants, newVar]);
+
+    if (type === "shade_only") setShades(updater);
+    else if (type === "size_only") setSizes(updater);
+    else if (type === "size_shade") setCombinations(updater);
     setIsDirty(true);
   };
 
-  const handleRemoveVariant = (vIndex) => {
-    if (variants.length <= 1) return;
-    const updated = variants.filter((_, idx) => idx !== vIndex);
-    setVariants(updated);
+  const handleRemoveImageFromRow = (type, rowIndex, urlToRemove) => {
+    const updater = (prevList) => {
+      const copy = [...prevList];
+      const row = { ...copy[rowIndex] };
+      row.imageUrls = (row.imageUrls || []).filter((u) => u !== urlToRemove);
+      copy[rowIndex] = row;
+      return copy;
+    };
+    if (type === "shade_only") setShades(updater);
+    else if (type === "size_only") setSizes(updater);
+    else if (type === "size_shade") setCombinations(updater);
     setIsDirty(true);
   };
 
-  const handleVariantChange = (vIndex, field, value) => {
-    setVariants((prev) => {
+  // ── Handlers for Type 1: Shade only ──
+  const handleAddShade = () => {
+    const nextIdx = shades.length + 1;
+    const defaultColor = "#E8A0B4";
+    const defaultName = getClosestShadeName(defaultColor);
+    setShades((prev) => [
+      ...prev,
+      {
+        id: `shade_${Date.now()}_${nextIdx}`,
+        shadeColor: defaultColor,
+        shadeName: defaultName,
+        regularPrice: "",
+        costPrice: "",
+        imageUrls: [],
+      },
+    ]);
+    setIsDirty(true);
+  };
+
+  const handleRemoveShade = (idx) => {
+    if (shades.length <= 1) return;
+    setShades((prev) => prev.filter((_, i) => i !== idx));
+    setIsDirty(true);
+  };
+
+  const handleShadeChange = (idx, field, value) => {
+    setShades((prev) => {
       const copy = [...prev];
-      const target = { ...copy[vIndex], [field]: value };
-
-      if (field === "value") {
-        target.optionsKey = value;
-        if (variantTypeDisplay === "swatch") {
-          const matched = COLOR_NAME_PRESETS[value.trim().toLowerCase()];
-          if (matched && (!target.swatchHex || target.swatchHex === "#D9534F" || target.swatchHex === "#000000")) {
-            target.swatchHex = matched;
-          }
-        }
+      const target = { ...copy[idx] };
+      if (field === "shadeColor") {
+        target.shadeColor = value;
+        target.shadeName = getClosestShadeName(value);
+      } else {
+        target[field] = value;
       }
-
-      if (field === "regularPrice" || field === "salePrice") {
-        const reg = field === "regularPrice" ? parseFloat(value) : parseFloat(target.regularPrice);
-        const sale =
-          field === "salePrice"
-            ? value !== ""
-              ? parseFloat(value)
-              : null
-            : target.salePrice !== ""
-            ? parseFloat(target.salePrice)
-            : null;
-
-        if (sale !== null && !isNaN(sale) && !isNaN(reg) && sale < reg) {
-          target.price = sale.toString();
-          target.compareAtPrice = reg.toString();
-        } else if (!isNaN(reg)) {
-          target.price = reg.toString();
-          target.compareAtPrice = "";
-        }
-      }
-
-      copy[vIndex] = target;
+      copy[idx] = target;
       return copy;
     });
     setIsDirty(true);
-
-    if (field === "regularPrice" && (clientErrors[`variant_${vIndex}_price`] || clientErrors.variants || clientErrors.form)) {
-      setClientErrors((p) => ({ ...p, [`variant_${vIndex}_price`]: null, variants: null, form: null }));
-    }
-    if (field === "value" && (clientErrors[`variant_${vIndex}_name`] || clientErrors.variants || clientErrors.form)) {
-      setClientErrors((p) => ({ ...p, [`variant_${vIndex}_name`]: null, variants: null, form: null }));
+    if (clientErrors[`shade_${idx}_${field}`] || clientErrors.variants || clientErrors.form) {
+      setClientErrors((p) => ({
+        ...p,
+        [`shade_${idx}_${field}`]: null,
+        variants: null,
+        form: null,
+      }));
     }
   };
 
-  const handleApplyBulkRegularPrice = () => {
+  // ── Handlers for Type 2: Size only ──
+  const handleAddSize = () => {
+    const nextIdx = sizes.length + 1;
+    setSizes((prev) => [
+      ...prev,
+      {
+        id: `size_${Date.now()}_${nextIdx}`,
+        sizeValue: `${nextIdx * 30}`,
+        sizeUnit: "ml",
+        regularPrice: "",
+        costPrice: "",
+        imageUrls: [],
+      },
+    ]);
+    setIsDirty(true);
+  };
+
+  const handleRemoveSize = (idx) => {
+    if (sizes.length <= 1) return;
+    setSizes((prev) => prev.filter((_, i) => i !== idx));
+    setIsDirty(true);
+  };
+
+  const handleSizeChange = (idx, field, value) => {
+    setSizes((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: value };
+      return copy;
+    });
+    setIsDirty(true);
+    if (clientErrors[`size_${idx}_${field}`] || clientErrors.variants || clientErrors.form) {
+      setClientErrors((p) => ({
+        ...p,
+        [`size_${idx}_${field}`]: null,
+        variants: null,
+        form: null,
+      }));
+    }
+  };
+
+  // ── Handlers for Type 3: Size + Shade ──
+  const handleAddComboSize = () => {
+    const val = newSizeValue.trim();
+    if (!val || isNaN(parseFloat(val)) || parseFloat(val) <= 0) return;
+    const exists = comboSizes.some(
+      (s) => s.sizeValue.trim() === val && s.sizeUnit === newSizeUnit
+    );
+    if (exists) return;
+
+    setComboSizes((prev) => [
+      ...prev,
+      { id: `cs_${Date.now()}`, sizeValue: val, sizeUnit: newSizeUnit },
+    ]);
+    setNewSizeValue("");
+    setIsDirty(true);
+    if (clientErrors.comboSizes) {
+      setClientErrors((p) => ({ ...p, comboSizes: null, form: null }));
+    }
+  };
+
+  const handleRemoveComboSize = (id) => {
+    setComboSizes((prev) => prev.filter((s) => s.id !== id));
+    setIsDirty(true);
+  };
+
+  const handleAddComboShade = () => {
+    const name = newShadeName.trim();
+    if (!name) return;
+    const exists = comboShades.some(
+      (s) => s.shadeName.trim().toLowerCase() === name.toLowerCase()
+    );
+    if (exists) return;
+
+    setComboShades((prev) => [
+      ...prev,
+      { id: `csh_${Date.now()}`, shadeColor: newShadeColor, shadeName: name },
+    ]);
+    setNewShadeName(getClosestShadeName(newShadeColor));
+    setIsDirty(true);
+    if (clientErrors.comboShades) {
+      setClientErrors((p) => ({ ...p, comboShades: null, form: null }));
+    }
+  };
+
+  const handleRemoveComboShade = (id) => {
+    setComboShades((prev) => prev.filter((s) => s.id !== id));
+    setIsDirty(true);
+  };
+
+  const handleGenerateCombinations = () => {
+    if (comboSizes.length === 0 || comboShades.length === 0) return;
+
+    setCombinations((prev) => {
+      const existingMap = new Map();
+      prev.forEach((c) => {
+        const key = `${c.sizeValue}${c.sizeUnit}__${c.shadeName.toLowerCase()}`;
+        existingMap.set(key, c);
+      });
+
+      const nextCombos = [];
+      comboSizes.forEach((sz) => {
+        comboShades.forEach((sh) => {
+          const key = `${sz.sizeValue}${sz.sizeUnit}__${sh.shadeName.toLowerCase()}`;
+          const existing = existingMap.get(key);
+          if (existing) {
+            nextCombos.push({
+              ...existing,
+              sizeValue: sz.sizeValue,
+              sizeUnit: sz.sizeUnit,
+              shadeColor: sh.shadeColor,
+              shadeName: sh.shadeName,
+            });
+          } else {
+            nextCombos.push({
+              id: `combo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              sizeValue: sz.sizeValue,
+              sizeUnit: sz.sizeUnit,
+              shadeColor: sh.shadeColor,
+              shadeName: sh.shadeName,
+              regularPrice: bulkRegularPrice || "",
+              costPrice: bulkCostPrice || "",
+              imageUrls: [],
+            });
+          }
+        });
+      });
+
+      return nextCombos;
+    });
+    setIsDirty(true);
+    if (clientErrors.combinations) {
+      setClientErrors((p) => ({ ...p, combinations: null, form: null }));
+    }
+  };
+
+  const handleCombinationChange = (idx, field, value) => {
+    setCombinations((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: value };
+      return copy;
+    });
+    setIsDirty(true);
+    if (clientErrors[`combo_${idx}_${field}`] || clientErrors.variants || clientErrors.form) {
+      setClientErrors((p) => ({
+        ...p,
+        [`combo_${idx}_${field}`]: null,
+        variants: null,
+        form: null,
+      }));
+    }
+  };
+
+  const handleApplyBulkRegularToCombinations = () => {
     if (!bulkRegularPrice) return;
-    setVariants((prev) =>
-      prev.map((v) => {
-        const reg = parseFloat(bulkRegularPrice);
-        const sale = v.salePrice !== "" ? parseFloat(v.salePrice) : null;
-        const price =
-          sale !== null && !isNaN(sale) && !isNaN(reg) && sale < reg ? sale.toString() : bulkRegularPrice;
-        const compareAtPrice =
-          sale !== null && !isNaN(sale) && !isNaN(reg) && sale < reg ? bulkRegularPrice : "";
-        return {
-          ...v,
-          regularPrice: bulkRegularPrice,
-          price,
-          compareAtPrice,
-        };
-      })
+    setCombinations((prev) =>
+      prev.map((c) => ({
+        ...c,
+        regularPrice: bulkRegularPrice,
+      }))
     );
     setIsDirty(true);
   };
 
-  const handleApplyBulkSalePrice = () => {
-    setVariants((prev) =>
-      prev.map((v) => {
-        const reg = parseFloat(v.regularPrice || 0);
-        const sale = bulkSalePrice !== "" ? parseFloat(bulkSalePrice) : null;
-        const price =
-          sale !== null && !isNaN(sale) && !isNaN(reg) && sale < reg
-            ? bulkSalePrice
-            : v.regularPrice || "";
-        const compareAtPrice =
-          sale !== null && !isNaN(sale) && !isNaN(reg) && sale < reg ? v.regularPrice || "" : "";
-        return {
-          ...v,
-          salePrice: bulkSalePrice,
-          price,
-          compareAtPrice,
-        };
-      })
-    );
-    setIsDirty(true);
-  };
-
-  const handleApplyBulkCostPrice = () => {
+  const handleApplyBulkCostToCombinations = () => {
     if (!bulkCostPrice) return;
-    setVariants((prev) =>
-      prev.map((v) => ({
-        ...v,
+    setCombinations((prev) =>
+      prev.map((c) => ({
+        ...c,
         costPrice: bulkCostPrice,
       }))
     );
     setIsDirty(true);
   };
 
-  const handleBulkToggleAvailability = (isAvail) => {
-    setVariants((prev) => prev.map((v) => ({ ...v, isAvailable: isAvail })));
-    setIsDirty(true);
+  const handleDeleteCombinationRow = (index) => {
+    const row = combinations[index];
+    if (!row) return;
+    if (row.regularPrice || row.costPrice || (row.imageUrls && row.imageUrls.length > 0)) {
+      setDeleteComboConfirmIndex(index);
+    } else {
+      setCombinations((prev) => prev.filter((_, idx) => idx !== index));
+      setIsDirty(true);
+    }
+  };
+
+  const handleConfirmDeleteCombination = () => {
+    if (deleteComboConfirmIndex !== null) {
+      setCombinations((prev) => prev.filter((_, idx) => idx !== deleteComboConfirmIndex));
+      setDeleteComboConfirmIndex(null);
+      setIsDirty(true);
+    }
   };
 
   // Form Status / Meta
@@ -538,58 +886,85 @@ export default function ProductForm({
     setIsDirty(true);
   };
 
+  // Margin calculation helper
+  const getMarginInfo = (regPrice, costPrice) => {
+    const reg = parseFloat(regPrice);
+    const cost = parseFloat(costPrice);
+    if (isNaN(reg) || reg <= 0 || isNaN(cost) || cost <= 0) return null;
+    const margin = Math.round(((reg - cost) / reg) * 100);
+    const isLoss = cost > reg;
+    return { margin, isLoss };
+  };
+
   // Client-side validation before submission
   const validateForm = () => {
     const errs = {};
     if (!name.trim()) errs.name = "Product name is required.";
     if (!slug.trim()) errs.slug = "Product slug is required.";
 
-    if (hasVariants) {
-      if (!variantTypeName.trim()) {
-        errs.variantType = "Option name (e.g. Shade or Size) is required.";
-      }
-      if (variants.length === 0) {
-        errs.variants = "Please add at least one variant.";
+    if (!variantType) {
+      errs.variantType = "Please select a variant type (Shade only, Size only, or Size + Shade).";
+    } else if (variantType === "shade_only") {
+      if (shades.length === 0) {
+        errs.variants = "Please add at least one shade.";
       } else {
-        const activeVariants = variants.filter((v) => v.isActive);
-        if (activeVariants.length === 0) {
-          errs.variants = "At least one variant must be active.";
-        }
-        for (let i = 0; i < variants.length; i++) {
-          const v = variants[i];
-          if (!v.isActive) continue;
-          const valName = (v.value || v.optionsKey || "").trim();
-          if (!valName) {
-            errs[`variant_${i}_name`] = `Variant #${i + 1} name is required.`;
-            errs.variants = "Every active variant must have a name.";
+        const seenNames = new Set();
+        for (let i = 0; i < shades.length; i++) {
+          const s = shades[i];
+          const sName = (s.shadeName || "").trim();
+          if (!sName) {
+            errs[`shade_${i}_name`] = "Shade name is required.";
+          } else if (seenNames.has(sName.toLowerCase())) {
+            errs[`shade_${i}_name`] = "Duplicate shade name.";
+          } else {
+            seenNames.add(sName.toLowerCase());
           }
-          const regNum = parseFloat(v.regularPrice || v.price);
-          if (isNaN(regNum) || regNum < 0 || (!v.regularPrice && !v.price)) {
-            errs[`variant_${i}_price`] = `Regular price for "${valName || `Variant ${i + 1}`}" is required.`;
-            errs.variants = "Every active variant must have a valid non-negative Regular Price.";
-          }
-          if (v.salePrice && v.salePrice.trim() !== "") {
-            const sNum = parseFloat(v.salePrice);
-            if (isNaN(sNum) || sNum < 0) {
-              errs.variants = `Sale price for "${valName || `Variant ${i + 1}`}" must be a valid positive number.`;
-            } else if (sNum > regNum) {
-              errs.variants = `Sale price for "${valName || `Variant ${i + 1}`}" cannot be higher than its Regular Price.`;
-            }
-          }
-        }
-      }
-    } else {
-      const priceNum = parseFloat(price);
-      if (!price || isNaN(priceNum) || priceNum < 0) {
-        errs.price = "A valid non-negative regular price is required in Section 2 (Pricing).";
-      }
 
-      if (salePrice && salePrice.trim() !== "") {
-        const saleNum = parseFloat(salePrice);
-        if (isNaN(saleNum) || saleNum < 0) {
-          errs.salePrice = "Sale price must be a valid positive number.";
-        } else if (saleNum > priceNum) {
-          errs.salePrice = "Sale price cannot be higher than the regular price.";
+          const reg = parseFloat(s.regularPrice);
+          if (isNaN(reg) || reg <= 0) {
+            errs[`shade_${i}_price`] = "Regular price must be greater than 0.";
+          }
+        }
+      }
+    } else if (variantType === "size_only") {
+      if (sizes.length === 0) {
+        errs.variants = "Please add at least one size.";
+      } else {
+        const seenSizes = new Set();
+        for (let i = 0; i < sizes.length; i++) {
+          const sz = sizes[i];
+          const sVal = (sz.sizeValue || "").trim();
+          const sKey = `${sVal}${sz.sizeUnit || "ml"}`.toLowerCase();
+          if (!sVal || isNaN(parseFloat(sVal)) || parseFloat(sVal) <= 0) {
+            errs[`size_${i}_value`] = "Valid size number is required.";
+          } else if (seenSizes.has(sKey)) {
+            errs[`size_${i}_value`] = "Duplicate size.";
+          } else {
+            seenSizes.add(sKey);
+          }
+
+          const reg = parseFloat(sz.regularPrice);
+          if (isNaN(reg) || reg <= 0) {
+            errs[`size_${i}_price`] = "Regular price must be greater than 0.";
+          }
+        }
+      }
+    } else if (variantType === "size_shade") {
+      if (comboSizes.length === 0) {
+        errs.comboSizes = "Please add at least one size in the Size section.";
+      }
+      if (comboShades.length === 0) {
+        errs.comboShades = "Please add at least one shade in the Shade section.";
+      }
+      if (combinations.length === 0) {
+        errs.combinations = "Please click 'Generate Combination' to create the variants matrix.";
+      } else {
+        for (let i = 0; i < combinations.length; i++) {
+          const c = combinations[i];
+          const reg = parseFloat(c.regularPrice);
+          if (isNaN(reg) || reg <= 0) {
+            errs[`combo_${i}_price`] = "Regular price must be greater than 0.";
+          }
         }
       }
     }
@@ -622,95 +997,227 @@ export default function ProductForm({
     formData.append("shortDescription", shortDescription.trim());
     formData.append("description", description.trim());
 
-    let effectivePrice = price;
-    let effectiveSalePrice = "";
-    if (!hasVariants) {
-      const pNum = parseFloat(price);
-      const sNum = parseFloat(salePrice);
-      if (!isNaN(pNum) && !isNaN(sNum) && sNum > 0 && sNum < pNum) {
-        effectiveSalePrice = sNum.toString();
-      } else {
-        effectiveSalePrice = ""; // If regular price == sale price, there is no discount price
-      }
-    }
-    let effectiveCostPrice = costPrice;
-
     let formattedOptions = [];
     let formattedVariants = [];
+    const variantPayload = {
+      variant_type: variantType,
+      variants: [],
+    };
 
-    if (hasVariants && variants.length > 0) {
-      const optName = variantTypeName.trim() || "Option";
+    if (variantType === "shade_only") {
       formattedOptions = [
         {
-          name: optName,
-          type: variantTypeDisplay,
+          name: "Shade",
+          type: "swatch",
           position: 0,
-          values: variants.map((v, idx) => ({
-            value: (v.value || v.optionsKey || `Option ${idx + 1}`).trim(),
-            swatchHex: variantTypeDisplay === "swatch" ? (v.swatchHex || "#D9534F") : null,
+          values: shades.map((s, idx) => ({
+            value: s.shadeName.trim(),
+            swatchHex: s.shadeColor || "#E8A0B4",
             swatchImage: null,
             position: idx,
           })),
         },
       ];
 
-      formattedVariants = variants.map((v, idx) => {
-        const valTrimmed = (v.value || v.optionsKey || `Option ${idx + 1}`).trim();
-        const regVal = parseFloat(v.regularPrice || v.price);
-        const saleVal = parseFloat(v.salePrice);
-        const costVal = parseFloat(v.costPrice);
-        const isDiscounted = !isNaN(saleVal) && !isNaN(regVal) && saleVal > 0 && saleVal < regVal;
-        const finalPrice = isDiscounted ? saleVal : (!isNaN(regVal) ? regVal : 0);
-        const finalCompare = isDiscounted ? regVal : null;
+      formattedVariants = shades.map((s, idx) => {
+        const valTrimmed = s.shadeName.trim();
+        const regVal = parseFloat(s.regularPrice);
+        const costVal = parseFloat(s.costPrice);
+        const primImg = s.imageUrls?.[0] || "";
 
         return {
-          id: v.id,
+          id: s.id?.startsWith("shade_") ? undefined : s.id,
           optionsKey: valTrimmed,
-          price: finalPrice.toString(),
-          compareAtPrice: finalCompare !== null ? finalCompare.toString() : "",
-          regularPrice: !isNaN(regVal) ? regVal.toString() : "",
-          salePrice: isDiscounted ? saleVal.toString() : "",
+          price: regVal.toString(),
+          compareAtPrice: "",
+          regularPrice: regVal.toString(),
+          salePrice: "",
           costPrice: !isNaN(costVal) && costVal > 0 ? costVal.toString() : "",
-          sizeValue: v.sizeValue || "",
-          sizeUnit: v.sizeUnit || "ml",
-          imageUrl: v.imageUrl || "",
-          isAvailable: v.isAvailable ?? true,
-          isActive: v.isActive ?? true,
+          sizeValue: null,
+          sizeUnit: null,
+          imageUrl: primImg,
+          imageUrls: s.imageUrls || [],
+          isAvailable: true,
+          isActive: true,
           selectedOptions: [
             {
-              optionName: optName,
+              optionName: "Shade",
               value: valTrimmed,
-              swatchHex: variantTypeDisplay === "swatch" ? (v.swatchHex || "#D9534F") : null,
+              swatchHex: s.shadeColor || "#E8A0B4",
             },
           ],
         };
       });
 
-      // Set effective product price to lowest active variant price
-      const activeVars = formattedVariants.filter((v) => v.isActive);
-      const minP = activeVars.reduce((min, v) => {
-        const num = parseFloat(v.price);
-        return !isNaN(num) && (min === null || num < min) ? num : min;
-      }, null);
-      if (minP !== null) {
-        effectivePrice = minP.toString();
-        effectiveSalePrice = "";
-      }
-      const minCost = activeVars.reduce((min, v) => {
-        const num = parseFloat(v.costPrice);
-        return !isNaN(num) && (min === null || num < min) ? num : min;
-      }, null);
-      if (minCost !== null) {
-        effectiveCostPrice = minCost.toString();
-      }
+      variantPayload.variants = shades.map((s) => ({
+        size: null,
+        size_value: null,
+        size_unit: null,
+        shade_name: s.shadeName.trim(),
+        shade_color: s.shadeColor || "#E8A0B4",
+        image_urls: s.imageUrls || [],
+        regular_price: parseFloat(s.regularPrice) || 0,
+        cost_price: s.costPrice ? parseFloat(s.costPrice) : null,
+      }));
+    } else if (variantType === "size_only") {
+      formattedOptions = [
+        {
+          name: "Size",
+          type: "button",
+          position: 0,
+          values: sizes.map((s, idx) => ({
+            value: `${s.sizeValue.trim()}${s.sizeUnit}`,
+            swatchHex: null,
+            swatchImage: null,
+            position: idx,
+          })),
+        },
+      ];
+
+      formattedVariants = sizes.map((s, idx) => {
+        const valTrimmed = `${s.sizeValue.trim()}${s.sizeUnit}`;
+        const regVal = parseFloat(s.regularPrice);
+        const costVal = parseFloat(s.costPrice);
+        const primImg = s.imageUrls?.[0] || "";
+
+        return {
+          id: s.id?.startsWith("size_") ? undefined : s.id,
+          optionsKey: valTrimmed,
+          price: regVal.toString(),
+          compareAtPrice: "",
+          regularPrice: regVal.toString(),
+          salePrice: "",
+          costPrice: !isNaN(costVal) && costVal > 0 ? costVal.toString() : "",
+          sizeValue: s.sizeValue.trim(),
+          sizeUnit: s.sizeUnit,
+          imageUrl: primImg,
+          imageUrls: s.imageUrls || [],
+          isAvailable: true,
+          isActive: true,
+          selectedOptions: [
+            {
+              optionName: "Size",
+              value: valTrimmed,
+            },
+          ],
+        };
+      });
+
+      variantPayload.variants = sizes.map((s) => ({
+        size: `${s.sizeValue.trim()}${s.sizeUnit}`,
+        size_value: parseFloat(s.sizeValue) || null,
+        size_unit: s.sizeUnit,
+        shade_name: null,
+        shade_color: null,
+        image_urls: s.imageUrls || [],
+        regular_price: parseFloat(s.regularPrice) || 0,
+        cost_price: s.costPrice ? parseFloat(s.costPrice) : null,
+      }));
+    } else if (variantType === "size_shade") {
+      const uniqueSizes = Array.from(
+        new Set(combinations.map((c) => `${c.sizeValue}${c.sizeUnit}`))
+      );
+      const uniqueShades = [];
+      const shadeSeen = new Set();
+      combinations.forEach((c) => {
+        if (!shadeSeen.has(c.shadeName)) {
+          shadeSeen.add(c.shadeName);
+          uniqueShades.push({ name: c.shadeName, color: c.shadeColor });
+        }
+      });
+
+      formattedOptions = [
+        {
+          name: "Size",
+          type: "button",
+          position: 0,
+          values: uniqueSizes.map((val, idx) => ({
+            value: val,
+            swatchHex: null,
+            swatchImage: null,
+            position: idx,
+          })),
+        },
+        {
+          name: "Shade",
+          type: "swatch",
+          position: 1,
+          values: uniqueShades.map((sh, idx) => ({
+            value: sh.name,
+            swatchHex: sh.color || "#E8A0B4",
+            swatchImage: null,
+            position: idx,
+          })),
+        },
+      ];
+
+      formattedVariants = combinations.map((c) => {
+        const sizeStr = `${c.sizeValue}${c.sizeUnit}`;
+        const comboKey = `${sizeStr} / ${c.shadeName}`;
+        const regVal = parseFloat(c.regularPrice);
+        const costVal = parseFloat(c.costPrice);
+        const primImg = c.imageUrls?.[0] || "";
+
+        return {
+          id: c.id?.startsWith("combo_") ? undefined : c.id,
+          optionsKey: comboKey,
+          price: regVal.toString(),
+          compareAtPrice: "",
+          regularPrice: regVal.toString(),
+          salePrice: "",
+          costPrice: !isNaN(costVal) && costVal > 0 ? costVal.toString() : "",
+          sizeValue: c.sizeValue,
+          sizeUnit: c.sizeUnit,
+          imageUrl: primImg,
+          imageUrls: c.imageUrls || [],
+          isAvailable: true,
+          isActive: true,
+          selectedOptions: [
+            {
+              optionName: "Size",
+              value: sizeStr,
+            },
+            {
+              optionName: "Shade",
+              value: c.shadeName,
+              swatchHex: c.shadeColor || "#E8A0B4",
+            },
+          ],
+        };
+      });
+
+      variantPayload.variants = combinations.map((c) => ({
+        size: `${c.sizeValue}${c.sizeUnit}`,
+        size_value: parseFloat(c.sizeValue) || null,
+        size_unit: c.sizeUnit,
+        shade_name: c.shadeName,
+        shade_color: c.shadeColor || "#E8A0B4",
+        image_urls: c.imageUrls || [],
+        regular_price: parseFloat(c.regularPrice) || 0,
+        cost_price: c.costPrice ? parseFloat(c.costPrice) : null,
+      }));
     }
 
+    // Set effective product price to lowest variant price
+    const minP = formattedVariants.reduce((min, v) => {
+      const num = parseFloat(v.price);
+      return !isNaN(num) && (min === null || num < min) ? num : min;
+    }, null);
+    const effectivePrice = minP !== null ? minP.toString() : "0";
+
+    const minCost = formattedVariants.reduce((min, v) => {
+      const num = parseFloat(v.costPrice);
+      return !isNaN(num) && (min === null || num < min) ? num : min;
+    }, null);
+    const effectiveCostPrice = minCost !== null ? minCost.toString() : "";
+
     formData.append("price", parseFloat(effectivePrice || 0).toString());
-    formData.append("salePrice", effectiveSalePrice ? parseFloat(effectiveSalePrice).toString() : "");
+    formData.append("salePrice", "");
     formData.append("costPrice", effectiveCostPrice ? parseFloat(effectiveCostPrice).toString() : "");
-    formData.append("hasVariants", hasVariants.toString());
+    formData.append("hasVariants", "true");
     formData.append("options", JSON.stringify(formattedOptions));
     formData.append("variants", JSON.stringify(formattedVariants));
+    formData.append("variantPayload", JSON.stringify(variantPayload));
     formData.append("stockQuantity", stockQuantity ? parseInt(stockQuantity, 10).toString() : "0");
     formData.append("lowStockThreshold", lowStockThreshold ? parseInt(lowStockThreshold, 10).toString() : "5");
     formData.append("trackInventory", trackInventory.toString());
@@ -747,16 +1254,15 @@ export default function ProductForm({
     await onSubmit(formData);
   };
 
-  // Calculations for live indicators
-  const regularNum = parseFloat(price) || 0;
-  const saleNum = parseFloat(salePrice) || 0;
-  const costNum = parseFloat(costPrice) || 0;
-  const discountPercent = regularNum > 0 && saleNum > 0 && saleNum < regularNum
-    ? Math.round(((regularNum - saleNum) / regularNum) * 100)
-    : 0;
-  const grossProfitMargin = regularNum > 0 && costNum > 0
-    ? Math.round((((saleNum || regularNum) - costNum) / (saleNum || regularNum)) * 100)
-    : 0;
+  // Live price indicator for summary
+  const lowestVariantPrice = (() => {
+    let list = [];
+    if (variantType === "shade_only") list = shades.map((s) => parseFloat(s.regularPrice));
+    else if (variantType === "size_only") list = sizes.map((s) => parseFloat(s.regularPrice));
+    else if (variantType === "size_shade") list = combinations.map((c) => parseFloat(c.regularPrice));
+    const valid = list.filter((n) => !isNaN(n) && n > 0);
+    return valid.length > 0 ? Math.min(...valid) : 0;
+  })();
 
   return (
     <div className="space-y-6 pb-24">
@@ -1146,817 +1652,957 @@ export default function ProductForm({
       </div>
 
       {/* ── FULL WIDTH SECTIONS (3, 4, 5) ── */}
-      {/* SECTION 3: Pricing & Variants Flow */}
-          {!hasVariants ? (
-            /* AS USUAL: Single Product Standard Pricing */
-            <div className="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                    3. Pricing (BDT ৳)
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    Standard pricing for this single product item.
-                  </p>
+      {/* SECTION 3: Product Variants & Pricing */}
+      <div className="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-400">
+              <FaLayerGroup className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                3. Product Variants & Pricing
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-pink-50 text-[#9B4F5E] dark:bg-pink-950/40 dark:text-pink-400">
+                  Required
+                </span>
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Choose variation structure: Shade only, Size only, or Size + Shade. Select photos from Section 2.
+              </p>
+            </div>
+          </div>
+          {lowestVariantPrice > 0 && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Starting at <strong>৳{lowestVariantPrice}</strong> across storefront</span>
+            </div>
+          )}
+        </div>
+
+        {/* VARIANT TYPE SELECTION (Radio Buttons) */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2.5">
+            Select Variant Type <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* 1. Shade only */}
+            <div
+              onClick={() => handleSelectVariantType("shade_only")}
+              className={`relative flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                variantType === "shade_only"
+                  ? "border-[#9B4F5E] bg-pink-50/40 dark:bg-pink-950/20 ring-2 ring-[#9B4F5E]/20 dark:ring-pink-500/20 shadow-xs"
+                  : "border-gray-200/90 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30"
+              }`}
+            >
+              <input
+                type="radio"
+                name="variant_type_selection"
+                value="shade_only"
+                checked={variantType === "shade_only"}
+                onChange={() => handleSelectVariantType("shade_only")}
+                className="mt-1 h-4 w-4 text-[#9B4F5E] border-gray-300 focus:ring-[#9B4F5E] cursor-pointer"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <FaPalette className={`h-3.5 w-3.5 ${variantType === "shade_only" ? "text-[#9B4F5E] dark:text-pink-400" : "text-gray-400"}`} />
+                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                    1. Shade only
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Lipsticks, foundations, and color cosmetics with color swatches & shade names.
+                </p>
+              </div>
+            </div>
+
+            {/* 2. Size only */}
+            <div
+              onClick={() => handleSelectVariantType("size_only")}
+              className={`relative flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                variantType === "size_only"
+                  ? "border-[#9B4F5E] bg-pink-50/40 dark:bg-pink-950/20 ring-2 ring-[#9B4F5E]/20 dark:ring-pink-500/20 shadow-xs"
+                  : "border-gray-200/90 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30"
+              }`}
+            >
+              <input
+                type="radio"
+                name="variant_type_selection"
+                value="size_only"
+                checked={variantType === "size_only"}
+                onChange={() => handleSelectVariantType("size_only")}
+                className="mt-1 h-4 w-4 text-[#9B4F5E] border-gray-300 focus:ring-[#9B4F5E] cursor-pointer"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <FaRulerCombined className={`h-3.5 w-3.5 ${variantType === "size_only" ? "text-[#9B4F5E] dark:text-pink-400" : "text-gray-400"}`} />
+                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                    2. Size only
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Serums, creams, cleansers, and bottles with volume / weight variations.
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Size + Shade */}
+            <div
+              onClick={() => handleSelectVariantType("size_shade")}
+              className={`relative flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                variantType === "size_shade"
+                  ? "border-[#9B4F5E] bg-pink-50/40 dark:bg-pink-950/20 ring-2 ring-[#9B4F5E]/20 dark:ring-pink-500/20 shadow-xs"
+                  : "border-gray-200/90 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30"
+              }`}
+            >
+              <input
+                type="radio"
+                name="variant_type_selection"
+                value="size_shade"
+                checked={variantType === "size_shade"}
+                onChange={() => handleSelectVariantType("size_shade")}
+                className="mt-1 h-4 w-4 text-[#9B4F5E] border-gray-300 focus:ring-[#9B4F5E] cursor-pointer"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <FaLayerGroup className={`h-3.5 w-3.5 ${variantType === "size_shade" ? "text-[#9B4F5E] dark:text-pink-400" : "text-gray-400"}`} />
+                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                    3. Size + Shade
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Combined variations where each size is offered across multiple shade tones.
+                </p>
+              </div>
+            </div>
+          </div>
+          {clientErrors.variantType && (
+            <p className="mt-2 text-xs text-red-500 font-medium flex items-center gap-1.5">
+              <FaExclamationTriangle className="w-3.5 h-3.5 shrink-0" />
+              {clientErrors.variantType}
+            </p>
+          )}
+        </div>
+
+        {/* NOTHING ELSE IS SHOWN UNTIL ONE IS SELECTED */}
+        {!variantType && (
+          <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/40 p-8 text-center">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-pink-50 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-400 flex items-center justify-center mb-3">
+              <FaLayerGroup className="w-6 h-6" />
+            </div>
+            <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+              No Variant Type Selected
+            </h4>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+              Please choose either <strong>Shade only</strong>, <strong>Size only</strong>, or <strong>Size + Shade</strong> above to configure prices and variations.
+            </p>
+          </div>
+        )}
+
+        {/* ── TYPE 1: SHADE ONLY ── */}
+        {variantType === "shade_only" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                  Shade Variants & Pricing
+                </h4>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  Select a color to auto-generate the shade name (editable), set regular and cost prices, and assign photos.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddShade}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-400 hover:bg-pink-100 dark:hover:bg-pink-900/50 text-xs font-bold transition-colors self-start sm:self-auto"
+              >
+                <FaPlus className="w-3 h-3" />
+                Add Shade
+              </button>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50/90 dark:bg-gray-800/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                  <tr>
+                    <th className="py-3 px-3 w-12 text-center">#</th>
+                    <th className="py-3 px-3 min-w-[150px]">Images</th>
+                    <th className="py-3 px-3 min-w-[140px]">Shade Color</th>
+                    <th className="py-3 px-3 min-w-[180px]">Shade Name <span className="text-red-500">*</span></th>
+                    <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
+                    <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
+                    <th className="py-3 px-3 w-12 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                  {shades.map((shade, idx) => {
+                    const marginInfo = getMarginInfo(shade.regularPrice, shade.costPrice);
+                    return (
+                      <tr key={shade.id || idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors">
+                        <td className="py-3 px-3 text-center text-xs font-semibold text-gray-400">
+                          {idx + 1}
+                        </td>
+
+                        {/* Images */}
+                        <td className="py-3 px-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {(shade.imageUrls || []).map((url, uIdx) => (
+                              <div
+                                key={uIdx}
+                                className="relative group w-9 h-9 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shrink-0"
+                              >
+                                <img src={url} alt="Variant" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImageFromRow("shade_only", idx, url)}
+                                  className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove image"
+                                >
+                                  <FaTimes className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => setImageModalTarget({ type: "shade_only", index: idx })}
+                              className="h-9 px-2.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 hover:border-[#9B4F5E] dark:hover:border-pink-400 text-gray-500 hover:text-[#9B4F5E] dark:hover:text-pink-400 flex items-center gap-1 text-[11px] font-semibold transition-colors shrink-0"
+                            >
+                              <FaImages className="w-3 h-3" />
+                              <span>{(shade.imageUrls || []).length > 0 ? `${shade.imageUrls.length} selected` : "+ Photos"}</span>
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Shade Color Picker */}
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            <label className="relative w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 shadow-xs cursor-pointer overflow-hidden shrink-0">
+                              <input
+                                type="color"
+                                value={shade.shadeColor || "#E8A0B4"}
+                                onChange={(e) => handleShadeChange(idx, "shadeColor", e.target.value)}
+                                className="absolute -inset-2 w-12 h-12 cursor-pointer opacity-0"
+                              />
+                              <div
+                                className="w-full h-full rounded-full"
+                                style={{ backgroundColor: shade.shadeColor || "#E8A0B4" }}
+                              />
+                            </label>
+                            <span className="font-mono text-xs uppercase text-gray-700 dark:text-gray-300">
+                              {shade.shadeColor || "#E8A0B4"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Shade Name (Auto-filled + Editable) */}
+                        <td className="py-3 px-3">
+                          <input
+                            type="text"
+                            value={shade.shadeName || ""}
+                            onChange={(e) => handleShadeChange(idx, "shadeName", e.target.value)}
+                            placeholder="e.g. Rose Pink"
+                            className={`w-full rounded-xl border px-3 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                              clientErrors[`shade_${idx}_name`]
+                                ? "border-red-500 ring-1 ring-red-500"
+                                : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                            }`}
+                          />
+                          {clientErrors[`shade_${idx}_name`] && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                              {clientErrors[`shade_${idx}_name`]}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Regular Price */}
+                        <td className="py-3 px-3">
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={shade.regularPrice || ""}
+                              onChange={(e) => handleShadeChange(idx, "regularPrice", e.target.value)}
+                              placeholder="0.00"
+                              className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                clientErrors[`shade_${idx}_regularPrice`]
+                                  ? "border-red-500 ring-1 ring-red-500"
+                                  : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                              }`}
+                            />
+                          </div>
+                          {clientErrors[`shade_${idx}_regularPrice`] && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                              {clientErrors[`shade_${idx}_regularPrice`]}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Cost Price + Margin */}
+                        <td className="py-3 px-3">
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={shade.costPrice || ""}
+                              onChange={(e) => handleShadeChange(idx, "costPrice", e.target.value)}
+                              placeholder="0.00"
+                              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 pl-6 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                            />
+                          </div>
+                          {marginInfo && (
+                            <div className="mt-1">
+                              {marginInfo.warning ? (
+                                <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                  ⚠️ Cost exceeds regular price
+                                </span>
+                              ) : (
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                  {marginInfo.margin}% Margin
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Delete Row */}
+                        <td className="py-3 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveShade(idx)}
+                            disabled={shades.length <= 1}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              shades.length <= 1
+                                ? "text-gray-300 dark:text-gray-700 cursor-not-allowed"
+                                : "text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            }`}
+                            title={shades.length <= 1 ? "At least one shade is required" : "Remove shade"}
+                          >
+                            <FaTrash className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddShade}
+              className="w-full py-2.5 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 hover:border-[#9B4F5E] dark:hover:border-pink-500/50 text-gray-500 hover:text-[#9B4F5E] dark:hover:text-pink-400 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+            >
+              <FaPlus className="w-3 h-3" />
+              Add Another Shade
+            </button>
+          </div>
+        )}
+
+        {/* ── TYPE 2: SIZE ONLY ── */}
+        {variantType === "size_only" && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                  Size Variants & Pricing
+                </h4>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  Enter size volume, select unit, set pricing, and optionally assign images from Section 2.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddSize}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-400 hover:bg-pink-100 dark:hover:bg-pink-900/50 text-xs font-bold transition-colors self-start sm:self-auto"
+              >
+                <FaPlus className="w-3 h-3" />
+                Add Size
+              </button>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50/90 dark:bg-gray-800/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                  <tr>
+                    <th className="py-3 px-3 w-12 text-center">#</th>
+                    <th className="py-3 px-3 min-w-[150px]">Images</th>
+                    <th className="py-3 px-3 min-w-[200px]">Size / Volume <span className="text-red-500">*</span></th>
+                    <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
+                    <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
+                    <th className="py-3 px-3 w-12 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                  {sizes.map((size, idx) => {
+                    const marginInfo = getMarginInfo(size.regularPrice, size.costPrice);
+                    return (
+                      <tr key={size.id || idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors">
+                        <td className="py-3 px-3 text-center text-xs font-semibold text-gray-400">
+                          {idx + 1}
+                        </td>
+
+                        {/* Images */}
+                        <td className="py-3 px-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {(size.imageUrls || []).map((url, uIdx) => (
+                              <div
+                                key={uIdx}
+                                className="relative group w-9 h-9 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shrink-0"
+                              >
+                                <img src={url} alt="Variant" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImageFromRow("size_only", idx, url)}
+                                  className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove image"
+                                >
+                                  <FaTimes className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => setImageModalTarget({ type: "size_only", index: idx })}
+                              className="h-9 px-2.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 hover:border-[#9B4F5E] dark:hover:border-pink-400 text-gray-500 hover:text-[#9B4F5E] dark:hover:text-pink-400 flex items-center gap-1 text-[11px] font-semibold transition-colors shrink-0"
+                            >
+                              <FaImages className="w-3 h-3" />
+                              <span>{(size.imageUrls || []).length > 0 ? `${size.imageUrls.length} selected` : "+ Photos"}</span>
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Size Amount (Editable Number) + Unit (Dropdown) */}
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={size.sizeValue || ""}
+                              onChange={(e) => handleSizeChange(idx, "sizeValue", e.target.value)}
+                              placeholder="e.g. 50"
+                              className={`w-28 rounded-xl border px-3 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                clientErrors[`size_${idx}_value`]
+                                  ? "border-red-500 ring-1 ring-red-500"
+                                  : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                              }`}
+                            />
+                            <select
+                              value={size.sizeUnit || "ml"}
+                              onChange={(e) => handleSizeChange(idx, "sizeUnit", e.target.value)}
+                              className="rounded-xl border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                            >
+                              {SIZE_UNITS.map((u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 pl-1">
+                              ({size.sizeValue || "?"}{size.sizeUnit})
+                            </span>
+                          </div>
+                          {clientErrors[`size_${idx}_value`] && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                              {clientErrors[`size_${idx}_value`]}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Regular Price */}
+                        <td className="py-3 px-3">
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={size.regularPrice || ""}
+                              onChange={(e) => handleSizeChange(idx, "regularPrice", e.target.value)}
+                              placeholder="0.00"
+                              className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                clientErrors[`size_${idx}_regularPrice`]
+                                  ? "border-red-500 ring-1 ring-red-500"
+                                  : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                              }`}
+                            />
+                          </div>
+                          {clientErrors[`size_${idx}_regularPrice`] && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                              {clientErrors[`size_${idx}_regularPrice`]}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Cost Price + Margin */}
+                        <td className="py-3 px-3">
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={size.costPrice || ""}
+                              onChange={(e) => handleSizeChange(idx, "costPrice", e.target.value)}
+                              placeholder="0.00"
+                              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 pl-6 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                            />
+                          </div>
+                          {marginInfo && (
+                            <div className="mt-1">
+                              {marginInfo.warning ? (
+                                <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                  ⚠️ Cost exceeds regular price
+                                </span>
+                              ) : (
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                  {marginInfo.margin}% Margin
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Delete Row */}
+                        <td className="py-3 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSize(idx)}
+                            disabled={sizes.length <= 1}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              sizes.length <= 1
+                                ? "text-gray-300 dark:text-gray-700 cursor-not-allowed"
+                                : "text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            }`}
+                            title={sizes.length <= 1 ? "At least one size is required" : "Remove size"}
+                          >
+                            <FaTrash className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddSize}
+              className="w-full py-2.5 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 hover:border-[#9B4F5E] dark:hover:border-pink-500/50 text-gray-500 hover:text-[#9B4F5E] dark:hover:text-pink-400 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+            >
+              <FaPlus className="w-3 h-3" />
+              Add Another Size
+            </button>
+          </div>
+        )}
+
+        {/* ── TYPE 3: SIZE + SHADE ── */}
+        {variantType === "size_shade" && (
+          <div className="space-y-6">
+            {/* Split Definition Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* SIZE DEFINITIONS */}
+              <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-200/70 dark:border-gray-700 pb-2">
+                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                    <FaRulerCombined className="text-[#9B4F5E] dark:text-pink-400" />
+                    1. Define Sizes ({comboSizes.length})
+                  </span>
+                  <span className="text-[11px] text-gray-400">No prices here</span>
                 </div>
 
-                {/* Switch to multiple variants */}
-                <label className="relative inline-flex items-center cursor-pointer select-none">
+                <div className="flex items-center gap-2">
                   <input
-                    type="checkbox"
-                    checked={hasVariants}
-                    onChange={handleToggleHasVariants}
-                    className="sr-only peer"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={newSizeValue}
+                    onChange={(e) => setNewSizeValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddComboSize();
+                      }
+                    }}
+                    placeholder="Value (e.g. 50)"
+                    className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E]"
                   />
-                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#9B4F5E]"></div>
-                  <span className="ml-3 text-xs font-semibold text-gray-800 dark:text-gray-200">
-                    Has Multiple Variants?
-                  </span>
-                </label>
+                  <select
+                    value={newSizeUnit}
+                    onChange={(e) => setNewSizeUnit(e.target.value)}
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                  >
+                    {SIZE_UNITS.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddComboSize}
+                    className="px-3 py-1.5 rounded-xl bg-[#9B4F5E] text-white hover:bg-[#85414f] text-xs font-bold flex items-center gap-1 shrink-0"
+                  >
+                    <FaPlus className="w-3 h-3" />
+                    Add Size
+                  </button>
+                </div>
+
+                {/* List of Added Sizes */}
+                <div className="flex flex-wrap gap-2 min-h-[38px] p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 items-center">
+                  {comboSizes.length === 0 ? (
+                    <span className="text-[11px] text-gray-400 italic">No sizes added yet. Add at least one size.</span>
+                  ) : (
+                    comboSizes.map((sz) => (
+                      <span
+                        key={sz.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-50 dark:bg-pink-950/40 text-xs font-bold text-[#9B4F5E] dark:text-pink-300 border border-pink-200/60 dark:border-pink-900/40"
+                      >
+                        {sz.sizeValue}{sz.sizeUnit}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveComboSize(sz.id)}
+                          className="hover:text-red-600 transition-colors"
+                          title="Remove size"
+                        >
+                          <FaTimes className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Regular Price */}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                    Regular Price <span className="text-red-500">*</span>
+              {/* SHADE DEFINITIONS */}
+              <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-200/70 dark:border-gray-700 pb-2">
+                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                    <FaPalette className="text-[#9B4F5E] dark:text-pink-400" />
+                    2. Define Shades ({comboShades.length})
+                  </span>
+                  <span className="text-[11px] text-gray-400">Color auto-names</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="relative w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 shadow-xs cursor-pointer overflow-hidden shrink-0">
+                    <input
+                      type="color"
+                      value={newShadeColor}
+                      onChange={(e) => {
+                        setNewShadeColor(e.target.value);
+                        setNewShadeName(getClosestShadeName(e.target.value));
+                      }}
+                      className="absolute -inset-2 w-12 h-12 cursor-pointer opacity-0"
+                    />
+                    <div className="w-full h-full rounded-full" style={{ backgroundColor: newShadeColor }} />
                   </label>
-                  <div
-                    className={`relative mt-1.5 flex rounded-xl border ${
-                      errors.price
-                        ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/10"
-                        : "border-gray-200 dark:border-gray-700 focus-within:border-[#9B4F5E]"
-                    } overflow-hidden`}
+                  <input
+                    type="text"
+                    value={newShadeName}
+                    onChange={(e) => setNewShadeName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddComboShade();
+                      }
+                    }}
+                    placeholder="Shade Name"
+                    className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddComboShade}
+                    className="px-3 py-1.5 rounded-xl bg-[#9B4F5E] text-white hover:bg-[#85414f] text-xs font-bold flex items-center gap-1 shrink-0"
                   >
-                    <span
-                      className={`inline-flex items-center px-3 text-sm font-bold select-none ${
-                        errors.price
-                          ? "bg-red-50 dark:bg-red-950/40 text-red-500 border-r border-red-200 dark:border-red-900/50"
-                          : "bg-gray-50 dark:bg-gray-800 text-gray-500"
-                      }`}
-                    >
-                      ৳
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={price}
-                      onChange={(e) => {
-                        setPrice(e.target.value);
-                        setIsDirty(true);
-                        if (clientErrors.price || clientErrors.form) {
-                          setClientErrors((p) => ({ ...p, price: null, form: null }));
-                        }
-                      }}
-                      placeholder="1650.00"
-                      className="w-full px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-hidden"
-                    />
-                  </div>
-                  {errors.price && <p className="mt-1 text-xs text-red-600 dark:text-red-400 font-semibold">{errors.price}</p>}
+                    <FaPlus className="w-3 h-3" />
+                    Add Shade
+                  </button>
                 </div>
 
-                {/* Sale Price */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                      Sale Price <span className="text-gray-400 font-normal lowercase">(optional)</span>
-                    </label>
-                    {discountPercent > 0 ? (
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
-                        {discountPercent}% OFF
+                {/* List of Added Shades */}
+                <div className="flex flex-wrap gap-2 min-h-[38px] p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 items-center">
+                  {comboShades.length === 0 ? (
+                    <span className="text-[11px] text-gray-400 italic">No shades added yet. Add at least one shade.</span>
+                  ) : (
+                    comboShades.map((sh) => (
+                      <span
+                        key={sh.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-50 dark:bg-pink-950/40 text-xs font-bold text-gray-800 dark:text-gray-200 border border-pink-200/60 dark:border-pink-900/40"
+                      >
+                        <span
+                          className="w-3 h-3 rounded-full border border-black/10 shrink-0"
+                          style={{ backgroundColor: sh.shadeColor }}
+                        />
+                        {sh.shadeName}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveComboShade(sh.id)}
+                          className="hover:text-red-600 transition-colors ml-0.5"
+                          title="Remove shade"
+                        >
+                          <FaTimes className="w-3 h-3" />
+                        </button>
                       </span>
-                    ) : regularNum > 0 && saleNum > 0 && regularNum === saleNum ? (
-                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
-                        No discount (same as regular)
-                      </span>
-                    ) : null}
-                  </div>
-                  <div
-                    className={`relative mt-1.5 flex rounded-xl border ${
-                      errors.salePrice
-                        ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/10"
-                        : "border-gray-200 dark:border-gray-700 focus-within:border-[#9B4F5E]"
-                    } overflow-hidden`}
-                  >
-                    <span
-                      className={`inline-flex items-center px-3 text-sm font-bold select-none ${
-                        errors.salePrice
-                          ? "bg-red-50 dark:bg-red-950/40 text-red-500 border-r border-red-200 dark:border-red-900/50"
-                          : "bg-gray-50 dark:bg-gray-800 text-gray-500"
-                      }`}
-                    >
-                      ৳
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={salePrice}
-                      onChange={(e) => {
-                        setSalePrice(e.target.value);
-                        setIsDirty(true);
-                        if (clientErrors.salePrice || clientErrors.form) {
-                          setClientErrors((p) => ({ ...p, salePrice: null, form: null }));
-                        }
-                      }}
-                      placeholder="1450.00"
-                      className="w-full px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-hidden"
-                    />
-                  </div>
-                  {errors.salePrice && <p className="mt-1 text-xs text-red-600 dark:text-red-400 font-semibold">{errors.salePrice}</p>}
-                </div>
-
-                {/* Cost Price */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                      Cost Price <span className="text-gray-400 font-normal lowercase">(internal)</span>
-                    </label>
-                    {grossProfitMargin > 0 && (
-                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded-full">
-                        {grossProfitMargin}% Margin
-                      </span>
-                    )}
-                  </div>
-                  <div className="relative mt-1.5 flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden focus-within:border-[#9B4F5E]">
-                    <span className="inline-flex items-center bg-gray-50 dark:bg-gray-800 px-3 text-sm font-bold text-gray-500 select-none">
-                      ৳
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={costPrice}
-                      onChange={(e) => {
-                        setCostPrice(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="950.00"
-                      className="w-full px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-hidden"
-                    />
-                  </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
-          ) : (
-            /* IF MORE THAN ONE VARIANT HAS: At first input the variant combined, then the combined variant Regular Price, Sale Price, Cost Price (internal) taken */
-            <div className="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-400">
-                    <FaLayerGroup className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                      3. Product Variants & Pricing
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Add variants directly with individual pricing, photos, and stock status (no combinations).
-                    </p>
-                  </div>
-                </div>
 
-                {/* Toggle to switch back to single product */}
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={hasVariants}
-                    onChange={handleToggleHasVariants}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#9B4F5E]"></div>
-                  <span className="ml-3 text-xs font-semibold text-gray-800 dark:text-gray-200">
-                    Multiple Variants (Active)
-                  </span>
-                </label>
+            {/* GENERATE COMBINATIONS ACTION ROW */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200/60 dark:border-pink-900/40">
+              <div>
+                <h5 className="text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                  <FaBolt className="text-[#9B4F5E] dark:text-pink-400" />
+                  Generate Matrix ({comboSizes.length} sizes × {comboShades.length} shades = {comboSizes.length * comboShades.length} combinations)
+                </h5>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  Clicking Generate builds combination rows. Re-generating retains any already-entered prices and images.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={handleGenerateCombinations}
+                disabled={comboSizes.length === 0 || comboShades.length === 0}
+                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                  comboSizes.length === 0 || comboShades.length === 0
+                    ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+                    : "bg-[#9B4F5E] text-white hover:bg-[#85414f] shadow-sm hover:shadow"
+                }`}
+              >
+                <FaBolt className="w-3.5 h-3.5" />
+                Generate Combination
+              </button>
+            </div>
 
-              {errors.variants && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 text-xs text-red-600 dark:text-red-400 font-medium">
-                  {errors.variants}
-                </div>
-              )}
-
-              <div className="space-y-6">
-                {/* Option Type Selector Card */}
-                <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200/60 dark:border-gray-700/60 pb-3">
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                        Option Type & Storefront Display
-                      </h4>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                        Choose what kind of variants this product has (e.g. Shades, Sizes, or Formulas).
-                      </p>
-                    </div>
-
-                    {/* Preset quick buttons */}
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {VARIANT_TYPE_PRESETS.map((preset) => {
-                        const isSelected =
-                          variantTypeName.toLowerCase() === preset.name.toLowerCase() ||
-                          (preset.name === "Custom" &&
-                            !["shade", "size", "finish"].includes(variantTypeName.toLowerCase()));
-
-                        return (
-                          <button
-                            key={preset.name}
-                            type="button"
-                            onClick={() => handleSelectPresetType(preset)}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-[#9B4F5E] text-white shadow-xs"
-                                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750"
-                            }`}
-                          >
-                            <span>{preset.icon}</span>
-                            <span>{preset.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Option Name */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Option Name <span className="text-[#9B4F5E]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={variantTypeName}
-                        onChange={(e) => {
-                          setVariantTypeName(e.target.value);
-                          setIsDirty(true);
-                          if (clientErrors.variantType || clientErrors.form) {
-                            setClientErrors((p) => ({ ...p, variantType: null, form: null }));
-                          }
-                        }}
-                        placeholder="e.g. Shade, Size, Volume, Scent"
-                        className={`w-full rounded-xl border ${
-                          errors.variantType
-                            ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/10"
-                            : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E]"
-                        } bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-900 dark:text-gray-100 focus:outline-hidden`}
-                      />
-                      {errors.variantType && (
-                        <p className="mt-1 text-xs text-red-600 dark:text-red-400 font-semibold">{errors.variantType}</p>
-                      )}
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                        The label displayed above the choices on the product detail page.
-                      </p>
-                    </div>
-
-                    {/* Storefront Display Style */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Storefront Display Style
-                      </label>
-                      <select
-                        value={variantTypeDisplay}
-                        onChange={(e) => handleVariantTypeDisplayChange(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer"
-                      >
-                        <option value="swatch">Color Swatches (Visual Circles with Hex Picker)</option>
-                        <option value="button">Pill Buttons (Default for Sizes / Finishes)</option>
-                        <option value="dropdown">Dropdown List</option>
-                      </select>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                        How shoppers interact with and select between these options.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                  {/* Bulk Actions Bar */}
-                  {variants.length > 0 && (
-                    <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 p-3.5 space-y-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-4 w-4 items-center justify-center rounded-md bg-[#9B4F5E]/10 dark:bg-[#9B4F5E]/20 text-[#9B4F5E] dark:text-pink-400">
-                          <FaBolt className="h-2 w-2" />
+            {/* COMBINATIONS TABLE & BULK TOOLBAR */}
+            {combinations.length > 0 && (
+              <div className="space-y-3">
+                {/* Bulk Price Application Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Bulk Fill Prices
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                          ৳
                         </span>
-                        <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                          Quick Bulk Actions
-                        </span>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                          — Apply values to all {variants.length} variants at once
-                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={bulkRegularPrice}
+                          onChange={(e) => setBulkRegularPrice(e.target.value)}
+                          placeholder="Regular Price"
+                          className="w-32 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                        />
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        {/* Set Bulk Regular Price */}
-                        <div className="flex items-center">
-                          <div className="flex items-center rounded-l-xl border border-r-0 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden focus-within:border-[#9B4F5E]">
-                            <span className="bg-gray-50 dark:bg-gray-900/60 px-2.5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500 border-r border-gray-100 dark:border-gray-700 select-none">
-                              ৳
-                            </span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="Regular Price"
-                              value={bulkRegularPrice}
-                              onChange={(e) => setBulkRegularPrice(e.target.value)}
-                              className="w-28 px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-transparent placeholder:text-gray-400 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleApplyBulkRegularPrice}
-                            disabled={!bulkRegularPrice}
-                            className="px-3 py-1.5 rounded-r-xl bg-[#9B4F5E] hover:bg-[#85404E] text-white text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            Apply Regular
-                          </button>
-                        </div>
-
-                        {/* Set Bulk Sale Price */}
-                        <div className="flex items-center">
-                          <div className="flex items-center rounded-l-xl border border-r-0 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden focus-within:border-[#9B4F5E]">
-                            <span className="bg-gray-50 dark:bg-gray-900/60 px-2.5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500 border-r border-gray-100 dark:border-gray-700 select-none">
-                              ৳
-                            </span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="Sale Price"
-                              value={bulkSalePrice}
-                              onChange={(e) => setBulkSalePrice(e.target.value)}
-                              className="w-28 px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-transparent placeholder:text-gray-400 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleApplyBulkSalePrice}
-                            disabled={!bulkSalePrice}
-                            className="px-3 py-1.5 rounded-r-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            Apply Sale
-                          </button>
-                        </div>
-
-                        {/* Set Bulk Cost Price */}
-                        <div className="flex items-center">
-                          <div className="flex items-center rounded-l-xl border border-r-0 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden focus-within:border-[#9B4F5E]">
-                            <span className="bg-gray-50 dark:bg-gray-900/60 px-2.5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500 border-r border-gray-100 dark:border-gray-700 select-none">
-                              ৳
-                            </span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="Cost Price"
-                              value={bulkCostPrice}
-                              onChange={(e) => setBulkCostPrice(e.target.value)}
-                              className="w-28 px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-transparent placeholder:text-gray-400 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleApplyBulkCostPrice}
-                            disabled={!bulkCostPrice}
-                            className="px-3 py-1.5 rounded-r-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            Apply Cost
-                          </button>
-                        </div>
-
-                        <div className="h-5 w-px bg-gray-200 dark:border-gray-700 hidden md:block" />
-
-                        {/* Stock Quick Toggles */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleBulkToggleAvailability(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer transition-all"
-                          >
-                            <FaCheck className="h-2.5 w-2.5" /> All In Stock
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleBulkToggleAvailability(false)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-all"
-                          >
-                            <FaTimes className="h-2.5 w-2.5" /> All Out of Stock
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Variants Matrix Table */}
-                  {variants.length > 0 ? (
-                    <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xs">
-                      <table className="w-full min-w-[1240px] text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-gray-50/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 font-bold uppercase tracking-wider text-[11px]">
-                            <th className="py-3 px-3.5 min-w-[220px]">
-                              {variantTypeName || "Variant"} Name *
-                              <span className="block text-[9px] font-normal text-gray-400 normal-case">
-                                {variantTypeDisplay === "swatch" ? "Color swatch & shade name" : "Option value name"}
-                              </span>
-                            </th>
-                            <th className="py-3 px-3 min-w-[155px] w-40">
-                              Regular Price (৳) *
-                              <span className="block text-[9px] font-normal text-gray-400 normal-case">Standard price</span>
-                            </th>
-                            <th className="py-3 px-3 min-w-[155px] w-40">
-                              Sale Price (৳)
-                              <span className="block text-[9px] font-normal text-gray-400 normal-case">Discounted price</span>
-                            </th>
-                            <th className="py-3 px-3 min-w-[155px] w-40">
-                              Cost Price (৳)
-                              <span className="block text-[9px] font-normal text-gray-400 normal-case">Internal cost</span>
-                            </th>
-                            <th className="py-3 px-2 text-center min-w-[80px] w-20">Margin</th>
-                            <th className="py-3 px-3 min-w-[165px] w-44">
-                              Net Vol / Size
-                              <span className="block text-[9px] font-normal text-gray-400 normal-case">Unit pricing</span>
-                            </th>
-                            <th className="py-3 px-3 min-w-[210px]">Variant Photo</th>
-                            <th className="py-3 px-3 text-center min-w-[130px] w-32">Availability</th>
-                            <th className="py-3 px-3 text-center min-w-[100px] w-28">Status</th>
-                            <th className="py-3 px-2 text-center min-w-[50px] w-12">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                          {variants.map((v, vIdx) => {
-                            const resolvedThumb =
-                              v.imageUrl ||
-                              existingImages.find((img) => img.isPrimary)?.imageUrl ||
-                              existingImages[0]?.imageUrl ||
-                              newlyAddedFiles[0]?.previewUrl ||
-                              null;
-
-                            const regVal = parseFloat(v.regularPrice || v.price) || 0;
-                            const saleVal = parseFloat(v.salePrice) || 0;
-                            const costVal = parseFloat(v.costPrice) || 0;
-                            const effectiveSell = saleVal > 0 && saleVal < regVal ? saleVal : regVal;
-                            const rowMargin =
-                              effectiveSell > 0 && costVal > 0
-                                ? Math.round(((effectiveSell - costVal) / effectiveSell) * 100)
-                                : null;
-
-                            return (
-                              <tr
-                                key={v.id || vIdx}
-                                className={`hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors ${
-                                  !v.isActive ? "opacity-50 bg-gray-50/30 dark:bg-gray-800/20" : ""
-                                }`}
-                              >
-                                {/* Variant Name & Swatch */}
-                                <td className="py-3 px-3.5 font-medium text-gray-900 dark:text-gray-100">
-                                  {variantTypeDisplay === "swatch" ? (
-                                    <div className="flex items-center gap-2">
-                                      {/* Color Picker Swatch */}
-                                      <label
-                                        htmlFor={`variant-color-${vIdx}`}
-                                        className="group relative h-7 w-7 rounded-full border border-gray-300 dark:border-gray-600 shadow-2xs flex items-center justify-center cursor-pointer transition-transform hover:scale-110 overflow-hidden shrink-0"
-                                        style={{ backgroundColor: v.swatchHex || "#D9534F" }}
-                                        title="Click to pick swatch color"
-                                      >
-                                        <input
-                                          type="color"
-                                          id={`variant-color-${vIdx}`}
-                                          value={v.swatchHex || "#D9534F"}
-                                          onChange={(e) => handleVariantChange(vIdx, "swatchHex", e.target.value)}
-                                          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                                        />
-                                      </label>
-
-                                      {/* Hex input */}
-                                      <input
-                                        type="text"
-                                        value={v.swatchHex || ""}
-                                        onChange={(e) => handleVariantChange(vIdx, "swatchHex", e.target.value)}
-                                        placeholder="#HEX"
-                                        className="w-18 text-[11px] uppercase font-mono text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-1.5 py-1 focus:outline-hidden focus:border-[#9B4F5E]"
-                                        title="Color Hex code"
-                                      />
-
-                                      {/* Variant Name input */}
-                                      <input
-                                        type="text"
-                                        value={v.value || ""}
-                                        onChange={(e) => handleVariantChange(vIdx, "value", e.target.value)}
-                                        placeholder="e.g. 01 Crimson Rose"
-                                        className={`flex-1 min-w-[110px] rounded-xl border ${
-                                          errors[`variant_${vIdx}_name`]
-                                            ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/10"
-                                            : "border-gray-200 dark:border-gray-700"
-                                        } bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden shadow-2xs`}
-                                      />
-                                    </div>
-                                  ) : (
-                                    <input
-                                      type="text"
-                                      value={v.value || ""}
-                                      onChange={(e) => handleVariantChange(vIdx, "value", e.target.value)}
-                                      placeholder={
-                                        variantTypeName.toLowerCase().includes("size")
-                                          ? "e.g. 50 ml"
-                                          : "e.g. Matte Velvet"
-                                      }
-                                      className={`w-full rounded-xl border ${
-                                        errors[`variant_${vIdx}_name`]
-                                          ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/10"
-                                          : "border-gray-200 dark:border-gray-700"
-                                      } bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden shadow-2xs`}
-                                    />
-                                  )}
-                                  {errors[`variant_${vIdx}_name`] && (
-                                    <p className="mt-0.5 text-[10px] text-red-500 font-medium">
-                                      {errors[`variant_${vIdx}_name`]}
-                                    </p>
-                                  )}
-                                </td>
-
-                                {/* Regular Price */}
-                                <td className="py-2.5 px-3">
-                                  <div
-                                    className={`flex items-center rounded-xl border ${
-                                      errors[`variant_${vIdx}_price`]
-                                        ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/10"
-                                        : "border-gray-200 dark:border-gray-700"
-                                    } overflow-hidden bg-white dark:bg-gray-800 focus-within:border-[#9B4F5E] shadow-2xs`}
-                                  >
-                                    <span
-                                      className={`inline-flex items-center px-2.5 py-1.5 text-xs font-bold border-r select-none ${
-                                        errors[`variant_${vIdx}_price`]
-                                          ? "bg-red-50 dark:bg-red-950/40 text-red-500 border-red-200 dark:border-red-900/50"
-                                          : "bg-gray-50 dark:bg-gray-900/60 text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700"
-                                      }`}
-                                    >
-                                      ৳
-                                    </span>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={v.regularPrice !== undefined ? v.regularPrice : v.price || ""}
-                                      onChange={(e) => handleVariantChange(vIdx, "regularPrice", e.target.value)}
-                                      placeholder="1000.00"
-                                      className="w-full px-2.5 py-1.5 text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent placeholder:text-gray-400 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    />
-                                  </div>
-                                  {errors[`variant_${vIdx}_price`] && (
-                                    <p className="mt-0.5 text-[10px] text-red-500 font-medium">
-                                      {errors[`variant_${vIdx}_price`]}
-                                    </p>
-                                  )}
-                                </td>
-
-                                {/* Sale Price */}
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800 focus-within:border-[#9B4F5E] shadow-2xs">
-                                    <span className="inline-flex items-center bg-gray-50 dark:bg-gray-900/60 px-2.5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500 border-r border-gray-100 dark:border-gray-700 select-none">
-                                      ৳
-                                    </span>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={v.salePrice || ""}
-                                      onChange={(e) =>
-                                        handleVariantChange(vIdx, "salePrice", e.target.value)
-                                      }
-                                      placeholder="850.00"
-                                      className="w-full px-2.5 py-1.5 text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent placeholder:text-gray-400 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    />
-                                  </div>
-                                  {saleVal > 0 && regVal > 0 && saleVal === regVal && (
-                                    <span className="block text-[9.5px] font-medium text-amber-600 dark:text-amber-400 mt-1 leading-tight">
-                                      No discount (same as regular)
-                                    </span>
-                                  )}
-                                  {saleVal > 0 && regVal > 0 && saleVal < regVal && (
-                                    <span className="block text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 leading-tight">
-                                      {Math.round(((regVal - saleVal) / regVal) * 100)}% OFF discount
-                                    </span>
-                                  )}
-                                </td>
-
-                                {/* Cost Price */}
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800 focus-within:border-[#9B4F5E] shadow-2xs">
-                                    <span className="inline-flex items-center bg-gray-50 dark:bg-gray-900/60 px-2.5 py-1.5 text-xs font-bold text-gray-400 dark:text-gray-500 border-r border-gray-100 dark:border-gray-700 select-none">
-                                      ৳
-                                    </span>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={v.costPrice || ""}
-                                      onChange={(e) =>
-                                        handleVariantChange(vIdx, "costPrice", e.target.value)
-                                      }
-                                      placeholder="600.00"
-                                      className="w-full px-2.5 py-1.5 text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent placeholder:text-gray-400 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    />
-                                  </div>
-                                </td>
-
-                                {/* Margin */}
-                                <td className="py-2.5 px-2 text-center">
-                                  {rowMargin !== null ? (
-                                    <span
-                                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                        rowMargin >= 30
-                                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                                          : rowMargin >= 15
-                                          ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                                          : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                                      }`}
-                                    >
-                                      {rowMargin}%
-                                    </span>
-                                  ) : (
-                                    <span className="text-gray-400 dark:text-gray-600 text-xs">—</span>
-                                  )}
-                                </td>
-
-                                {/* Size Value & Unit */}
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800 focus-within:border-[#9B4F5E] shadow-2xs">
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={v.sizeValue}
-                                      onChange={(e) => handleVariantChange(vIdx, "sizeValue", e.target.value)}
-                                      placeholder="50"
-                                      className="w-20 px-2.5 py-1.5 text-xs font-medium text-gray-900 dark:text-gray-100 bg-transparent focus:outline-hidden placeholder:text-gray-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    />
-                                    <select
-                                      value={v.sizeUnit || "ml"}
-                                      onChange={(e) => handleVariantChange(vIdx, "sizeUnit", e.target.value)}
-                                      className="bg-gray-50 dark:bg-gray-900 px-2 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 border-l border-gray-200 dark:border-gray-700 focus:outline-hidden cursor-pointer"
-                                    >
-                                      <option value="ml">ml</option>
-                                      <option value="g">g</option>
-                                      <option value="oz">oz</option>
-                                      <option value="pcs">pcs</option>
-                                    </select>
-                                  </div>
-                                </td>
-
-                                {/* Photo / Image Selection */}
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center gap-2">
-                                    {resolvedThumb ? (
-                                      <div className="relative h-7 w-7 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0 bg-gray-100 dark:bg-gray-800 shadow-2xs">
-                                        <img
-                                          src={resolvedThumb}
-                                          alt="Variant preview"
-                                          className="h-full w-full object-cover"
-                                        />
-                                      </div>
-                                    ) : (
-                                      <div className="h-7 w-7 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center shrink-0 text-gray-400 text-[10px]">
-                                        —
-                                      </div>
-                                    )}
-                                    <select
-                                      value={v.imageUrl || ""}
-                                      onChange={(e) => handleVariantChange(vIdx, "imageUrl", e.target.value)}
-                                      className="flex-1 min-w-[140px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer truncate"
-                                    >
-                                      <option value="">Default (Main Photo)</option>
-                                      {existingImages.map((img, iIdx) => (
-                                        <option key={img.id || iIdx} value={img.imageUrl}>
-                                          Gallery Photo #{iIdx + 1}
-                                        </option>
-                                      ))}
-                                      {newlyAddedFiles.map((file, fIdx) => (
-                                        <option key={fIdx} value={file.previewUrl}>
-                                          New Upload #{fIdx + 1}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </td>
-
-                                {/* Available (In Stock) Toggle */}
-                                <td className="py-2.5 px-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVariantChange(vIdx, "isAvailable", !v.isAvailable)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer transition-all ${
-                                      v.isAvailable
-                                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
-                                        : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40"
-                                    }`}
-                                    title={v.isAvailable ? "Click to mark Out of Stock" : "Click to mark In Stock"}
-                                  >
-                                    {v.isAvailable ? (
-                                      <>
-                                        <FaCheck className="h-2.5 w-2.5" /> In Stock
-                                      </>
-                                    ) : (
-                                      <>
-                                        <FaTimes className="h-2.5 w-2.5" /> Out of Stock
-                                      </>
-                                    )}
-                                  </button>
-                                </td>
-
-                                {/* Active (Visibility) Toggle */}
-                                <td className="py-2.5 px-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVariantChange(vIdx, "isActive", !v.isActive)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer transition-all ${
-                                      v.isActive
-                                        ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-                                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
-                                    }`}
-                                    title={v.isActive ? "Variant is active and visible to buyers" : "Variant is hidden / discontinued"}
-                                  >
-                                    {v.isActive ? "Active" : "Hidden"}
-                                  </button>
-                                </td>
-
-                                {/* Action: Delete variant */}
-                                <td className="py-2.5 px-2 text-center">
-                                  {variants.length > 1 ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveVariant(vIdx)}
-                                      className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer transition-colors"
-                                      title={`Delete this ${variantTypeName || "variant"}`}
-                                    >
-                                      <FaTrash className="h-3.5 w-3.5" />
-                                    </button>
-                                  ) : (
-                                    <span className="text-gray-300 dark:text-gray-700 text-xs">—</span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 p-8 text-center space-y-3">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        No variants added yet. Click the button below to add your first variant.
-                      </p>
                       <button
                         type="button"
-                        onClick={handleAddVariant}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#9B4F5E] hover:bg-[#85404E] text-white shadow-xs cursor-pointer transition-all"
+                        onClick={handleApplyBulkRegularToCombinations}
+                        className="px-2.5 py-1 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold text-gray-800 dark:text-gray-200"
                       >
-                        <FaPlus className="h-3 w-3" /> Add {variantTypeName || "Variant"}
+                        Apply to All
                       </button>
                     </div>
-                  )}
 
-                  {/* Bottom Action Bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleAddVariant}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-[#9B4F5E] dark:text-pink-300 bg-pink-50 dark:bg-pink-950/40 border border-[#9B4F5E]/30 hover:bg-[#9B4F5E]/15 hover:border-[#9B4F5E]/50 cursor-pointer transition-all shadow-2xs self-start"
-                    >
-                      <FaPlus className="h-3.5 w-3.5" />
-                      <span>Add {variantTypeName || "Variant"}</span>
-                    </button>
-
-                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {variants.length} {variants.length === 1 ? "variant" : "variants"} configured
+                    <div className="flex items-center gap-1">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                          ৳
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={bulkCostPrice}
+                          onChange={(e) => setBulkCostPrice(e.target.value)}
+                          placeholder="Cost Price"
+                          className="w-32 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleApplyBulkCostToCombinations}
+                        className="px-2.5 py-1 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold text-gray-800 dark:text-gray-200"
+                      >
+                        Apply to All
+                      </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* Summary Helper */}
-                  {variants.length > 0 && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-100/60 dark:border-pink-900/30 text-[11px] text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#9B4F5E]" />
-                        The lowest active variant price (
-                        <strong className="text-[#9B4F5E] dark:text-pink-400 font-bold">
-                          ৳
-                          {variants
-                            .filter((v) => v.isActive && (v.salePrice || v.price || v.regularPrice))
-                            .reduce((min, v) => {
-                              const num = parseFloat(v.salePrice || v.price || v.regularPrice);
-                              return !isNaN(num) && (min === null || num < min) ? num : min;
-                            }, null) ?? 0}
-                        </strong>
-                        ) will be displayed as the starting price across the store.
-                      </span>
-                      <span className="text-gray-500 dark:text-gray-400">
-                        Inactive variants remain preserved for historical orders but hidden from shoppers.
-                      </span>
-                    </div>
-                  )}
+                {/* Combinations Matrix Table */}
+                <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50/90 dark:bg-gray-800/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                      <tr>
+                        <th className="py-3 px-3 w-10 text-center">#</th>
+                        <th className="py-3 px-3 min-w-[100px]">Size</th>
+                        <th className="py-3 px-3 min-w-[160px]">Shade</th>
+                        <th className="py-3 px-3 min-w-[150px]">Images</th>
+                        <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
+                        <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
+                        <th className="py-3 px-3 w-12 text-center">Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                      {combinations.map((combo, idx) => {
+                        const marginInfo = getMarginInfo(combo.regularPrice, combo.costPrice);
+                        return (
+                          <tr key={combo.id || idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors">
+                            <td className="py-3 px-3 text-center text-xs font-semibold text-gray-400">
+                              {idx + 1}
+                            </td>
+
+                            {/* Size (Read-only) */}
+                            <td className="py-3 px-3">
+                              <span className="inline-block px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 font-bold text-gray-800 dark:text-gray-200 text-xs">
+                                {combo.sizeValue}{combo.sizeUnit}
+                              </span>
+                            </td>
+
+                            {/* Shade Color + Name (Read-only) */}
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+                                  style={{ backgroundColor: combo.shadeColor || "#E8A0B4" }}
+                                />
+                                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                  {combo.shadeName}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Images */}
+                            <td className="py-3 px-3">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {(combo.imageUrls || []).map((url, uIdx) => (
+                                  <div
+                                    key={uIdx}
+                                    className="relative group w-9 h-9 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shrink-0"
+                                  >
+                                    <img src={url} alt="Variant" className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveImageFromRow("size_shade", idx, url)}
+                                      className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Remove image"
+                                    >
+                                      <FaTimes className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => setImageModalTarget({ type: "size_shade", index: idx })}
+                                  className="h-9 px-2.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 hover:border-[#9B4F5E] dark:hover:border-pink-400 text-gray-500 hover:text-[#9B4F5E] dark:hover:text-pink-400 flex items-center gap-1 text-[11px] font-semibold transition-colors shrink-0"
+                                >
+                                  <FaImages className="w-3 h-3" />
+                                  <span>{(combo.imageUrls || []).length > 0 ? `${combo.imageUrls.length} selected` : "+ Photos"}</span>
+                                </button>
+                              </div>
+                            </td>
+
+                            {/* Regular Price (Editable) */}
+                            <td className="py-3 px-3">
+                              <div className="relative">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                                  ৳
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={combo.regularPrice || ""}
+                                  onChange={(e) => handleCombinationChange(idx, "regularPrice", e.target.value)}
+                                  placeholder="0.00"
+                                  className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                    clientErrors[`combo_${idx}_regularPrice`]
+                                      ? "border-red-500 ring-1 ring-red-500"
+                                      : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                                  }`}
+                                />
+                              </div>
+                              {clientErrors[`combo_${idx}_regularPrice`] && (
+                                <p className="mt-1 text-[10px] text-red-500">
+                                  {clientErrors[`combo_${idx}_regularPrice`]}
+                                </p>
+                              )}
+                            </td>
+
+                            {/* Cost Price (Editable) */}
+                            <td className="py-3 px-3">
+                              <div className="relative">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                                  ৳
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={combo.costPrice || ""}
+                                  onChange={(e) => handleCombinationChange(idx, "costPrice", e.target.value)}
+                                  placeholder="0.00"
+                                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 pl-6 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                                />
+                              </div>
+                              {marginInfo && (
+                                <div className="mt-1">
+                                  {marginInfo.warning ? (
+                                    <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                      ⚠️ Cost exceeds regular price
+                                    </span>
+                                  ) : (
+                                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                      {marginInfo.margin}% Margin
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Delete Combination */}
+                            <td className="py-3 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCombinationRow(idx)}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                                title="Delete combination row"
+                              >
+                                <FaTrash className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </div>
 
-            {/* SECTION 4: Skincare & Cosmetics Specifications */}
+      {/* SECTION 4: Skincare & Cosmetics Specifications */}
           <div className="rounded-3xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-xs space-y-4">
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 pb-3">
               4. Skincare & Cosmetic Specifications
@@ -2203,7 +2849,198 @@ export default function ProductForm({
             </div>
           </div>
         </div>
+      )}      {/* ── Switch Variant Type Confirmation Modal ── */}
+      {switchConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-2xl text-center max-h-[85vh] flex flex-col">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 shrink-0">
+              <FaExclamationTriangle className="w-6 h-6" />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                Change Variant Type?
+              </h3>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                Switching variant types will clear your current variant inputs and combinations. Do you want to proceed?
+              </p>
+            </div>
+            <div className="mt-5 flex items-center justify-center gap-2.5 shrink-0 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setSwitchConfirmModalOpen(false);
+                  setPendingVariantType(null);
+                }}
+                className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50"
+              >
+                Keep Current
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSwitchType}
+                className="rounded-full bg-[#9B4F5E] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#85414f]"
+              >
+                Switch & Clear
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* ── Variant Image Selection Modal (from Section 2) ── */}
+      {imageModalTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-400">
+                  <FaImages className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    Select Images for Variant
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Choose one or more photos uploaded in Section 2.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setImageModalTarget(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4">
+              {availableProductImages.length === 0 ? (
+                <div className="text-center py-10 space-y-2">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    No product images uploaded in Section 2 yet.
+                  </p>
+                  <p className="text-xs text-gray-500 max-w-md mx-auto">
+                    Please upload photos under &quot;2. Product Images&quot; above first. You can then assign them to specific variants here.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {availableProductImages.map((img, i) => {
+                    let currentSelected = [];
+                    if (imageModalTarget.type === "shade_only") {
+                      currentSelected = shades[imageModalTarget.index]?.imageUrls || [];
+                    } else if (imageModalTarget.type === "size_only") {
+                      currentSelected = sizes[imageModalTarget.index]?.imageUrls || [];
+                    } else if (imageModalTarget.type === "size_shade") {
+                      currentSelected = combinations[imageModalTarget.index]?.imageUrls || [];
+                    }
+                    const isSelected = currentSelected.includes(img.url);
+
+                    return (
+                      <div
+                        key={img.id || i}
+                        onClick={() => handleToggleImageForTarget(img.url)}
+                        className={`relative group aspect-square rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-[#9B4F5E] ring-2 ring-[#9B4F5E]/30"
+                            : "border-gray-200 dark:border-gray-700 hover:border-gray-400"
+                        }`}
+                      >
+                        <img
+                          src={img.url}
+                          alt="Product"
+                          className="w-full h-full object-cover"
+                        />
+                        <div
+                          className={`absolute inset-0 transition-opacity ${
+                            isSelected
+                              ? "bg-[#9B4F5E]/20"
+                              : "bg-black/0 group-hover:bg-black/10"
+                          }`}
+                        />
+                        <div
+                          className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                            isSelected
+                              ? "bg-[#9B4F5E] text-white shadow"
+                              : "bg-white/80 dark:bg-gray-800/80 text-transparent border border-gray-300 dark:border-gray-600"
+                          }`}
+                        >
+                          <FaCheck className="w-3 h-3" />
+                        </div>
+                        {img.isPrimary && (
+                          <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-semibold">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3 shrink-0">
+              <span className="text-xs text-gray-500">
+                {(() => {
+                  let count = 0;
+                  if (imageModalTarget.type === "shade_only") {
+                    count = (shades[imageModalTarget.index]?.imageUrls || []).length;
+                  } else if (imageModalTarget.type === "size_only") {
+                    count = (sizes[imageModalTarget.index]?.imageUrls || []).length;
+                  } else if (imageModalTarget.type === "size_shade") {
+                    count = (combinations[imageModalTarget.index]?.imageUrls || []).length;
+                  }
+                  return `${count} image${count === 1 ? "" : "s"} selected for this variant`;
+                })()}
+              </span>
+              <button
+                type="button"
+                onClick={() => setImageModalTarget(null)}
+                className="rounded-full bg-[#9B4F5E] px-5 py-2 text-xs font-semibold text-white hover:bg-[#85414f]"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Combination Row Confirmation Modal ── */}
+      {deleteComboConfirmIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-2xl text-center max-h-[85vh] flex flex-col">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center mb-3 shrink-0">
+              <FaTrash className="w-6 h-6" />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                Remove Combination?
+              </h3>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                This combination has entered prices or images. Are you sure you want to delete this row?
+              </p>
+            </div>
+            <div className="mt-5 flex items-center justify-center gap-2.5 shrink-0 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setDeleteComboConfirmIndex(null)}
+                className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCombination}
+                className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+              >
+                Remove Row
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
