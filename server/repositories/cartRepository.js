@@ -89,6 +89,13 @@ class CartRepository {
                   ),
                   pv_all.options_key
                 ),
+                'swatchHex', (
+                  SELECT ov2.swatch_hex
+                  FROM variant_option_values vov2
+                  JOIN option_values ov2 ON ov2.id = vov2.option_value_id
+                  WHERE vov2.variant_id = pv_all.id AND ov2.swatch_hex IS NOT NULL
+                  LIMIT 1
+                ),
                 'price', pv_all.price,
                 'salePrice', pv_all.sale_price,
                 'regularPrice', pv_all.regular_price,

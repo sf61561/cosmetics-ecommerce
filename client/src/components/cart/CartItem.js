@@ -3,17 +3,31 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FaTrashAlt, FaMinus, FaPlus, FaHeart, FaExclamationTriangle, FaSpinner } from "react-icons/fa";
+import {
+  FaTrashAlt,
+  FaMinus,
+  FaPlus,
+  FaHeart,
+  FaExclamationTriangle,
+  FaSpinner,
+  FaCheck,
+} from "react-icons/fa";
 import { interactionService } from "@/services/interactionService";
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80";
 
-export default function CartItem({ item = {}, onUpdateQuantity, onUpdateVariant, onRemove, onNotify }) {
+export default function CartItem({
+  item = {},
+  onUpdateQuantity,
+  onUpdateVariant,
+  onRemove,
+  onNotify,
+}) {
   const [imgSrc, setImgSrc] = useState(item?.thumbnailUrl || FALLBACK_IMAGE);
   const [prevThumbnail, setPrevThumbnail] = useState(item?.thumbnailUrl);
   const [isUpdatingQty, setIsUpdatingQty] = useState(false);
   const [isUpdatingVariant, setIsUpdatingVariant] = useState(false);
-  const [showChangeVariant, setShowChangeVariant] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isWishlisting, setIsWishlisting] = useState(false);
 
@@ -37,7 +51,6 @@ export default function CartItem({ item = {}, onUpdateQuantity, onUpdateVariant,
       }
     } finally {
       setIsUpdatingVariant(false);
-      setShowChangeVariant(false);
     }
   };
 
@@ -151,76 +164,118 @@ export default function CartItem({ item = {}, onUpdateQuantity, onUpdateVariant,
             {/* Product Title */}
             <Link
               href={`/products/${item?.slug || item?.productId || ""}`}
-              className="font-serif text-sm sm:text-base font-semibold text-gray-900 dark:text-white hover:text-[#9B4F5E] dark:hover:text-rose-300 transition-colors line-clamp-2 leading-snug mb-1"
+              className="font-serif text-sm sm:text-base font-semibold text-gray-900 dark:text-white hover:text-[#9B4F5E] dark:hover:text-rose-300 transition-colors line-clamp-2 leading-snug mb-2"
             >
               {item?.name || "Product"}
             </Link>
 
-            {/* Required Variant Selector Alert Banner & Dropdown */}
+            {/* ── Case 1: Unselected Variant Attention Banner with Toggle Pills ── */}
             {item?.requiresVariantSelection && (
-              <div className="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs">
-                <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-200 font-semibold mb-2">
-                  <FaExclamationTriangle className="text-amber-600 dark:text-amber-400 shrink-0 text-xs" />
-                  <span>Please choose your shade or size before checkout</span>
+              <div className="mb-3 p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-200 font-semibold">
+                    <FaExclamationTriangle className="text-amber-600 dark:text-amber-400 shrink-0 text-xs" />
+                    <span>Please choose your shade or size:</span>
+                  </div>
+                  {isUpdatingVariant && (
+                    <span className="flex items-center gap-1 text-[11px] text-[#9B4F5E] dark:text-pink-300 font-medium">
+                      <FaSpinner className="animate-spin text-[10px]" />
+                      <span>Saving...</span>
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <select
-                    id={`variant-select-${item?.id}`}
-                    value=""
-                    onChange={(e) => handleVariantChange(e.target.value)}
-                    disabled={isUpdatingVariant}
-                    className="flex-1 text-xs font-semibold rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 px-2.5 focus:outline-hidden focus:ring-2 focus:ring-[#9B4F5E] cursor-pointer"
-                  >
-                    <option value="" disabled>
-                      {isUpdatingVariant ? "Updating option..." : "— Choose Shade / Size —"}
-                    </option>
-                    {variantsList.map((v) => (
-                      <option key={v.id} value={v.id} disabled={!v.isAvailable}>
-                        {v.name || "Option"} • ৳{Number(v.price || 0).toLocaleString()} {!v.isAvailable ? "(Out of stock)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {isUpdatingVariant && (
-                    <FaSpinner className="animate-spin text-xs text-[#9B4F5E]" />
-                  )}
+                {/* Toggle Pill Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {variantsList.map((v) => {
+                    const isSelected = item?.variantId === v.id;
+                    const isAvail = v.isAvailable !== false;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => handleVariantChange(v.id)}
+                        disabled={!isAvail || isUpdatingVariant}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-2 ${
+                          isSelected
+                            ? "bg-[#9B4F5E] text-white border-[#9B4F5E] shadow-2xs cursor-default"
+                            : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-[#9B4F5E] hover:text-[#9B4F5E]"
+                        } ${!isAvail ? "opacity-40 line-through cursor-not-allowed" : ""}`}
+                      >
+                        {v.swatchHex && (
+                          <span
+                            className="h-3.5 w-3.5 rounded-full border border-black/15 shadow-2xs shrink-0 inline-block"
+                            style={{ backgroundColor: v.swatchHex }}
+                          />
+                        )}
+                        <span>{v.name || "Option"}</span>
+                        <span className="text-[10px] opacity-75 font-normal">
+                          • ৳{Number(v.price || 0).toLocaleString()}
+                        </span>
+                        {isSelected && <FaCheck className="text-[9px] ml-0.5" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Variant Combination Badge (with Change option) */}
-            {item?.variantName && (
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9B4F5E] dark:text-pink-300 bg-pink-50 dark:bg-pink-950/40 border border-pink-200/60 dark:border-pink-900/40 px-2 py-0.5 rounded-md">
-                  {item.variantName}
-                </span>
+            {/* ── Case 2: Selected Variant with Interactive Toggle Pills (PDP Style) ── */}
+            {!item?.requiresVariantSelection && (
+              <div className="mb-2.5 space-y-1.5">
+                {variantsList.length > 1 ? (
+                  <>
+                    <div className="flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <span>Option:</span>
+                        <span className="font-bold text-[#9B4F5E] dark:text-pink-300">
+                          {item?.variantName || "Selected"}
+                        </span>
+                      </span>
+                      {isUpdatingVariant && (
+                        <span className="flex items-center gap-1 text-[11px] text-[#9B4F5E] dark:text-pink-300 font-medium">
+                          <FaSpinner className="animate-spin text-[10px]" />
+                          <span>Updating...</span>
+                        </span>
+                      )}
+                    </div>
 
-                {variantsList.length > 1 && (
-                  <div className="relative inline-block">
-                    {showChangeVariant ? (
-                      <select
-                        value={item?.variantId || ""}
-                        onChange={(e) => handleVariantChange(e.target.value)}
-                        disabled={isUpdatingVariant}
-                        className="text-[11px] font-medium rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-0.5 px-2 focus:outline-hidden focus:ring-1 focus:ring-[#9B4F5E] cursor-pointer"
-                      >
-                        {variantsList.map((v) => (
-                          <option key={v.id} value={v.id} disabled={!v.isAvailable}>
-                            {v.name || "Option"} • ৳{Number(v.price || 0).toLocaleString()} {!v.isAvailable ? "(Out of stock)" : ""}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowChangeVariant(true)}
-                        className="text-[11px] text-gray-500 hover:text-[#9B4F5E] dark:text-gray-400 dark:hover:text-pink-300 underline font-medium cursor-pointer"
-                      >
-                        Change
-                      </button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {variantsList.map((v) => {
+                        const isSelected = item?.variantId === v.id;
+                        const isAvail = v.isAvailable !== false;
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => handleVariantChange(v.id)}
+                            disabled={!isAvail || isUpdatingVariant || isSelected}
+                            className={`px-2.5 py-1 rounded-xl text-xs border transition-all flex items-center gap-1.5 ${
+                              isSelected
+                                ? "bg-[#9B4F5E] text-white border-[#9B4F5E] shadow-2xs cursor-default font-semibold"
+                                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-[#9B4F5E] hover:text-[#9B4F5E] cursor-pointer font-medium"
+                            } ${!isAvail ? "opacity-40 line-through cursor-not-allowed" : ""}`}
+                          >
+                            {v.swatchHex && (
+                              <span
+                                className="h-3 w-3 rounded-full border border-black/15 shadow-2xs shrink-0 inline-block"
+                                style={{ backgroundColor: v.swatchHex }}
+                              />
+                            )}
+                            <span>{v.name || "Option"}</span>
+                            {isSelected && <FaCheck className="text-[9px] ml-0.5" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : item?.variantName ? (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9B4F5E] dark:text-pink-300 bg-pink-50 dark:bg-pink-950/40 border border-pink-200/60 dark:border-pink-900/40 px-2.5 py-0.5 rounded-lg">
+                      {item.variantName}
+                    </span>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
 
@@ -286,7 +341,11 @@ export default function CartItem({ item = {}, onUpdateQuantity, onUpdateVariant,
                 type="button"
                 suppressHydrationWarning
                 onClick={() => handleQuantityChange(1)}
-                disabled={Number(item?.quantity || 1) >= Number(item?.stockQuantity || 9999) || isUpdatingQty || isBlocked}
+                disabled={
+                  Number(item?.quantity || 1) >= Number(item?.stockQuantity || 9999) ||
+                  isUpdatingQty ||
+                  isBlocked
+                }
                 aria-label="Increase quantity"
                 className="w-7 h-7 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
               >

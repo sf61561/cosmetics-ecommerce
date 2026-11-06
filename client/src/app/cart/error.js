@@ -53,3 +53,4 @@ export default function CartError({ error, reset }) {
     </div>
   );
 }
+
