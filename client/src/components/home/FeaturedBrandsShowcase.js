@@ -6,16 +6,23 @@ import { FaArrowRight, FaSpinner } from "react-icons/fa";
 import { brandService } from "@/services/brandService";
 import BrandLogo from "@/components/common/BrandLogo";
 
-export default function FeaturedBrandsShowcase() {
-  const [brands, setBrands] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function FeaturedBrandsShowcase({ initialBrands = [] }) {
+  const [brands, setBrands] = useState(initialBrands);
+  const [isLoading, setIsLoading] = useState(initialBrands.length === 0);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    if (initialBrands && initialBrands.length > 0) {
+      setBrands(initialBrands);
+      setIsLoading(false);
+      return;
+    }
+
     let isSubscribed = true;
 
     async function loadTopBrands() {
       try {
+        setIsLoading(true);
         const res = await brandService.getTopBrands(3);
         if (isSubscribed && res?.success && Array.isArray(res.data)) {
           setBrands(res.data.slice(0, 3));
@@ -35,7 +42,7 @@ export default function FeaturedBrandsShowcase() {
     return () => {
       isSubscribed = false;
     };
-  }, []);
+  }, [initialBrands]);
 
   return (
     <section className="w-full bg-[#FCF8F8]/50 dark:bg-gray-950 py-16 sm:py-20 lg:py-24 border-t border-b border-pink-100/40 dark:border-gray-800/60">

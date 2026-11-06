@@ -6,50 +6,29 @@ import Link from "next/link";
 import { FaArrowRight, FaSpinner } from "react-icons/fa";
 import { collectionService } from "@/services/collectionService";
 
-// Fallback high-quality curated collections matching the exact design mockup
-const FALLBACK_TOP_COLLECTIONS = [
-  {
-    id: "fallback-hydration-glow",
-    name: "Hydration & Glow",
-    slug: "hydration-and-glow",
-    description: "Deeply quenching hyaluronic acid, essences, and brightening serums for luminous glass skin.",
-    imageUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&auto=format&fit=crop&q=80",
-    salesCount: 2450,
-  },
-  {
-    id: "fallback-calm-soothe",
-    name: "Calm & Soothe",
-    slug: "calm-and-soothe",
-    description: "Centella Asiatica, heartleaf, and soothing green tea infusions to calm irritated skin barriers.",
-    imageUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80",
-    salesCount: 1890,
-  },
-  {
-    id: "fallback-age-defying",
-    name: "Age Defying",
-    slug: "age-defying",
-    description: "Potent Korean red ginseng, peptide complexes, and retinol alternatives to firm and restore youthfulness.",
-    imageUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80",
-    salesCount: 1420,
-  },
-];
-
-export default function CollectionsShowcase() {
-  const [collections, setCollections] = useState(FALLBACK_TOP_COLLECTIONS);
-  const [isLoading, setIsLoading] = useState(true);
+export default function CollectionsShowcase({ initialCollections = [] }) {
+  const [collections, setCollections] = useState(initialCollections);
+  const [isLoading, setIsLoading] = useState(initialCollections.length === 0);
 
   useEffect(() => {
+    // If SSR already provided the collections, no need to re-fetch
+    if (initialCollections && initialCollections.length > 0) {
+      setCollections(initialCollections);
+      setIsLoading(false);
+      return;
+    }
+
     let isSubscribed = true;
 
     async function loadTopCollections() {
       try {
+        setIsLoading(true);
         const res = await collectionService.getTopCollections(3);
-        if (isSubscribed && res?.success && Array.isArray(res.data) && res.data.length > 0) {
+        if (isSubscribed && res?.success && Array.isArray(res.data)) {
           setCollections(res.data.slice(0, 3));
         }
       } catch (err) {
-        // Fallback already pre-populated
-        console.warn("Using curated collections fallback:", err.message);
+        console.warn("Unable to load top collections:", err.message);
       } finally {
         if (isSubscribed) {
           setIsLoading(false);
@@ -62,7 +41,7 @@ export default function CollectionsShowcase() {
     return () => {
       isSubscribed = false;
     };
-  }, []);
+  }, [initialCollections]);
 
   return (
     <section className="w-full bg-white py-16 sm:py-20 lg:py-24">
@@ -83,9 +62,17 @@ export default function CollectionsShowcase() {
         {/* ── Top 3 Most Sales Collections Grid ── */}
         <div className="mt-12 sm:mt-16">
           {isLoading && collections.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-3">
-              <FaSpinner className="h-8 w-8 animate-spin text-[#9B4F5E]" />
-              <p className="text-xs text-gray-400">Curating top collections...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="flex flex-col items-center bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-xs animate-pulse"
+                >
+                  <div className="w-full aspect-[4/5] rounded-2xl bg-gray-100" />
+                  <div className="mt-5 h-6 w-36 bg-gray-100 rounded-full" />
+                  <div className="mt-4 h-8 w-24 bg-gray-100 rounded-full" />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">

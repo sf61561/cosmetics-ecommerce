@@ -9,60 +9,31 @@ import { interactionService } from "@/services/interactionService";
 import { useCart } from "@/context/CartContext";
 import WishlistButton from "@/components/product/WishlistButton";
 
-// Fallback products if backend is cold-starting
-const FALLBACK_ARRIVALS = [
-  {
-    id: "fb-arr-snail92",
-    name: "Advanced Snail 92 All in One Cream",
-    slug: "cosrx-advanced-snail-92-all-in-one-cream",
-    brand: { name: "COSRX", slug: "cosrx" },
-    price: 1850,
-    thumbnailUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "fb-arr-birch",
-    name: "Birch Juice Moisturizing Sunscreen",
-    slug: "round-lab-birch-juice-moisturizing-sunscreen",
-    brand: { name: "ROUND LAB", slug: "round-lab" },
-    price: 2100,
-    thumbnailUrl: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "fb-arr-heartleaf",
-    name: "Heartleaf 77% Soothing Toner",
-    slug: "anua-heartleaf-77-soothing-toner",
-    brand: { name: "ANUA", slug: "anua" },
-    price: 2250,
-    thumbnailUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "fb-arr-ginseng",
-    name: "Ginseng Cleansing Oil",
-    slug: "beauty-of-joseon-ginseng-cleansing-oil",
-    brand: { name: "BEAUTY OF JOSEON", slug: "beauty-of-joseon" },
-    price: 2450,
-    thumbnailUrl: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80",
-  },
-];
-
-export default function NewArrivalsSection() {
+export default function NewArrivalsSection({ initialProducts = [] }) {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState(FALLBACK_ARRIVALS);
-  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState(initialProducts);
+  const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
   const [addedIds, setAddedIds] = useState(new Set());
 
   useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      setProducts(initialProducts);
+      setIsLoading(false);
+      return;
+    }
+
     let isSubscribed = true;
 
     async function loadNewArrivals() {
       try {
+        setIsLoading(true);
         const res = await productService.getNewArrivals(8);
         if (isSubscribed && res?.success && Array.isArray(res.data) && res.data.length > 0) {
           // Display top 4 on the homepage showcase
           setProducts(res.data.slice(0, 4));
         }
       } catch (err) {
-        console.warn("Using new arrivals fallback:", err.message);
+        console.warn("Unable to load new arrivals:", err.message);
       } finally {
         if (isSubscribed) {
           setIsLoading(false);
@@ -75,7 +46,7 @@ export default function NewArrivalsSection() {
     return () => {
       isSubscribed = false;
     };
-  }, []);
+  }, [initialProducts]);
 
   const handleAddToCart = async (e, product) => {
     e.preventDefault();

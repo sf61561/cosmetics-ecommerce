@@ -21,8 +21,55 @@ async function getHeroSlides() {
   }
 }
 
+async function getTopCollections() {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const res = await fetch(`${apiUrl}/api/collections/top?limit=3`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.data) ? data.data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function getNewArrivals() {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const res = await fetch(`${apiUrl}/api/products/new-arrivals?limit=8`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.data) ? data.data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function getTopBrands() {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const res = await fetch(`${apiUrl}/api/brands/top?limit=3`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.data) ? data.data : [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function Home() {
-  const heroSlides = await getHeroSlides();
+  const [heroSlides, topCollections, newArrivals, topBrands] = await Promise.all([
+    getHeroSlides(),
+    getTopCollections(),
+    getNewArrivals(),
+    getTopBrands(),
+  ]);
 
   return (
     <AdminHomeRedirect>
@@ -30,10 +77,10 @@ export default async function Home() {
         <Navbar />
         <main className="flex-1">
           <HeroSlider initialSlides={heroSlides} />
-          <CollectionsShowcase />
-          <NewArrivalsSection />
+          <CollectionsShowcase initialCollections={topCollections} />
+          <NewArrivalsSection initialProducts={newArrivals.slice(0, 4)} />
           <RecommendedProducts />
-          <FeaturedBrandsShowcase />
+          <FeaturedBrandsShowcase initialBrands={topBrands} />
         </main>
         <Footer />
       </div>
