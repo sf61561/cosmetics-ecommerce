@@ -15,10 +15,12 @@ router.get("/", async (req, res, next) => {
       sortBy = "sales_count",
       sortOrder = "DESC",
       search = "",
+      tag = "",
     } = req.query;
 
     const result = await collectionService.getCollections({
       search,
+      tag,
       status: "active",
       page: parseInt(page, 10) || 1,
       limit: parseInt(limit, 10) || 12,

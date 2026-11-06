@@ -7,6 +7,7 @@ const collectionRepository = {
   async findAll({
     search = "",
     status = "all",
+    tag = "",
     page = 1,
     limit = 10,
     sortBy = "created_at",
@@ -33,6 +34,20 @@ const collectionRepository = {
       conditions.push("c.is_active = true");
     } else if (status === "inactive") {
       conditions.push("c.is_active = false");
+    }
+
+    // Tag filter
+    if (tag && tag.trim() && tag !== "all") {
+      values.push(`%${tag.trim().toLowerCase()}%`);
+      const tagIndex = values.length;
+      conditions.push(
+        `(LOWER(c.name) LIKE $${tagIndex} OR LOWER(c.slug) LIKE $${tagIndex} OR LOWER(COALESCE(c.description, '')) LIKE $${tagIndex} OR EXISTS (
+           SELECT 1 FROM product_collections pc2
+           JOIN product_tags pt ON pt.product_id = pc2.product_id
+           JOIN tags t ON t.id = pt.tag_id
+           WHERE pc2.collection_id = c.id AND (LOWER(t.name) LIKE $${tagIndex} OR LOWER(t.slug) LIKE $${tagIndex})
+         ))`
+      );
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -84,7 +99,7 @@ const collectionRepository = {
   /**
    * Count total collections matching search & status filters
    */
-  async countFiltered({ search = "", status = "all" }) {
+  async countFiltered({ search = "", status = "all", tag = "" }) {
     const conditions = [];
     const values = [];
 
@@ -92,18 +107,31 @@ const collectionRepository = {
       values.push(`%${search.trim().toLowerCase()}%`);
       const searchIndex = values.length;
       conditions.push(
-        `(LOWER(name) LIKE $${searchIndex} OR LOWER(slug) LIKE $${searchIndex} OR LOWER(COALESCE(description, '')) LIKE $${searchIndex})`
+        `(LOWER(c.name) LIKE $${searchIndex} OR LOWER(c.slug) LIKE $${searchIndex} OR LOWER(COALESCE(c.description, '')) LIKE $${searchIndex})`
       );
     }
 
     if (status === "active") {
-      conditions.push("is_active = true");
+      conditions.push("c.is_active = true");
     } else if (status === "inactive") {
-      conditions.push("is_active = false");
+      conditions.push("c.is_active = false");
+    }
+
+    if (tag && tag.trim() && tag !== "all") {
+      values.push(`%${tag.trim().toLowerCase()}%`);
+      const tagIndex = values.length;
+      conditions.push(
+        `(LOWER(c.name) LIKE $${tagIndex} OR LOWER(c.slug) LIKE $${tagIndex} OR LOWER(COALESCE(c.description, '')) LIKE $${tagIndex} OR EXISTS (
+           SELECT 1 FROM product_collections pc2
+           JOIN product_tags pt ON pt.product_id = pc2.product_id
+           JOIN tags t ON t.id = pt.tag_id
+           WHERE pc2.collection_id = c.id AND (LOWER(t.name) LIKE $${tagIndex} OR LOWER(t.slug) LIKE $${tagIndex})
+         ))`
+      );
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    const sql = `SELECT COUNT(*)::int AS total FROM collections ${whereClause};`;
+    const sql = `SELECT COUNT(*)::int AS total FROM collections c ${whereClause};`;
     const res = await query(sql, values);
 
     return res.rows[0]?.total || 0;

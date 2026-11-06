@@ -7,12 +7,33 @@ import { FaArrowRight, FaSpinner, FaChevronDown } from "react-icons/fa";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { collectionService } from "@/services/collectionService";
+import { tagService } from "@/services/tagService";
 
 export default function CollectionsPage() {
   const [collections, setCollections] = useState([]);
+  const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [needFilter, setNeedFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [sortBy, setSortBy] = useState("sales_count");
+
+  // Load active tags for the filter dropdown
+  useEffect(() => {
+    let isMounted = true;
+    async function loadTags() {
+      try {
+        const res = await tagService.getPublicTags({ limit: 50, sortBy: "name", sortOrder: "ASC" });
+        if (isMounted && res?.tags && Array.isArray(res.tags)) {
+          setTags(res.tags);
+        }
+      } catch (err) {
+        console.warn("Failed to load tags for filter:", err);
+      }
+    }
+    loadTags();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -24,6 +45,7 @@ export default function CollectionsPage() {
           limit: 24,
           sortBy,
           sortOrder: sortBy === "name" ? "ASC" : "DESC",
+          tag: tagFilter !== "all" ? tagFilter : undefined,
         });
 
         if (isSubscribed && res?.success && Array.isArray(res.data)) {
@@ -43,13 +65,17 @@ export default function CollectionsPage() {
     return () => {
       isSubscribed = false;
     };
-  }, [sortBy]);
+  }, [sortBy, tagFilter]);
 
-  // Client-side filtering by skin need keyword if selected
+  // Client-side filtering fallback by tag keyword if selected
   const filteredCollections = collections.filter((col) => {
-    if (needFilter === "all") return true;
-    const text = `${col.name} ${col.description}`.toLowerCase();
-    return text.includes(needFilter.toLowerCase());
+    if (tagFilter === "all" || !tagFilter) return true;
+    const filterTerm = tagFilter.toLowerCase().replace(/-/g, " ");
+    const text = `${col.name} ${col.description || ""}`.toLowerCase();
+    return (
+      text.includes(filterTerm) ||
+      filterTerm.split(" ").some((w) => w.length > 2 && text.includes(w))
+    );
   });
 
   return (
@@ -79,20 +105,19 @@ export default function CollectionsPage() {
 
           {/* ── Filters & Sorting Row ── */}
           <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-end gap-3 sm:gap-4 pb-6 border-b border-gray-100">
-            {/* Filter by Need */}
+            {/* Filter by Tag */}
             <div className="relative inline-block">
               <select
-                value={needFilter}
-                onChange={(e) => setNeedFilter(e.target.value)}
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
                 className="appearance-none rounded-full border border-gray-200 bg-white pl-4 pr-9 py-2 text-xs font-medium text-gray-700 hover:border-gray-300 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer shadow-2xs"
               >
-                <option value="all">Filter By Need (All)</option>
-                <option value="hydration">Hydration & Moisture</option>
-                <option value="soothe">Calming & Soothing</option>
-                <option value="age">Age Defying & Firming</option>
-                <option value="blemish">Clear & Acne Control</option>
-                <option value="bridal">Bridal & Radiance Glow</option>
-                <option value="sun">Sun Protection</option>
+                <option value="all">Filter By Tag (All)</option>
+                {tags.map((tag) => (
+                  <option key={tag.id || tag.slug} value={tag.slug}>
+                    {tag.name}
+                  </option>
+                ))}
               </select>
               <FaChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-gray-400" />
             </div>
@@ -121,10 +146,10 @@ export default function CollectionsPage() {
               </div>
             ) : filteredCollections.length === 0 ? (
               <div className="text-center py-16">
-                <p className="text-sm text-gray-500">No collections found matching this filter.</p>
+                <p className="text-sm text-gray-500">No collections found matching this tag.</p>
                 <button
                   type="button"
-                  onClick={() => setNeedFilter("all")}
+                  onClick={() => setTagFilter("all")}
                   className="mt-3 text-xs font-semibold text-[#9B4F5E] underline"
                 >
                   Clear filter

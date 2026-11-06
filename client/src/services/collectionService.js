@@ -159,6 +159,7 @@ export const collectionService = {
     sortBy = "sales_count",
     sortOrder = "DESC",
     search = "",
+    tag = "",
   } = {}) {
     const params = new URLSearchParams();
     if (limit) params.append("limit", limit.toString());
@@ -166,6 +167,7 @@ export const collectionService = {
     if (sortBy) params.append("sortBy", sortBy);
     if (sortOrder) params.append("sortOrder", sortOrder);
     if (search.trim()) params.append("search", search.trim());
+    if (tag && tag.trim() && tag !== "all") params.append("tag", tag.trim());
 
     const res = await fetch(`${API_BASE}/api/collections?${params.toString()}`, {
       method: "GET",

@@ -15,6 +15,7 @@ const collectionService = {
   async getCollections({
     search = "",
     status = "all",
+    tag = "",
     page = 1,
     limit = 10,
     sortBy = "created_at",
@@ -27,12 +28,13 @@ const collectionService = {
       collectionRepository.findAll({
         search,
         status,
+        tag,
         page: pageNum,
         limit: limitNum,
         sortBy,
         sortOrder,
       }),
-      collectionRepository.countFiltered({ search, status }),
+      collectionRepository.countFiltered({ search, status, tag }),
       collectionRepository.getSummaryCounts(),
     ]);
 
