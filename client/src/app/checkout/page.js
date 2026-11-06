@@ -3,21 +3,27 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FaLock, FaSpinner, FaShoppingBag, FaArrowLeft, FaShieldAlt } from "react-icons/fa";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { orderService } from "@/services/orderService";
 import { API_BASE } from "@/services/apiConfig";
-const EMPTY_ADDRESS = { label: "Home", recipientName: "", phone: "", division: "", district: "", area: "", streetAddress: "", postalCode: "" };
+
+import SavedAddressCards from "@/components/checkout/SavedAddressCards";
+import AddressForm from "@/components/checkout/AddressForm";
+import AddressSummaryCard from "@/components/checkout/AddressSummaryCard";
 
 export default function CheckoutPage() {
   const { user, isLoading: authLoading, isLoggingOut } = useAuth();
   const { cart, isLoading: cartLoading } = useCart();
   const router = useRouter();
+
   const [addresses, setAddresses] = useState([]);
-  const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [isAddressCollapsed, setIsAddressCollapsed] = useState(false);
+  const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
   const [zone, setZone] = useState("INSIDE_DHAKA");
   const [couponCode, setCouponCode] = useState("");
   const [customerNote, setCustomerNote] = useState("");
@@ -26,8 +32,11 @@ export default function CheckoutPage() {
   const [message, setMessage] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
 
+  // Authentication guard
   useEffect(() => {
-    if (!authLoading && !user && !isLoggingOut) router.replace("/auth/login?redirect=/checkout");
+    if (!authLoading && !user && !isLoggingOut) {
+      router.replace("/auth/login?redirect=/checkout");
+    }
   }, [authLoading, user, isLoggingOut, router]);
 
   // Load applied coupon from cart session storage
@@ -38,13 +47,46 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  // Automatically determine delivery zone from selected address
+  // Fetch saved customer addresses
+  useEffect(() => {
+    if (!user) return;
+    let isSubscribed = true;
+
+    fetch(`${API_BASE}/api/addresses`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isSubscribed) return;
+        const values = Array.isArray(data.data) ? data.data : [];
+        setAddresses(values);
+
+        if (values.length > 0) {
+          // Pre-select default address, or fallback to first
+          const defaultAddr = values.find((a) => a.is_default) || values[0];
+          setSelectedAddressId(defaultAddr.id);
+          setIsAddressCollapsed(true);
+        } else {
+          setIsAddingNewAddress(true);
+          setIsAddressCollapsed(false);
+        }
+      })
+      .catch((err) => {
+        if (isSubscribed) setMessage(err.message);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [user]);
+
+  // Automatically determine delivery zone whenever selectedAddressId changes
   useEffect(() => {
     if (!selectedAddressId || !addresses.length) return;
     const selectedAddr = addresses.find((item) => item.id === selectedAddressId);
     if (!selectedAddr) return;
+
     const dist = (selectedAddr.district || "").trim().toLowerCase();
     const div = (selectedAddr.division || "").trim().toLowerCase();
+
     if (dist.includes("dhaka") || (!dist && div.includes("dhaka"))) {
       setZone("INSIDE_DHAKA");
     } else {
@@ -52,33 +94,36 @@ export default function CheckoutPage() {
     }
   }, [selectedAddressId, addresses]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetch(`${API_BASE}/api/addresses`, { credentials: "include" })
-      .then((response) => response.json())
-      .then((data) => {
-        const values = data.data || [];
-        setAddresses(values);
-        if (values[0]) setSelectedAddressId(values[0].id);
-      })
-      .catch((error) => setMessage(error.message));
-  }, [user]);
-
-  const saveAddress = async (event) => {
-    event.preventDefault();
+  // Save new address from the AddressForm
+  const handleSaveNewAddress = async (formData) => {
     setIsSavingAddress(true);
+    setMessage(null);
+
     try {
       const response = await fetch(`${API_BASE}/api/addresses`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...address, isDefault: addresses.length === 0 }),
+        body: JSON.stringify({
+          label: formData.label || "Home",
+          recipientName: formData.recipientName,
+          phone: formData.phone,
+          division: formData.division || "Dhaka",
+          district: formData.district || "Dhaka",
+          area: formData.area,
+          streetAddress: formData.streetAddress,
+          postalCode: formData.postalCode || null,
+          isDefault: formData.isDefault || addresses.length === 0,
+        }),
       });
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to save address.");
-      setAddresses((previous) => [data.data, ...previous]);
+
+      setAddresses((prev) => [data.data, ...prev]);
       setSelectedAddressId(data.data.id);
-      setAddress(EMPTY_ADDRESS);
+      setIsAddingNewAddress(false);
+      setIsAddressCollapsed(true);
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -86,15 +131,26 @@ export default function CheckoutPage() {
     }
   };
 
+  // Place order submission
   const placeOrder = async () => {
-    if (!selectedAddressId) return setMessage("Select or add a delivery address.");
+    if (!selectedAddressId) {
+      return setMessage("Please select or add a delivery address to proceed.");
+    }
     setIsPlacing(true);
     setMessage(null);
+
     try {
-      const idempotencyKey = typeof window !== "undefined"
-        ? (sessionStorage.getItem("pendingOrderKey") || `${Date.now()}_${crypto.randomUUID()}`).replace(/[^A-Za-z0-9_-]/g, "")
-        : `${Date.now()}_checkout`;
-      if (typeof window !== "undefined") sessionStorage.setItem("pendingOrderKey", idempotencyKey);
+      const idempotencyKey =
+        typeof window !== "undefined"
+          ? (sessionStorage.getItem("pendingOrderKey") || `${Date.now()}_${crypto.randomUUID()}`).replace(
+              /[^A-Za-z0-9_-]/g,
+              ""
+            )
+          : `${Date.now()}_checkout`;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("pendingOrderKey", idempotencyKey);
+      }
 
       const selectedAddr = addresses.find((item) => item.id === selectedAddressId);
       const isInside = selectedAddr
@@ -121,6 +177,7 @@ export default function CheckoutPage() {
         sessionStorage.removeItem("pendingOrderKey");
         sessionStorage.removeItem("appliedCouponCode");
       }
+
       router.push(`/order-confirmation/${data.id}`);
     } catch (error) {
       setMessage(error.message);
@@ -131,123 +188,210 @@ export default function CheckoutPage() {
 
   if (authLoading || !user || cartLoading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
         <Navbar />
-        <div className="flex min-h-[50vh] items-center justify-center text-sm">Loading checkout...</div>
+        <div className="flex-1 flex flex-col items-center justify-center py-20 gap-3">
+          <FaSpinner className="animate-spin text-2xl text-[#9B4F5E]" />
+          <p className="text-xs text-gray-500">Preparing your secure checkout...</p>
+        </div>
+        <Footer />
       </div>
     );
   }
 
+  const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
+  const subtotal = Number(cart.subtotal || 0);
+  const shippingFee = zone === "INSIDE_DHAKA" ? 70 : 130;
+  const grandTotal = subtotal + shippingFee;
+
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <div className="mb-8">
-          <Link href="/cart" className="text-sm font-semibold text-[#9B4F5E]">← Back to bag</Link>
-          <h1 className="mt-3 font-serif text-3xl font-bold">Checkout</h1>
+
+      <main className="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* ── Breadcrumb & Page Title ── */}
+        <div className="mb-6">
+          <Link
+            href="/cart"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#9B4F5E] dark:text-rose-300 hover:underline"
+          >
+            <FaArrowLeft className="text-[10px]" />
+            <span>Return to Shopping Bag</span>
+          </Link>
+          <h1 className="mt-2 font-serif text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Secure Checkout
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Complete your order with Cash on Delivery across Bangladesh.
+          </p>
         </div>
-        {message && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</div>}
-        <div className="grid gap-8 lg:grid-cols-3">
-          <section className="space-y-5 lg:col-span-2">
-            <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-gray-900">
-              <h2 className="mb-4 text-lg font-semibold">Delivery address</h2>
-              {addresses.length > 0 && (
-                <select
-                  value={selectedAddressId}
-                  onChange={(event) => setSelectedAddressId(event.target.value)}
-                  className="mb-5 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-700 dark:bg-gray-800"
-                >
-                  <option value="">Select saved address</option>
-                  {addresses.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.label}: {item.recipient_name}, {item.area}, {item.district}
-                    </option>
-                  ))}
-                </select>
+
+        {/* ── Alert Error Banner ── */}
+        {message && (
+          <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 p-4 text-xs text-red-700 dark:text-red-300 flex items-start gap-2.5 animate-in fade-in">
+            <span className="font-bold shrink-0">Attention:</span>
+            <span>{message}</span>
+          </div>
+        )}
+
+        {/* ── Main Two-Column Layout ── */}
+        <div className="grid gap-8 lg:grid-cols-12 items-start">
+          {/* ── Left Column: Delivery Address & Note (8 Cols) ── */}
+          <section className="space-y-6 lg:col-span-8">
+            {/* Delivery Address Card Container */}
+            <div className="rounded-3xl bg-white dark:bg-gray-900 p-6 sm:p-8 border border-gray-200/80 dark:border-gray-800 shadow-xs">
+              {isAddressCollapsed && selectedAddr ? (
+                /* ── State 1: Collapsed Compact Summary Card ── */
+                <AddressSummaryCard
+                  address={selectedAddr}
+                  onEdit={() => {
+                    setIsAddressCollapsed(false);
+                    setIsAddingNewAddress(false);
+                  }}
+                />
+              ) : isAddingNewAddress || addresses.length === 0 ? (
+                /* ── State 2: Minimalist Modern Address Form ── */
+                <AddressForm
+                  onSubmit={handleSaveNewAddress}
+                  onCancel={
+                    addresses.length > 0
+                      ? () => {
+                          setIsAddingNewAddress(false);
+                          setIsAddressCollapsed(true);
+                        }
+                      : null
+                  }
+                  hasSavedAddresses={addresses.length > 0}
+                  isSubmitting={isSavingAddress}
+                />
+              ) : (
+                /* ── State 3: Visual Saved Address Cards ── */
+                <SavedAddressCards
+                  addresses={addresses}
+                  selectedAddressId={selectedAddressId}
+                  onSelectAddress={(id) => {
+                    setSelectedAddressId(id);
+                    setIsAddressCollapsed(true);
+                  }}
+                  onAddNewAddress={() => setIsAddingNewAddress(true)}
+                />
               )}
-              <form onSubmit={saveAddress} className="grid gap-3 sm:grid-cols-2">
-                {Object.keys(EMPTY_ADDRESS).map((key) => (
-                  <input
-                    key={key}
-                    required={key !== "label" && key !== "postalCode"}
-                    placeholder={key.replace(/([A-Z])/g, " $1")}
-                    value={address[key]}
-                    onChange={(event) => setAddress({ ...address, [key]: event.target.value })}
-                    className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm dark:border-gray-700 dark:bg-gray-800"
-                  />
-                ))}
-                <button
-                  disabled={isSavingAddress}
-                  className="rounded-xl border border-[#9B4F5E] px-4 py-3 text-sm font-semibold text-[#9B4F5E] sm:col-span-2 disabled:opacity-50"
-                >
-                  {isSavingAddress ? "Saving..." : "Save delivery address"}
-                </button>
-              </form>
             </div>
 
-            <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-gray-900">
-              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1.5">
-                Delivery Note (Optional)
+            {/* Delivery Instructions Note Card */}
+            <div className="rounded-3xl bg-white dark:bg-gray-900 p-6 sm:p-8 border border-gray-200/80 dark:border-gray-800 shadow-xs">
+              <label
+                htmlFor="customerNote"
+                className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1"
+              >
+                Delivery Instructions (Optional)
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Any specific directions or preferences for your delivery rider.
+                Any specific directions, preferred delivery time, or landmark notes for your courier rider.
               </p>
               <textarea
+                id="customerNote"
                 value={customerNote}
                 onChange={(e) => setCustomerNote(e.target.value)}
-                placeholder="e.g. Call before delivery, deliver after 3 PM, leave with security..."
+                placeholder="e.g. Call before arrival, deliver after 2 PM, leave with building security..."
                 rows={2}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 focus:outline-hidden focus:ring-1 focus:ring-[#9B4F5E]"
+                className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-xs sm:text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-[#9B4F5E] focus:ring-2 focus:ring-[#9B4F5E]/20 focus:outline-hidden transition-all"
               />
             </div>
           </section>
 
-          <aside className="h-fit rounded-3xl bg-white p-6 shadow-sm dark:bg-gray-900">
-            <h2 className="text-lg font-semibold">Order review</h2>
-            <div className="mt-4 space-y-2 text-sm">
-              <p className="text-gray-500">{cart.itemCount} item(s)</p>
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>৳{Number(cart.subtotal || 0).toLocaleString()}</span>
+          {/* ── Right Column: Order Review & Placement (4 Cols) ── */}
+          <aside className="lg:col-span-4 sticky top-24 space-y-4">
+            <div className="rounded-3xl bg-white dark:bg-gray-900 p-6 sm:p-7 border border-gray-200/80 dark:border-gray-800 shadow-xs">
+              <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800">
+                <h2 className="font-serif text-lg font-bold text-gray-900 dark:text-white">
+                  Order Summary
+                </h2>
+                <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <FaShoppingBag className="text-[10px]" />
+                  <span>{cart.itemCount || 0} units</span>
+                </span>
               </div>
-              <div className="flex justify-between font-semibold">
-                <span>Estimated total</span>
-                <span>৳{Number(cart.estimatedTotal || cart.subtotal || 0).toLocaleString()}</span>
+
+              {/* Price Breakdown */}
+              <div className="mt-4 space-y-2.5 text-xs sm:text-sm">
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                  <span>Bag Subtotal</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    ৳{subtotal.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                  <span>Delivery ({zone === "INSIDE_DHAKA" ? "Inside Dhaka" : "Nationwide"})</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    ৳{shippingFee}
+                  </span>
+                </div>
+
+                {couponCode && (
+                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl text-xs">
+                    <span>Applied Voucher</span>
+                    <span className="font-bold uppercase tracking-wider">{couponCode}</span>
+                  </div>
+                )}
+
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between items-baseline">
+                  <span className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
+                    Estimated Total
+                  </span>
+                  <span className="font-serif font-bold text-lg sm:text-xl text-[#9B4F5E] dark:text-rose-300">
+                    ৳{grandTotal.toLocaleString()}
+                  </span>
+                </div>
               </div>
+
+              {/* Order Placement CTA Button */}
+              <button
+                type="button"
+                onClick={() => setReviewOpen(true)}
+                disabled={isPlacing || cart.hasBlockingIssues || !cart.items?.length || !selectedAddressId}
+                className="mt-6 w-full rounded-full bg-[#9B4F5E] hover:bg-[#843F4E] px-5 py-3.5 text-xs sm:text-sm font-semibold text-white shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <FaLock className="text-xs" />
+                <span>Confirm Order</span>
+              </button>
+
+              {/* Modal / Drawer Confirmation Prompt */}
+              {reviewOpen && (
+                <div className="mt-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 p-4 text-xs space-y-2 animate-in fade-in">
+                  <p className="font-bold text-gray-900 dark:text-gray-100">
+                    Ready to place your Cash on Delivery order?
+                  </p>
+                  <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
+                    Delivering to{" "}
+                    <span className="font-semibold">
+                      {selectedAddr?.recipient_name || "your chosen address"}
+                    </span>
+                    . We will verify stock and prepare your beauty package immediately.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={placeOrder}
+                    disabled={isPlacing}
+                    className="mt-2 w-full rounded-xl bg-[#9B4F5E] hover:bg-[#843F4E] px-4 py-2.5 font-bold text-white shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isPlacing && <FaSpinner className="animate-spin text-xs" />}
+                    <span>{isPlacing ? "Placing Order..." : "Yes, Place Order Now"}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Security Reassurance */}
+              <p className="mt-4 text-[11px] text-gray-400 dark:text-gray-500 text-center flex items-center justify-center gap-1.5">
+                <FaShieldAlt className="text-[10px]" />
+                <span>Pay cash upon delivery. 100% authentic cosmetics.</span>
+              </p>
             </div>
-            {couponCode && (
-              <div className="mt-3 flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2 rounded-xl">
-                <span>Applied Voucher</span>
-                <span className="font-semibold uppercase tracking-wider">{couponCode}</span>
-              </div>
-            )}
-            <button
-              onClick={() => setReviewOpen(true)}
-              disabled={isPlacing || cart.hasBlockingIssues || !cart.items.length || !selectedAddressId}
-              className="mt-5 w-full rounded-full bg-[#9B4F5E] px-5 py-3.5 text-sm font-semibold text-white hover:bg-[#843F4E] disabled:opacity-50"
-            >
-              Confirm order
-            </button>
-            {reviewOpen && (
-              <div className="mt-4 rounded-xl border border-[#EED9DC] bg-[#FBF0F0] p-4 text-sm dark:border-gray-800 dark:bg-gray-800">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  Deliver to {address.recipientName || addresses.find((item) => item.id === selectedAddressId)?.recipient_name || "saved address"}
-                </p>
-                <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                  The server will verify live stock, delivery zone rules, and authoritative pricing before placing this order.
-                </p>
-                <button
-                  onClick={placeOrder}
-                  disabled={isPlacing}
-                  className="mt-3 w-full rounded-xl bg-[#9B4F5E] px-4 py-2.5 font-semibold text-white hover:bg-[#843F4E] disabled:opacity-50"
-                >
-                  {isPlacing ? "Placing order..." : "Place order now"}
-                </button>
-              </div>
-            )}
           </aside>
         </div>
       </main>
+
       <Footer />
     </div>
   );
