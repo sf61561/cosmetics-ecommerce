@@ -91,7 +91,7 @@ export default function CollectionsShowcase({ initialCollections = [] }) {
                     {/* Collection Image */}
                     <Link
                       href={targetHref}
-                      className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-[#FAF7F5] block"
+                      className="relative w-full object-cover aspect-[4/5] rounded-2xl overflow-hidden bg-[#FAF7F5] block"
                     >
                       <Image
                         src={cardImage}
