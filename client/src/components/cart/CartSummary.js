@@ -26,9 +26,6 @@ export default function CartSummary({ cart, onNotify }) {
     OUTSIDE_DHAKA: { charge: 130, time: "3-5 business days" },
   });
   const subtotal = cart.subtotal || 0;
-  const discountFromCoupon = quote?.couponDiscount || 0;
-  const finalTotal = quote?.finalTotal ?? subtotal;
-  const totalSavings = (cart.totalDiscount || 0) + discountFromCoupon;
   const appliedCode = appliedCoupon?.code || "";
 
   useEffect(() => {
@@ -120,14 +117,25 @@ export default function CartSummary({ cart, onNotify }) {
   const isCheckoutDisabled = cart.hasBlockingIssues || cart.items.length === 0;
 
   const isFreeDeliveryCoupon = quote?.coupon?.discountType === "FREE_DELIVERY";
-  const insideCharge = deliveryZone === "dhaka" && quote
-    ? quote.deliveryCharge
-    : (isFreeDeliveryCoupon ? 0 : deliveryRates.INSIDE_DHAKA.charge);
-  const outsideCharge = deliveryZone === "outside" && quote
-    ? quote.deliveryCharge
-    : (isFreeDeliveryCoupon ? 0 : deliveryRates.OUTSIDE_DHAKA.charge);
-  const insideTime = (deliveryZone === "dhaka" && quote?.estimatedDeliveryTime) || deliveryRates.INSIDE_DHAKA.time;
-  const outsideTime = (deliveryZone === "outside" && quote?.estimatedDeliveryTime) || deliveryRates.OUTSIDE_DHAKA.time;
+
+  const insideCharge = isFreeDeliveryCoupon
+    ? 0
+    : (quote?.deliveryZone === "INSIDE_DHAKA" ? quote.deliveryCharge : deliveryRates.INSIDE_DHAKA.charge);
+
+  const outsideCharge = isFreeDeliveryCoupon
+    ? 0
+    : (quote?.deliveryZone === "OUTSIDE_DHAKA" ? quote.deliveryCharge : deliveryRates.OUTSIDE_DHAKA.charge);
+
+  const insideTime = deliveryRates.INSIDE_DHAKA.time;
+  const outsideTime = deliveryRates.OUTSIDE_DHAKA.time;
+
+  const activeDeliveryCharge = deliveryZone === "dhaka" ? insideCharge : outsideCharge;
+  const discountFromCoupon = quote?.couponDiscount || 0;
+  const finalTotal = Math.max(0, subtotal - discountFromCoupon + activeDeliveryCharge);
+  const deliverySavings = isFreeDeliveryCoupon
+    ? (deliveryZone === "dhaka" ? deliveryRates.INSIDE_DHAKA.charge : deliveryRates.OUTSIDE_DHAKA.charge)
+    : 0;
+  const totalSavings = (cart.totalDiscount || 0) + discountFromCoupon + deliverySavings;
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/80 dark:border-gray-800 p-6 shadow-sm sticky top-24">
