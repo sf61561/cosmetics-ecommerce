@@ -8,8 +8,6 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { orderService } from "@/services/orderService";
-import { promotionService } from "@/services/promotionService";
-
 import { API_BASE } from "@/services/apiConfig";
 const EMPTY_ADDRESS = { label: "Home", recipientName: "", phone: "", division: "", district: "", area: "", streetAddress: "", postalCode: "" };
 
@@ -21,7 +19,6 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [zone, setZone] = useState("INSIDE_DHAKA");
-  const [deliveryRates, setDeliveryRates] = useState({ INSIDE_DHAKA: 70, OUTSIDE_DHAKA: 130 });
   const [couponCode, setCouponCode] = useState("");
   const [customerNote, setCustomerNote] = useState("");
   const [isSavingAddress, setIsSavingAddress] = useState(false);
@@ -33,18 +30,27 @@ export default function CheckoutPage() {
     if (!authLoading && !user && !isLoggingOut) router.replace("/auth/login?redirect=/checkout");
   }, [authLoading, user, isLoggingOut, router]);
 
+  // Load applied coupon from cart session storage
   useEffect(() => {
-    promotionService.getPublicDeliveryOptions().then((res) => {
-      const inside = res?.data?.find((r) => r.zone === "INSIDE_DHAKA");
-      const outside = res?.data?.find((r) => r.zone === "OUTSIDE_DHAKA");
-      if (inside || outside) {
-        setDeliveryRates({
-          INSIDE_DHAKA: inside ? inside.deliveryCharge : 70,
-          OUTSIDE_DHAKA: outside ? outside.deliveryCharge : 130,
-        });
-      }
-    }).catch(() => {});
+    if (typeof window !== "undefined") {
+      const savedCode = sessionStorage.getItem("appliedCouponCode");
+      if (savedCode) setCouponCode(savedCode);
+    }
   }, []);
+
+  // Automatically determine delivery zone from selected address
+  useEffect(() => {
+    if (!selectedAddressId || !addresses.length) return;
+    const selectedAddr = addresses.find((item) => item.id === selectedAddressId);
+    if (!selectedAddr) return;
+    const dist = (selectedAddr.district || "").trim().toLowerCase();
+    const div = (selectedAddr.division || "").trim().toLowerCase();
+    if (dist.includes("dhaka") || (!dist && div.includes("dhaka"))) {
+      setZone("INSIDE_DHAKA");
+    } else {
+      setZone("OUTSIDE_DHAKA");
+    }
+  }, [selectedAddressId, addresses]);
 
   useEffect(() => {
     if (!user) return;
@@ -90,15 +96,31 @@ export default function CheckoutPage() {
         : `${Date.now()}_checkout`;
       if (typeof window !== "undefined") sessionStorage.setItem("pendingOrderKey", idempotencyKey);
 
+      const selectedAddr = addresses.find((item) => item.id === selectedAddressId);
+      const isInside = selectedAddr
+        ? Boolean(
+            (selectedAddr.district && /dhaka/i.test(selectedAddr.district)) ||
+            (!selectedAddr.district && selectedAddr.division && /dhaka/i.test(selectedAddr.division))
+          )
+        : zone === "INSIDE_DHAKA";
+      const finalZone = isInside ? "INSIDE_DHAKA" : "OUTSIDE_DHAKA";
+
+      const finalCoupon =
+        couponCode ||
+        (typeof window !== "undefined" ? sessionStorage.getItem("appliedCouponCode") || "" : "");
+
       const data = await orderService.create({
         addressId: selectedAddressId,
-        zone,
-        couponCode,
+        zone: finalZone,
+        couponCode: finalCoupon,
         customerNote,
         idempotencyKey,
       });
 
-      if (typeof window !== "undefined") sessionStorage.removeItem("pendingOrderKey");
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("pendingOrderKey");
+        sessionStorage.removeItem("appliedCouponCode");
+      }
       router.push(`/order-confirmation/${data.id}`);
     } catch (error) {
       setMessage(error.message);
@@ -164,33 +186,19 @@ export default function CheckoutPage() {
             </div>
 
             <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-gray-900">
-              <h2 className="mb-4 text-lg font-semibold">Delivery options</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => setZone("INSIDE_DHAKA")}
-                  className={`rounded-xl border p-3.5 text-left text-sm transition-colors ${zone === "INSIDE_DHAKA" ? "border-[#9B4F5E] bg-[#FBF0F0] font-semibold text-[#9B4F5E] dark:bg-gray-800" : "border-gray-200 dark:border-gray-800"}`}
-                >
-                  Inside Dhaka (৳{deliveryRates.INSIDE_DHAKA})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setZone("OUTSIDE_DHAKA")}
-                  className={`rounded-xl border p-3.5 text-left text-sm transition-colors ${zone === "OUTSIDE_DHAKA" ? "border-[#9B4F5E] bg-[#FBF0F0] font-semibold text-[#9B4F5E] dark:bg-gray-800" : "border-gray-200 dark:border-gray-800"}`}
-                >
-                  Outside Dhaka (৳{deliveryRates.OUTSIDE_DHAKA})
-                </button>
-              </div>
-              <div className="mt-4">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Delivery Note (Optional)</label>
-                <textarea
-                  value={customerNote}
-                  onChange={(e) => setCustomerNote(e.target.value)}
-                  placeholder="e.g. Call before delivery, deliver after 3 PM, leave with security..."
-                  rows={2}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-                />
-              </div>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1.5">
+                Delivery Note (Optional)
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Any specific directions or preferences for your delivery rider.
+              </p>
+              <textarea
+                value={customerNote}
+                onChange={(e) => setCustomerNote(e.target.value)}
+                placeholder="e.g. Call before delivery, deliver after 3 PM, leave with security..."
+                rows={2}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 focus:outline-hidden focus:ring-1 focus:ring-[#9B4F5E]"
+              />
             </div>
           </section>
 
@@ -207,12 +215,12 @@ export default function CheckoutPage() {
                 <span>৳{Number(cart.estimatedTotal || cart.subtotal || 0).toLocaleString()}</span>
               </div>
             </div>
-            <input
-              value={couponCode}
-              onChange={(event) => setCouponCode(event.target.value)}
-              placeholder="Coupon code (optional)"
-              className="mt-5 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm dark:border-gray-700 dark:bg-gray-800"
-            />
+            {couponCode && (
+              <div className="mt-3 flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2 rounded-xl">
+                <span>Applied Voucher</span>
+                <span className="font-semibold uppercase tracking-wider">{couponCode}</span>
+              </div>
+            )}
             <button
               onClick={() => setReviewOpen(true)}
               disabled={isPlacing || cart.hasBlockingIssues || !cart.items.length || !selectedAddressId}

@@ -32,6 +32,16 @@ export default function CartSummary({ cart = {}, onNotify }) {
   const appliedCode = appliedCoupon?.code || "";
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedCode = sessionStorage.getItem("appliedCouponCode");
+      if (savedCode) {
+        setAppliedCoupon({ code: savedCode });
+        setCouponCode(savedCode);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     let isSubscribed = true;
     promotionService.getPublicDeliveryOptions()
       .then((res) => {
@@ -99,9 +109,13 @@ export default function CartSummary({ cart = {}, onNotify }) {
         zone: deliveryZone === "dhaka" ? "INSIDE_DHAKA" : "OUTSIDE_DHAKA",
         code,
       });
-      setAppliedCoupon({ code: response.data?.coupon?.code || code });
+      const validCode = response.data?.coupon?.code || code;
+      setAppliedCoupon({ code: validCode });
       setQuote(response.data);
-      if (onNotify) onNotify(`Coupon ${response.data?.coupon?.code || code} applied.`);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("appliedCouponCode", validCode);
+      }
+      if (onNotify) onNotify(`Coupon ${validCode} applied.`);
     } catch (error) {
       setCouponError(error.message || "Unable to apply this coupon.");
     } finally {
@@ -113,6 +127,9 @@ export default function CartSummary({ cart = {}, onNotify }) {
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponError("");
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("appliedCouponCode");
+    }
     if (onNotify) onNotify("Voucher removed.");
   };
 

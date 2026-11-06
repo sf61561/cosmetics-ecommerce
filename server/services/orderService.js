@@ -172,9 +172,6 @@ class OrderService {
 
   async createOrder({ userId, sessionId, zone, couponCode = "", addressId, idempotencyKey, customerNote = "" }, actor = null, request = null) {
     if (!userId) fail("Sign in before placing an order.", "AUTH_REQUIRED", 401);
-    if (!["INSIDE_DHAKA", "OUTSIDE_DHAKA"].includes(zone)) {
-      fail("Select a supported delivery zone.", "UNSUPPORTED_DELIVERY_ZONE", 400);
-    }
     if (!addressId) fail("A delivery address is required.", "ADDRESS_REQUIRED", 400);
     if (!idempotencyKey || !/^[A-Za-z0-9_-]{16,100}$/.test(idempotencyKey)) {
       fail("A valid order submission key is required.", "IDEMPOTENCY_KEY_REQUIRED", 400);
@@ -218,6 +215,18 @@ class OrderService {
       );
       if (!addressResult.rows[0]) fail("Selected delivery address was not found.", "ADDRESS_NOT_FOUND", 404);
       const addr = addressResult.rows[0];
+
+      // Automatically infer delivery zone if not provided or invalid
+      let effectiveZone = zone;
+      if (!effectiveZone || !["INSIDE_DHAKA", "OUTSIDE_DHAKA"].includes(effectiveZone)) {
+        const dist = (addr.district || "").toLowerCase();
+        const div = (addr.division || "").toLowerCase();
+        if (dist.includes("dhaka") || (!dist && div.includes("dhaka"))) {
+          effectiveZone = "INSIDE_DHAKA";
+        } else {
+          effectiveZone = "OUTSIDE_DHAKA";
+        }
+      }
 
       // 2. Fetch cart items & lock products (never trust client prices)
       const itemsResult = await client.query(
@@ -314,7 +323,7 @@ class OrderService {
          WHERE zone = $1 AND is_active = true
          LIMIT 1
          FOR UPDATE`,
-        [zone]
+        [effectiveZone]
       );
       const rule = ruleResult.rows[0];
       if (!rule) fail("Delivery service is currently unavailable for this destination.", "DELIVERY_ZONE_UNAVAILABLE", 400);
@@ -406,7 +415,7 @@ class OrderService {
           productDiscount,
           coupon?.code || null,
           couponDiscount,
-          zone,
+          effectiveZone,
           deliveryDiscount,
         ]
       );
