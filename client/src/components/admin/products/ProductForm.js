@@ -155,6 +155,27 @@ export default function ProductForm({
   const [selectedTagIds, setSelectedTagIds] = useState(
     initialProduct?.tags?.map((t) => t.id) || []
   );
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
+  const tagDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        tagDropdownRef.current &&
+        !tagDropdownRef.current.contains(event.target)
+      ) {
+        setIsTagDropdownOpen(false);
+      }
+    };
+    if (isTagDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isTagDropdownOpen]);
+
   const [internalTags, setInternalTags] = useState([]);
 
   useEffect(() => {
@@ -177,6 +198,9 @@ export default function ProductForm({
   const availableTags = tags && tags.length > 0 ? tags : internalTags;
   const filteredCollections = (collections || []).filter((col) =>
     (col.name || "").toLowerCase().includes(collectionSearch.toLowerCase().trim())
+  );
+  const filteredTags = (availableTags || []).filter((tag) =>
+    (tag.name || "").toLowerCase().includes(tagSearch.toLowerCase().trim())
   );
   const [shortDescription, setShortDescription] = useState(initialProduct?.shortDescription || "");
   const [description, setDescription] = useState(initialProduct?.description || "");
@@ -1798,41 +1822,143 @@ export default function ProductForm({
               )}
             </div>
 
-            {/* Tags Multi-Select */}
-            <div>
+            {/* Tags Multi-Select Dropdown */}
+            <div className="relative" ref={tagDropdownRef}>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
                   Tags
                 </label>
                 {selectedTagIds.length > 0 && (
-                  <span className="text-[10px] text-gray-400">
-                    {selectedTagIds.length} selected
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTagIds([]);
+                      setIsDirty(true);
+                    }}
+                    className="text-[10px] text-[#9B4F5E] dark:text-pink-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    Clear ({selectedTagIds.length})
+                  </button>
                 )}
               </div>
-              <div className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800 p-2 space-y-1">
-                {availableTags.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic p-1.5">No tags available</p>
-                ) : (
-                  availableTags.map((tag) => {
-                    const isChecked = selectedTagIds.includes(tag.id);
+
+              {/* Dropdown Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsTagDropdownOpen((prev) => !prev)}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 flex items-center justify-between focus:border-[#9B4F5E] focus:outline-hidden transition-colors cursor-pointer text-left shadow-2xs"
+              >
+                <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
+                  {selectedTagIds.length === 0 ? (
+                    <span className="text-gray-400 dark:text-gray-500">
+                      -- Select Tags --
+                    </span>
+                  ) : (
+                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                      {selectedTagIds.length === 1
+                        ? availableTags.find((t) => t.id === selectedTagIds[0])?.name || "1 selected"
+                        : `${selectedTagIds.length} tags selected`}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  {selectedTagIds.length > 0 && (
+                    <span className="inline-flex items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 px-2 py-0.5 text-[10px] font-bold text-[#9B4F5E] dark:text-pink-300">
+                      {selectedTagIds.length}
+                    </span>
+                  )}
+                  <FaChevronDown
+                    className={`h-3 w-3 text-gray-400 transition-transform duration-200 ${
+                      isTagDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {/* Selected Tag Chips */}
+              {selectedTagIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {selectedTagIds.map((id) => {
+                    const tag = availableTags.find((t) => t.id === id);
+                    if (!tag) return null;
                     return (
-                      <label
-                        key={tag.id}
-                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer text-xs text-gray-800 dark:text-gray-200 select-none"
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 dark:bg-pink-950/40 text-[11px] font-medium text-[#9B4F5E] dark:text-pink-300 border border-pink-100 dark:border-pink-900/40"
                       >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleToggleTag(tag.id)}
-                          className="rounded border-gray-300 dark:border-gray-600 text-[#9B4F5E] focus:ring-[#9B4F5E]"
-                        />
-                        <span>{tag.name}</span>
-                      </label>
+                        {tag.name}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleTag(id);
+                          }}
+                          className="hover:text-red-500 transition-colors ml-0.5 cursor-pointer"
+                          aria-label={`Remove ${tag.name}`}
+                        >
+                          <FaTimes className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
                     );
-                  })
-                )}
-              </div>
+                  })}
+                </div>
+              )}
+
+              {/* Dropdown Menu Popover */}
+              {isTagDropdownOpen && (
+                <div className="absolute left-0 right-0 z-30 mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 shadow-xl space-y-2">
+                  {/* Search inside tags */}
+                  {availableTags.length > 3 && (
+                    <div className="relative">
+                      <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                      <input
+                        type="text"
+                        value={tagSearch}
+                        onChange={(e) => setTagSearch(e.target.value)}
+                        placeholder="Search tags..."
+                        className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+
+                  {/* Options List */}
+                  <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                    {filteredTags.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic p-2 text-center">
+                        {tagSearch ? "No matching tags" : "No tags available"}
+                      </p>
+                    ) : (
+                      filteredTags.map((tag) => {
+                        const isChecked = selectedTagIds.includes(tag.id);
+                        return (
+                          <label
+                            key={tag.id}
+                            className={`flex items-center justify-between p-2 rounded-xl text-xs transition-colors cursor-pointer select-none ${
+                              isChecked
+                                ? "bg-pink-50/70 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-300 font-medium"
+                                : "hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-800 dark:text-gray-200"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleTag(tag.id)}
+                                className="rounded border-gray-300 dark:border-gray-600 text-[#9B4F5E] focus:ring-[#9B4F5E]"
+                              />
+                              <span className="truncate">{tag.name}</span>
+                            </div>
+                            {isChecked && (
+                              <FaCheck className="h-3 w-3 text-[#9B4F5E] dark:text-pink-400 shrink-0" />
+                            )}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
