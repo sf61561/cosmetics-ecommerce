@@ -167,12 +167,12 @@ export default function CollectionsPage() {
                   return (
                     <div
                       key={collection.id || index}
-                      className="group relative flex flex-col items-center bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(155,79,94,0.12)] hover:-translate-y-1.5 transition-all duration-300"
+                      className="group relative flex flex-col items-center bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(155,79,94,0.12)] hover:-translate-y-1.5 transition-all duration-300"
                     >
                       {/* Image */}
                       <Link
                         href={targetHref}
-                        className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-[#FAF7F5] block"
+                        className="relative w-full aspect-[4/5] overflow-hidden bg-[#FAF7F5] block"
                       >
                         <Image
                           src={cardImage}
@@ -183,22 +183,25 @@ export default function CollectionsPage() {
                         />
                       </Link>
 
-                      {/* Title */}
-                      <Link href={targetHref} className="mt-4 sm:mt-5 text-center group/title">
-                        <h3 className="font-serif text-xl sm:text-2xl text-gray-900 font-normal tracking-tight group-hover/title:text-[#9B4F5E] transition-colors">
-                          {collection.name}
-                        </h3>
-                      </Link>
-
-                      {/* CTA Pill Button */}
-                      <div className="mt-3">
-                        <Link
-                          href={targetHref}
-                          className="inline-flex items-center gap-2 rounded-full bg-[#FBF0F0] hover:bg-[#9B4F5E] text-[#9B4F5E] hover:text-white px-5 py-2 text-xs font-medium tracking-wide transition-all duration-300 shadow-2xs group-hover:shadow-xs"
-                        >
-                          <span>Shop Now</span>
-                          <FaArrowRight className="h-2.5 w-2.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      {/* Content */}
+                      <div className="flex flex-col items-center px-5 py-5 sm:py-6 w-full text-center">
+                        {/* Title */}
+                        <Link href={targetHref} className="group/title">
+                          <h3 className="font-serif text-xl sm:text-2xl text-gray-900 font-normal tracking-tight group-hover/title:text-[#9B4F5E] transition-colors">
+                            {collection.name}
+                          </h3>
                         </Link>
+
+                        {/* CTA Pill Button */}
+                        <div className="mt-3.5">
+                          <Link
+                            href={targetHref}
+                            className="inline-flex items-center gap-2 rounded-full bg-[#FBF0F0] hover:bg-[#9B4F5E] text-[#9B4F5E] hover:text-white px-5 py-2 text-xs font-medium tracking-wide transition-all duration-300 shadow-2xs group-hover:shadow-xs"
+                          >
+                            <span>Shop Now</span>
+                            <FaArrowRight className="h-2.5 w-2.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   );
