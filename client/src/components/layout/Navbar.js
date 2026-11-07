@@ -17,7 +17,6 @@ const navLinks = [
   { label: "Collections", href: "/collections" },
   { label: "Brands", href: "/brands" },
   { label: "New Arrivals", href: "/new-arrivals" },
-  { label: "Track Order", href: "/track-order" },
 ];
 
 function formatNavTime(dateStr) {
