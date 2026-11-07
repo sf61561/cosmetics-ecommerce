@@ -168,7 +168,7 @@ export default function AdminNavbar({ onToggleSidebar }) {
                 className="text-xl text-gray-800 dark:text-gray-100"
                 style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
               >
-                Eloura
+                Elourá
               </span>
               <LogoFloralIcon />
             </Link>

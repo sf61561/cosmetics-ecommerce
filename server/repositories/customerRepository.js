@@ -407,7 +407,7 @@ const customerRepository = {
           stockQuantity,
           inStock,
           isOutOfStock: !inStock,
-          brandName: row.brand_name || "Eloura",
+          brandName: row.brand_name || "Elourá",
           thumbnailUrl: row.thumbnail_url || null,
           addedAt: row.added_at,
         };

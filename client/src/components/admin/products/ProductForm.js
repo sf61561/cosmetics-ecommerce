@@ -2762,7 +2762,7 @@ export default function ProductForm({
                   setSeoTitle(e.target.value);
                   setIsDirty(true);
                 }}
-                placeholder={name ? `${name} | Eloura Bangladesh` : "Page Title in Search Results"}
+                placeholder={name ? `${name} | Elourá Bangladesh` : "Page Title in Search Results"}
                 className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden"
               />
             </div>
@@ -2792,12 +2792,12 @@ export default function ProductForm({
                 https://eloura.com/products/{slug || "product-slug"}
               </p>
               <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer truncate">
-                {seoTitle || name || "Product Name | Eloura Bangladesh"}
+                {seoTitle || name || "Product Name | Elourá Bangladesh"}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-0.5">
                 {seoDescription ||
                   shortDescription ||
-                  "Buy genuine cosmetics in Bangladesh at Eloura. Authentic skincare with cash on delivery and fast express shipping nationwide."}
+                  "Buy genuine cosmetics in Bangladesh at Elourá. Authentic skincare with cash on delivery and fast express shipping nationwide."}
               </p>
             </div>
           </div>

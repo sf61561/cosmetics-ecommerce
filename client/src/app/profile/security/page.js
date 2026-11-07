@@ -74,7 +74,7 @@ export default function SecurityPage() {
   const hasPassword = Boolean(security?.hasPassword);
 
   return (
-    <ProfileLayout title="Security & sign-in" description="Manage the ways you can access your Eloura account.">
+    <ProfileLayout title="Security & sign-in" description="Manage the ways you can access your Elourá account.">
       <div className="grid gap-6">
         <section className="rounded-3xl border border-[#eee6ee] bg-white p-6 shadow-sm sm:p-8">
           <h2 className="text-lg font-bold text-gray-900">Password</h2>

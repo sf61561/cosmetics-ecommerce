@@ -273,7 +273,7 @@ export default function ShopView() {
         {/* Page Header */}
         <div className="mb-8">
           <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#9B4F5E] dark:text-pink-400 block mb-1">
-            THE ELOURA EDIT
+            THE ELOURÁ EDIT
           </span>
           <h1
             className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 dark:text-white"
@@ -746,7 +746,7 @@ export default function ShopView() {
                   {data.items.map((product) => {
                     const isAdded = addedIds.has(product.id);
                     const price = product.currentPrice ?? product.price;
-                    const brandName = product.brandName || product.brand?.name || "ELOURA";
+                    const brandName = product.brandName || product.brand?.name || "ELOURÁ";
                     const isOutOfStock = !product.inStock || product.stockStatus === "out_of_stock";
 
                     return (

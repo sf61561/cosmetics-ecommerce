@@ -89,7 +89,7 @@ class WishlistRepository {
         brand: row.brand_id
           ? { id: row.brand_id, name: row.brand_name, slug: row.brand_slug }
           : null,
-        brandName: row.brand_name || "Eloura",
+        brandName: row.brand_name || "Elourá",
         category: row.category_id
           ? { id: row.category_id, name: row.category_name, slug: row.category_slug }
           : null,

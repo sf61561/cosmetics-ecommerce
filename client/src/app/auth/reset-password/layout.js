@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Reset Password | Eloura Cosmetics",
-  description: "Reset your Eloura account password securely.",
+  title: "Reset Password | Elourá Cosmetics",
+  description: "Reset your Elourá account password securely.",
   referrer: "no-referrer",
 };
 

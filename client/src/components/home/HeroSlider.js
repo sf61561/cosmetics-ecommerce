@@ -154,7 +154,7 @@ export default function HeroSlider({ initialSlides = [] }) {
                     <source media="(max-width: 768px)" srcSet={slide.mobileImageUrl} />
                     <Image
                       src={slide.desktopImageUrl}
-                      alt={slide.altText || slide.headline || "Eloura Hero Banner"}
+                      alt={slide.altText || slide.headline || "Elourá Hero Banner"}
                       fill
                       sizes="100vw"
                       priority={isLCP}
@@ -165,7 +165,7 @@ export default function HeroSlider({ initialSlides = [] }) {
                 ) : (
                   <Image
                     src={slide.desktopImageUrl}
-                    alt={slide.altText || slide.headline || "Eloura Hero Banner"}
+                    alt={slide.altText || slide.headline || "Elourá Hero Banner"}
                     fill
                     sizes="100vw"
                     priority={isLCP}

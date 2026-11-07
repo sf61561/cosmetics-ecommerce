@@ -263,9 +263,9 @@ export default function LoginPage() {
             href="/"
             className="text-3xl font-semibold tracking-wide text-gray-800 hover:text-[#9B4F5E] transition-colors"
             style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
-            aria-label="Eloura Home"
+            aria-label="Elourá Home"
           >
-            Eloura
+            Elourá
           </Link>
         </div>
 

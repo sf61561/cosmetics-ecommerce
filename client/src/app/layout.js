@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Eloura - Cosmetics & Beauty",
+  title: "Elourá - Cosmetics & Beauty",
   description: "Your one-stop shop for premium cosmetics and beauty products",
 };
 

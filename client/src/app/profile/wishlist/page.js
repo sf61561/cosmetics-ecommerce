@@ -210,7 +210,7 @@ export default function WishlistPage() {
                   {/* Product details */}
                   <div className="mt-4 flex flex-1 flex-col">
                     <p className="text-[11px] font-semibold tracking-wider text-gray-400 uppercase">
-                      {item.brandName || "Eloura"}
+                      {item.brandName || "Elourá"}
                     </p>
                     <Link
                       href={`/products/${item.slug}`}

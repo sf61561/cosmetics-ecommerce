@@ -594,7 +594,7 @@ export default function ViewProductModal({ isOpen, onClose, product }) {
                 {p.seoTitle || p.name}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
-                {p.seoDescription || p.shortDescription || p.description || "Browse authentic skincare and cosmetics on Eloura."}
+                {p.seoDescription || p.shortDescription || p.description || "Browse authentic skincare and cosmetics on Elourá."}
               </p>
             </div>
           </div>

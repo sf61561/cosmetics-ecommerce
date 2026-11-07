@@ -267,7 +267,7 @@ export default function ProductReviewsSection({ product = {} }) {
           <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
             {selectedRating || withPhotosOnly
               ? "Try resetting your filter to view all verified customer feedback."
-              : "We only publish reviews from verified buyers who placed an order on Eloura. Complete your delivery to write a review from your order details page."}
+              : "We only publish reviews from verified buyers who placed an order on Elourá. Complete your delivery to write a review from your order details page."}
           </p>
           {(selectedRating || withPhotosOnly) && (
             <button

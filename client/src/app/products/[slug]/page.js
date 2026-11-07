@@ -5,18 +5,18 @@ import ProductNotFoundState from "@/components/product/ProductNotFoundState";
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
-  if (!slug) return { title: "Product | Eloura" };
+  if (!slug) return { title: "Product | Elourá" };
 
   try {
     const res = await productService.getProductBySlug(slug);
     if (!res?.success || !res?.data) {
       return {
-        title: "Product Not Found | Eloura",
+        title: "Product Not Found | Elourá",
         description: "The requested cosmetics and skincare formulation was not found.",
       };
     }
     const product = res.data;
-    const title = product.seoTitle || `${product.name} | Eloura Bangladesh`;
+    const title = product.seoTitle || `${product.name} | Elourá Bangladesh`;
     const description =
       product.seoDescription || product.shortDescription || product.description;
     const ogImage = product.images?.[0]?.imageUrl || product.thumbnailUrl;
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }) {
     };
   } catch {
     return {
-      title: "Product | Eloura",
+      title: "Product | Elourá",
     };
   }
 }
@@ -83,7 +83,7 @@ export default async function ProductDetailPage({ params }) {
     mpn: product.barcode,
     brand: {
       "@type": "Brand",
-      name: product.brand?.name || "Eloura",
+      name: product.brand?.name || "Elourá",
     },
     offers: {
       "@type": "Offer",

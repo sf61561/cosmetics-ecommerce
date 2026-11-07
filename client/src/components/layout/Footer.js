@@ -21,7 +21,7 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2 group">
               <span className="font-serif text-2xl tracking-tight text-gray-900 group-hover:text-[#9B4F5E] transition-colors">
-                Eloura
+                Elourá
               </span>
               <span className="text-[#A582B4] text-lg font-serif">✿</span>
             </Link>
@@ -171,7 +171,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright */}
         <div className="mt-12 pt-6 border-t border-[#F2E8E6] flex items-center justify-center">
           <p className="text-xs text-gray-500 text-center">
-            © {new Date().getFullYear()} Eloura. All rights reserved.
+            © {new Date().getFullYear()} Elourá. All rights reserved.
           </p>
         </div>
       </div>

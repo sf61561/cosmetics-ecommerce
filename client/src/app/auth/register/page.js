@@ -358,9 +358,9 @@ export default function RegisterPage() {
             href="/"
             className="text-3xl font-semibold tracking-wide text-gray-800 hover:text-[#9B4F5E] transition-colors"
             style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
-            aria-label="Eloura Home"
+            aria-label="Elourá Home"
           >
-            Eloura
+            Elourá
           </Link>
         </div>
 
@@ -414,7 +414,7 @@ export default function RegisterPage() {
                 Create Your Account
               </h1>
           <p className="text-center text-sm text-gray-500 mb-5 leading-snug">
-            Join Eloura to track your orders<br />and save your favorites
+            Join Elourá to track your orders<br />and save your favorites
           </p>
 
           {/* ── Profile Picture Upload ── */}

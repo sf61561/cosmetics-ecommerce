@@ -4,9 +4,9 @@ import Footer from "@/components/layout/Footer";
 import ShopView from "./ShopView";
 
 export const metadata = {
-  title: "Shop All Products | Eloura Cosmetics & Skincare",
+  title: "Shop All Products | Elourá Cosmetics & Skincare",
   description:
-    "Discover our complete collection of authentic Korean skincare, cosmetics, and beauty essentials at Eloura.",
+    "Discover our complete collection of authentic Korean skincare, cosmetics, and beauty essentials at Elourá.",
 };
 
 export default function ShopPage() {

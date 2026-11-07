@@ -82,9 +82,9 @@ export default function PasswordSetupPage() {
         <Link
           href="/"
           className="font-serif text-2xl font-semibold text-gray-800 hover:text-[#9B4F5E] transition-colors"
-          aria-label="Eloura Home"
+          aria-label="Elourá Home"
         >
-          Eloura
+          Elourá
         </Link>
       </div>
       <h1 className="mt-5 text-2xl font-bold text-gray-900">{complete ? "Password set" : token ? "Set your password" : "Get a password setup link"}</h1>

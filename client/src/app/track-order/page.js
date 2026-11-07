@@ -508,7 +508,7 @@ function TrackOrderContent() {
                     <div className="flex justify-between py-1.5">
                       <span className="text-gray-500 dark:text-gray-400">Courier Partner</span>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {order.courierName || "Eloura Logistics / Courier"}
+                        {order.courierName || "Elourá Logistics / Courier"}
                       </span>
                     </div>
                   </div>
