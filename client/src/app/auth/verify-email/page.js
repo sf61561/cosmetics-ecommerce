@@ -50,12 +50,35 @@ function MailPendingIcon() {
   );
 }
 
-function LogoLeaf() {
+function EditEmailIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#9B7CB8] -mt-2 ml-0.5">
-      <path d="M12 2C8 6 4 10 4 14a8 8 0 0 0 16 0c0-4-4-8-8-12z" fill="currentColor" opacity="0.8" />
-    </svg>
+    <div className="w-16 h-16 rounded-full bg-pink-100 text-[#9B4F5E] flex items-center justify-center mx-auto mb-4 shadow-sm border border-pink-200">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    </div>
   );
+}
+
+/**
+ * Masks an email for privacy and security: e.g. syedfahad9884@gmail.com -> sy****84@gmail.com
+ */
+function maskEmail(email) {
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    return "your email address";
+  }
+  const [local, domain] = email.trim().split("@");
+  if (!domain) return "your email address";
+  if (local.length <= 2) {
+    return `${local[0]}*@${domain}`;
+  }
+  if (local.length <= 4) {
+    return `${local[0]}*${local.slice(-1)}@${domain}`;
+  }
+  const prefix = local.slice(0, 2);
+  const suffix = local.slice(-2);
+  return `${prefix}****${suffix}@${domain}`;
 }
 
 // ─── Verify Email Content ───
@@ -68,29 +91,36 @@ function VerifyEmailContent() {
   const [message, setMessage] = useState(
     token
       ? ""
-      : "We've sent a verification link to your email address. Please check your inbox to activate your account."
+      : "Please check your inbox to activate your account."
   );
   const [countdown, setCountdown] = useState(5);
 
-  // Resend tab state
+  // Email and resend state
   const [resendEmail, setResendEmail] = useState(() => searchParams.get("email") || "");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
   const [resendStatus, setResendStatus] = useState(null); // null | "success" | "already_verified" | "error"
+  const [cooldown, setCooldown] = useState(0);
 
-  // Active sub-view tab: "resend" | "change_email"
-  const [activeTab, setActiveTab] = useState("resend");
-
-  // Change unverified email form state
+  // Edit mistyped email view state (toggleable link at bottom)
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [changeCurrentEmail, setChangeCurrentEmail] = useState(() => searchParams.get("email") || "");
   const [changePassword, setChangePassword] = useState("");
   const [changeNewEmail, setChangeNewEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [changeLoading, setChangeLoading] = useState(false);
   const [changeError, setChangeError] = useState("");
-  const [changeSuccess, setChangeSuccess] = useState("");
 
   const hasRequestedRef = useRef(false);
+
+  // Countdown timer for resend rate-limit cooldown
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   useEffect(() => {
     if (!token || hasRequestedRef.current) {
@@ -179,13 +209,18 @@ function VerifyEmailContent() {
     return () => clearTimeout(timer);
   }, [status, countdown, router]);
 
-  // Handle Resend Request
+  // Handle Resend Request (no manual input required when email is known)
   const handleResend = async (e) => {
-    e.preventDefault();
-    const trimmed = resendEmail.trim();
-    if (!trimmed) return;
+    if (e && e.preventDefault) e.preventDefault();
+    const targetEmail = (resendEmail || "").trim();
 
-    if (/^www\./i.test(trimmed)) {
+    if (!targetEmail) {
+      setResendStatus("error");
+      setResendMessage("Please enter your registered email below to receive a new link.");
+      return;
+    }
+
+    if (/^www\./i.test(targetEmail)) {
       setResendStatus("error");
       setResendMessage("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
       return;
@@ -201,7 +236,7 @@ function VerifyEmailContent() {
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed }),
+        body: JSON.stringify({ email: targetEmail }),
       });
       const data = await res.json();
 
@@ -214,8 +249,9 @@ function VerifyEmailContent() {
       } else if (res.ok) {
         setResendStatus("success");
         setResendMessage(
-          data.message || "If an account exists, a new verification link was sent."
+          data.message || `A fresh verification link has been sent to ${maskEmail(targetEmail)}!`
         );
+        setCooldown(60);
       } else {
         setResendStatus("error");
         setResendMessage(data.message || "Failed to send verification link.");
@@ -232,7 +268,6 @@ function VerifyEmailContent() {
   const handleChangeEmail = async (e) => {
     e.preventDefault();
     setChangeError("");
-    setChangeSuccess("");
 
     const normCurrent = (changeCurrentEmail || resendEmail).trim();
     const normNew = changeNewEmail.trim();
@@ -285,15 +320,24 @@ function VerifyEmailContent() {
       const data = await res.json();
 
       if (res.ok) {
-        setChangeSuccess(
-          data.message || `Your email was updated to ${normNew}! A fresh verification link has been sent.`
-        );
+        const maskedNew = maskEmail(normNew);
         setResendEmail(normNew);
         setChangeCurrentEmail(normNew);
         setChangeNewEmail("");
         setChangePassword("");
+        setIsEditingEmail(false);
+        setResendStatus("success");
+        setResendMessage(
+          `Email updated to ${maskedNew}! A fresh verification link has been sent to your inbox. Please check your inbox and verify before logging in.`
+        );
+        setCooldown(60);
+
+        if (typeof window !== "undefined") {
+          const newUrl = `${window.location.pathname}?email=${encodeURIComponent(normNew)}`;
+          window.history.replaceState(null, "", newUrl);
+        }
       } else {
-        setChangeError(data.message || "Failed to update email. Please check your credentials.");
+        setChangeError(data.message || "Failed to update email. Please check your password.");
       }
     } catch {
       setChangeError("Network error. Please check your connection and try again.");
@@ -370,90 +414,79 @@ function VerifyEmailContent() {
 
         {(status === "pending" || status === "error") && (
           <div className="py-2">
-            {status === "pending" ? (
+            {!isEditingEmail ? (
+              /* ── Main Screen: Clean, No Input Fields ── */
               <>
-                <MailPendingIcon />
-                <h2
-                  className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2 font-logo tracking-[0.1em]"
+                {status === "pending" ? (
+                  <>
+                    <MailPendingIcon />
+                    <h2
+                      className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2 font-logo tracking-[0.1em]"
+                    >
+                      Verify Your Email
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-5 leading-relaxed">
+                      We&apos;ve sent a verification link to{" "}
+                      <span className="font-semibold text-gray-900 bg-white/70 px-2 py-0.5 rounded-md border border-gray-200/60 inline-block shadow-2xs">
+                        {maskEmail(resendEmail)}
+                      </span>
+                      .<br />
+                      Please check your inbox to activate your account.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <ErrorIcon />
+                    <h2
+                      className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2 font-logo tracking-[0.1em]"
+                    >
+                      Verification Link Invalid
+                    </h2>
+                    <p className="text-xs sm:text-sm text-red-600 mb-4 bg-red-50/80 border border-red-200 rounded-lg p-2.5 leading-relaxed">
+                      {message}
+                    </p>
+                    {resendEmail && (
+                      <p className="text-xs text-gray-600 mb-4">
+                        Send a new link to{" "}
+                        <span className="font-semibold text-gray-900">
+                          {maskEmail(resendEmail)}
+                        </span>
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* Fallback input ONLY if user arrived without any email in query string */}
+                {!resendEmail && (
+                  <div className="text-left mb-3">
+                    <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider pl-1">
+                      Enter Registered Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={resendEmail}
+                      onChange={(e) => setResendEmail(e.target.value)}
+                      className="w-full h-11 px-4 mt-1 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
+                    />
+                  </div>
+                )}
+
+                {/* ── Single Resend Action Button (No inputs required) ── */}
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading || cooldown > 0}
+                  className="w-full h-11 rounded-full bg-[#9B4F5E] text-white text-sm font-semibold tracking-wide transition-all hover:bg-[#843f4e] disabled:opacity-50 cursor-pointer shadow-md mb-3"
                 >
-                  Verify Your Email
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 mb-5 leading-relaxed">
-                  {message}
-                </p>
-              </>
-            ) : (
-              <>
-                <ErrorIcon />
-                <h2
-                  className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2 font-logo tracking-[0.1em]"
-                >
-                  Verification Link Invalid
-                </h2>
-                <p className="text-xs sm:text-sm text-red-600 mb-5 bg-red-50/80 border border-red-200 rounded-lg p-2.5 leading-relaxed">
-                  {message}
-                </p>
-              </>
-            )}
+                  {resendLoading
+                    ? "Sending Link..."
+                    : cooldown > 0
+                    ? `Resend Link in ${cooldown}s`
+                    : "Resend Verification Email"}
+                </button>
 
-            {/* ── Sub-navigation Tab Pills ── */}
-            <div className="flex p-1 bg-white/50 rounded-full border border-gray-200/70 mb-5">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("resend");
-                  setChangeError("");
-                  setChangeSuccess("");
-                }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                  activeTab === "resend"
-                    ? "bg-[#9B4F5E] text-white shadow-xs"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Resend Link
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("change_email");
-                  setResendMessage("");
-                  setChangeCurrentEmail(resendEmail);
-                }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                  activeTab === "change_email"
-                    ? "bg-[#9B4F5E] text-white shadow-xs"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Mistyped Email?
-              </button>
-            </div>
-
-            {/* ── Tab 1: Resend Link Form ── */}
-            {activeTab === "resend" && (
-              <div className="text-left">
-                <form onSubmit={handleResend} className="flex flex-col gap-2.5 mb-3">
-                  <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider pl-1">
-                    Registered Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="Enter your registered email"
-                    value={resendEmail}
-                    onChange={(e) => setResendEmail(e.target.value)}
-                    required
-                    className="w-full h-11 px-4 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
-                  />
-                  <button
-                    type="submit"
-                    disabled={resendLoading}
-                    className="w-full h-11 mt-1 rounded-full bg-[#9B4F5E] text-white text-sm font-semibold tracking-wide transition-all hover:bg-[#843f4e] disabled:opacity-50 cursor-pointer shadow-xs"
-                  >
-                    {resendLoading ? "Sending Link..." : "Resend Verification Email"}
-                  </button>
-                </form>
-
+                {/* ── Status Feedback Banner ── */}
                 {resendMessage && (
                   <div
                     className={`text-xs rounded-xl p-3 mb-3 text-left leading-relaxed ${
@@ -475,15 +508,45 @@ function VerifyEmailContent() {
                     )}
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* ── Tab 2: Change Mistyped Email Form ── */}
-            {activeTab === "change_email" && (
+                {/* ── Bottom Section: Edit Email Link & Return to Sign In ── */}
+                <div className="border-t border-gray-200/60 pt-4 mt-4 flex flex-col items-center gap-2">
+                  {resendEmail && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingEmail(true);
+                        setChangeError("");
+                        setChangeCurrentEmail(resendEmail);
+                      }}
+                      className="text-xs text-gray-600 hover:text-[#9B4F5E] transition-colors underline font-medium cursor-pointer"
+                    >
+                      Wrong email address? Edit it
+                    </button>
+                  )}
+                  <Link
+                    href="/auth/login"
+                    className="text-xs text-[#9B4F5E] hover:underline font-medium"
+                  >
+                    Return to Sign In
+                  </Link>
+                </div>
+              </>
+            ) : (
+              /* ── Edit Mistyped Email Screen (Shown only when clicked) ── */
               <div className="text-left">
-                <p className="text-[11px] text-gray-500 mb-3 pl-1 leading-normal">
-                  Signed up with a typo? Enter your registered password to correct your address and receive a new activation link.
-                </p>
+                <div className="text-center">
+                  <EditEmailIcon />
+                  <h2
+                    className="text-xl sm:text-2xl font-semibold text-gray-800 mb-1.5 font-logo tracking-[0.1em]"
+                  >
+                    Edit Email Address
+                  </h2>
+                  <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                    Signed up with a typo? Enter your account password to update your address and receive a new activation link.
+                  </p>
+                </div>
+
                 <form onSubmit={handleChangeEmail} className="flex flex-col gap-2.5 mb-3">
                   <div>
                     <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider pl-1">
@@ -491,11 +554,10 @@ function VerifyEmailContent() {
                     </label>
                     <input
                       type="email"
-                      placeholder="e.g. name@gmial.com"
                       value={changeCurrentEmail}
                       onChange={(e) => setChangeCurrentEmail(e.target.value)}
                       required
-                      className="w-full h-10 px-4 mt-1 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
+                      className="w-full h-10 px-4 mt-1 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
                     />
                   </div>
 
@@ -510,7 +572,7 @@ function VerifyEmailContent() {
                         value={changePassword}
                         onChange={(e) => setChangePassword(e.target.value)}
                         required
-                        className="w-full h-10 pl-4 pr-10 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
+                        className="w-full h-10 pl-4 pr-10 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
                       />
                       <button
                         type="button"
@@ -533,7 +595,7 @@ function VerifyEmailContent() {
                       value={changeNewEmail}
                       onChange={(e) => setChangeNewEmail(e.target.value)}
                       required
-                      className="w-full h-10 px-4 mt-1 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
+                      className="w-full h-10 px-4 mt-1 rounded-full bg-white/70 border border-white/80 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#C47B8A]/40"
                     />
                   </div>
 
@@ -542,32 +604,28 @@ function VerifyEmailContent() {
                     disabled={changeLoading}
                     className="w-full h-11 mt-2 rounded-full bg-[#9B4F5E] text-white text-sm font-semibold tracking-wide transition-all hover:bg-[#843f4e] disabled:opacity-50 cursor-pointer shadow-xs"
                   >
-                    {changeLoading ? "Updating Email..." : "Update Email & Send Link"}
+                    {changeLoading ? "Updating Email..." : "Update Email & Send Verification Link"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingEmail(false);
+                      setChangeError("");
+                    }}
+                    className="w-full text-xs text-gray-500 hover:text-gray-800 transition-colors py-1 cursor-pointer text-center"
+                  >
+                    Cancel
                   </button>
                 </form>
 
-                {changeSuccess && (
-                  <div className="text-xs rounded-xl p-3 mb-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-left leading-relaxed">
-                    <p className="font-medium">{changeSuccess}</p>
-                  </div>
-                )}
-
                 {changeError && (
-                  <div className="text-xs rounded-xl p-3 mb-3 bg-red-50 border border-red-200 text-red-800 text-left leading-relaxed">
+                  <div className="text-xs rounded-xl p-3 mb-2 bg-red-50 border border-red-200 text-red-800 text-left leading-relaxed">
                     <p>{changeError}</p>
                   </div>
                 )}
               </div>
             )}
-
-            <div className="border-t border-gray-200/60 pt-3 mt-2">
-              <Link
-                href="/auth/login"
-                className="inline-block text-xs text-[#9B4F5E] hover:underline font-medium"
-              >
-                Return to Sign In
-              </Link>
-            </div>
           </div>
         )}
       </div>
