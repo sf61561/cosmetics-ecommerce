@@ -20,6 +20,10 @@ async function handleResponse(response) {
     throw error;
   }
 
+  if (!isJson && response.ok) {
+    throw new Error("Invalid response format received from server.");
+  }
+
   return data;
 }
 
@@ -28,19 +32,19 @@ export const reviewService = {
    * Check if logged-in customer is eligible to review a product
    */
   async checkEligibility(productId) {
-    const response = await fetch(`${API_BASE}/reviews/eligibility?productId=${productId}`, {
+    const response = await fetch(`${API_BASE}/api/reviews/eligibility?productId=${productId}`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data;
+    return res?.data || null;
   },
 
   /**
    * Submit a new customer review (FormData with files)
    */
   async submitReview(formData) {
-    const response = await fetch(`${API_BASE}/reviews`, {
+    const response = await fetch(`${API_BASE}/api/reviews`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -52,7 +56,7 @@ export const reviewService = {
    * Resubmit a rejected review (FormData with files)
    */
   async resubmitReview(reviewId, formData) {
-    const response = await fetch(`${API_BASE}/reviews/${reviewId}`, {
+    const response = await fetch(`${API_BASE}/api/reviews/${reviewId}`, {
       method: "PUT",
       credentials: "include",
       body: formData,
@@ -64,26 +68,26 @@ export const reviewService = {
    * Get customer's submitted reviews
    */
   async getMyReviews({ page = 1, limit = 20 } = {}) {
-    const response = await fetch(`${API_BASE}/reviews/my-reviews?page=${page}&limit=${limit}`, {
+    const response = await fetch(`${API_BASE}/api/reviews/my-reviews?page=${page}&limit=${limit}`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data;
+    return res?.data || null;
   },
 
   /**
    * Batch get review status for items in an order
    */
   async getOrderItemsReviewStatus(orderItemIds = []) {
-    const response = await fetch(`${API_BASE}/reviews/order-items-status`, {
+    const response = await fetch(`${API_BASE}/api/reviews/order-items-status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ orderItemIds }),
     });
     const res = await handleResponse(response);
-    return res.data || {};
+    return res?.data || {};
   },
 
   /**
@@ -97,12 +101,12 @@ export const reviewService = {
     if (rating) params.append("rating", rating.toString());
     if (withPhotosOnly) params.append("withPhotosOnly", "true");
 
-    const response = await fetch(`${API_BASE}/products/${productId}/reviews?${params.toString()}`, {
+    const response = await fetch(`${API_BASE}/api/products/${productId}/reviews?${params.toString()}`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data;
+    return res?.data || null;
   },
 
   /**
@@ -118,55 +122,55 @@ export const reviewService = {
     if (dateFrom) params.append("dateFrom", dateFrom);
     if (dateTo) params.append("dateTo", dateTo);
 
-    const response = await fetch(`${API_BASE}/admin/reviews?${params.toString()}`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews?${params.toString()}`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data;
+    return res?.data || null;
   },
 
   /**
    * Admin: Metrics (KPI cards)
    */
   async getAdminMetrics() {
-    const response = await fetch(`${API_BASE}/admin/reviews/metrics`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/metrics`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data;
+    return res?.data || null;
   },
 
   /**
    * Admin: Pending count badge
    */
   async getPendingCount() {
-    const response = await fetch(`${API_BASE}/admin/reviews/pending-count`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/pending-count`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data?.pendingCount || 0;
+    return res?.data?.pendingCount || 0;
   },
 
   /**
    * Admin: Single review details
    */
   async getAdminReviewById(reviewId) {
-    const response = await fetch(`${API_BASE}/admin/reviews/${reviewId}`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}`, {
       method: "GET",
       credentials: "include",
     });
     const res = await handleResponse(response);
-    return res.data;
+    return res?.data || null;
   },
 
   /**
    * Admin: Approve single review
    */
   async approveReview(reviewId) {
-    const response = await fetch(`${API_BASE}/admin/reviews/${reviewId}/approve`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}/approve`, {
       method: "POST",
       credentials: "include",
     });
@@ -177,7 +181,7 @@ export const reviewService = {
    * Admin: Reject single review with reason
    */
   async rejectReview(reviewId, reason) {
-    const response = await fetch(`${API_BASE}/admin/reviews/${reviewId}/reject`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}/reject`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -190,7 +194,7 @@ export const reviewService = {
    * Admin: Delete review
    */
   async deleteReview(reviewId) {
-    const response = await fetch(`${API_BASE}/admin/reviews/${reviewId}`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -201,7 +205,7 @@ export const reviewService = {
    * Admin: Bulk approve reviews
    */
   async bulkApprove(reviewIds = []) {
-    const response = await fetch(`${API_BASE}/admin/reviews/bulk-approve`, {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/bulk-approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -210,4 +214,3 @@ export const reviewService = {
     return handleResponse(response);
   },
 };
-
