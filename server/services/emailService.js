@@ -8,7 +8,7 @@ class EmailService {
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
     const { error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>",
+      from: process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>",
       to: [to],
       subject: "Set your Elourá password",
       html: `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#29252A;background:#FBF0F0;padding:32px"><main style="max-width:520px;margin:auto;background:white;border-radius:16px;padding:32px"><h1 style="color:#9B4F5E">Elourá</h1><h2>Hello ${safeName},</h2><p>Use the button below to set a password for your existing account. Your linked sign-in provider will continue to work.</p><p><a href="${setupUrl}" style="display:inline-block;background:#9B4F5E;color:#fff;padding:13px 22px;border-radius:24px;text-decoration:none;font-weight:bold">Set password</a></p><p>This one-time link expires in 30 minutes. If you did not request it, you can ignore this email.</p></main></body></html>`,
@@ -18,7 +18,7 @@ class EmailService {
   }
 
   async sendPasswordResetEmail({ to, name, resetUrl, isProviderOnly = false, providerName = "Google" }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>";
     const safeName = String(name || "there").replace(/[&<>\"']/g, (char) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
@@ -111,7 +111,7 @@ class EmailService {
   }
 
   async sendPasswordChangedConfirmationEmail({ to, name }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>";
     const safeName = String(name || "there").replace(/[&<>\"']/g, (char) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
@@ -303,7 +303,7 @@ class EmailService {
    * Send notification to a verified user when an account registration is attempted with their email
    */
   async sendAccountExistsEmail({ to, name }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>";
     const safeName = String(name || "there").replace(/[&<>\"']/g, (char) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
     })[char]);
@@ -396,7 +396,7 @@ class EmailService {
   }
 
   async sendOrderPlacedConfirmationEmail({ to, name, orderNumber, totalAmount, grandTotal, items = [], address = {} }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>";
     const safeName = name ? String(name).trim() : "Valued Customer";
 
     let finalAmount = totalAmount != null ? totalAmount : (grandTotal != null ? grandTotal : null);
@@ -551,7 +551,7 @@ class EmailService {
   }
 
   async sendOrderStatusChangedEmail({ to, name, orderNumber, status, courierName, trackingNumber, note }) {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>";
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>";
     const safeName = name ? String(name).trim() : "Valued Customer";
     const statusLabels = {
       pending: "Pending Review",
