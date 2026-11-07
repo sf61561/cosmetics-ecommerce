@@ -587,6 +587,19 @@ class ProductService {
       }
       await productRepository.syncCollections(createdProduct.id, collectionIds, client);
 
+      // Sync Tags
+      let tagIds = [];
+      if (Array.isArray(data.tagIds)) {
+        tagIds = data.tagIds;
+      } else if (typeof data.tagIds === "string") {
+        try {
+          tagIds = JSON.parse(data.tagIds);
+        } catch {
+          tagIds = [data.tagIds];
+        }
+      }
+      await productRepository.syncTags(createdProduct.id, tagIds, client);
+
       // Sync Options and Variants
       const primaryImageUrl = uploadedImages[0]?.imageUrl || null;
       await this.syncOptionsAndVariants(createdProduct.id, data, primaryImageUrl, client);
@@ -815,6 +828,21 @@ class ProductService {
           }
         }
         await productRepository.syncCollections(id, collectionIds, client);
+      }
+
+      // Sync Tags
+      if (data.tagIds !== undefined) {
+        let tagIds = [];
+        if (Array.isArray(data.tagIds)) {
+          tagIds = data.tagIds;
+        } else if (typeof data.tagIds === "string") {
+          try {
+            tagIds = JSON.parse(data.tagIds);
+          } catch {
+            tagIds = [data.tagIds];
+          }
+        }
+        await productRepository.syncTags(id, tagIds, client);
       }
 
       // Sync Options and Variants

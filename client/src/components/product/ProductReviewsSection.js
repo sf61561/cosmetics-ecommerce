@@ -424,3 +424,4 @@ export default function ProductReviewsSection({ product = {} }) {
     </div>
   );
 }
+

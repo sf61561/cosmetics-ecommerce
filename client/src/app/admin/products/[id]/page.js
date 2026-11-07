@@ -16,6 +16,7 @@ export default function EditProductPage() {
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [tags, setTags] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,11 +34,12 @@ export default function EditProductPage() {
       setError(null);
 
       try {
-        const [prodRes, catsRes, brandsRes, collectionsRes] = await Promise.all([
+        const [prodRes, catsRes, brandsRes, collectionsRes, tagsRes] = await Promise.all([
           productService.getAdminProductById(id),
           productService.getCategories(),
           productService.getBrands(),
           productService.getCollections(),
+          productService.getTags(),
         ]);
 
         if (isSubscribed) {
@@ -50,6 +52,8 @@ export default function EditProductPage() {
           if (catsRes?.success) setCategories(catsRes.data || []);
           if (brandsRes?.success) setBrands(brandsRes.data || []);
           if (collectionsRes?.success) setCollections(collectionsRes.data || []);
+          if (tagsRes?.tags) setTags(tagsRes.tags);
+          else if (tagsRes?.data) setTags(tagsRes.data);
         }
       } catch (err) {
         if (isSubscribed) {
@@ -135,6 +139,7 @@ export default function EditProductPage() {
         brands={brands}
         categories={categories}
         collections={collections}
+        tags={tags}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         serverError={serverError}

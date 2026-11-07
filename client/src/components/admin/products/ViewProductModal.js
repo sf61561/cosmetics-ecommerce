@@ -318,10 +318,10 @@ export default function ViewProductModal({ isOpen, onClose, product }) {
                   </div>
                 </div>
 
-                {/* Collections tags */}
+                {/* Collections */}
                 {p.collections && p.collections.length > 0 && (
                   <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <span className="text-gray-400 text-[11px] block mb-1.5">Featured In Collections</span>
+                    <span className="text-gray-400 text-[11px] block mb-1.5">Collection</span>
                     <div className="flex flex-wrap gap-1.5">
                       {p.collections.map((col) => (
                         <span
@@ -330,6 +330,23 @@ export default function ViewProductModal({ isOpen, onClose, product }) {
                         >
                           <FaCheck className="h-2.5 w-2.5 text-[#9B4F5E]" />
                           {col.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Product Tags */}
+                {p.tags && p.tags.length > 0 && (
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <span className="text-gray-400 text-[11px] block mb-1.5">Product Tags</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-300"
+                        >
+                          #{tag.name}
                         </span>
                       ))}
                     </div>

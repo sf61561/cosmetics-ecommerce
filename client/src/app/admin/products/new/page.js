@@ -12,6 +12,7 @@ export default function NewProductPage() {
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [tags, setTags] = useState([]);
   const [isLoadingMeta, setIsLoadingMeta] = useState(true);
   const [metaError, setMetaError] = useState(null);
 
@@ -26,16 +27,19 @@ export default function NewProductPage() {
       setIsLoadingMeta(true);
       setMetaError(null);
       try {
-        const [catsRes, brandsRes, collectionsRes] = await Promise.all([
+        const [catsRes, brandsRes, collectionsRes, tagsRes] = await Promise.all([
           productService.getCategories(),
           productService.getBrands(),
           productService.getCollections(),
+          productService.getTags(),
         ]);
 
         if (isSubscribed) {
           if (catsRes?.success) setCategories(catsRes.data || []);
           if (brandsRes?.success) setBrands(brandsRes.data || []);
           if (collectionsRes?.success) setCollections(collectionsRes.data || []);
+          if (tagsRes?.tags) setTags(tagsRes.tags);
+          else if (tagsRes?.data) setTags(tagsRes.data);
         }
       } catch (err) {
         if (isSubscribed) {
@@ -112,6 +116,7 @@ export default function NewProductPage() {
           brands={brands}
           categories={categories}
           collections={collections}
+          tags={tags}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           serverError={serverError}

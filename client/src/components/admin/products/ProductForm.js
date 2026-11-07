@@ -104,6 +104,7 @@ export default function ProductForm({
   brands = [],
   categories = [],
   collections = [],
+  tags = [],
   onSubmit,
   isSubmitting = false,
   serverError = null,
@@ -118,9 +119,27 @@ export default function ProductForm({
   const [isSlugCustomized, setIsSlugCustomized] = useState(isEditMode);
   const [brandId, setBrandId] = useState(initialProduct?.brand?.id || initialProduct?.brandId || "");
   const [categoryId, setCategoryId] = useState(initialProduct?.category?.id || initialProduct?.categoryId || "");
-  const [selectedCollectionIds, setSelectedCollectionIds] = useState(
-    initialProduct?.collections?.map((c) => c.id) || []
+  const [selectedCollectionId, setSelectedCollectionId] = useState(
+    initialProduct?.collections?.[0]?.id || initialProduct?.collectionId || ""
   );
+  const [selectedTagIds, setSelectedTagIds] = useState(
+    initialProduct?.tags?.map((t) => t.id) || []
+  );
+  const [availableTags, setAvailableTags] = useState(tags);
+
+  useEffect(() => {
+    if (tags && tags.length > 0) {
+      setAvailableTags(tags);
+    } else {
+      productService
+        .getTags()
+        .then((res) => {
+          if (res?.tags) setAvailableTags(res.tags);
+          else if (res?.data) setAvailableTags(res.data);
+        })
+        .catch(() => {});
+    }
+  }, [tags]);
   const [shortDescription, setShortDescription] = useState(initialProduct?.shortDescription || "");
   const [description, setDescription] = useState(initialProduct?.description || "");
   const [isFeatured, setIsFeatured] = useState(initialProduct?.isFeatured ?? false);
@@ -879,9 +898,9 @@ export default function ProductForm({
     setIsDirty(true);
   };
 
-  const handleToggleCollection = (colId) => {
-    setSelectedCollectionIds((prev) =>
-      prev.includes(colId) ? prev.filter((id) => id !== colId) : [...prev, colId]
+  const handleToggleTag = (tagId) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     );
     setIsDirty(true);
   };
@@ -1232,8 +1251,9 @@ export default function ProductForm({
     formData.append("seoTitle", (seoTitle || name).trim());
     formData.append("seoDescription", (seoDescription || shortDescription).trim());
 
-    // Collection IDs
-    formData.append("collectionIds", JSON.stringify(selectedCollectionIds));
+    // Collection & Tag IDs
+    formData.append("collectionIds", JSON.stringify(selectedCollectionId ? [selectedCollectionId] : []));
+    formData.append("tagIds", JSON.stringify(selectedTagIds));
 
     // Handle primary image ID for existing images
     const primaryExisting = existingImages.find((img) => img.isPrimary);
@@ -1594,58 +1614,63 @@ export default function ProductForm({
               </select>
             </div>
 
-            {/* Collections Multi-Select */}
+            {/* Collection */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
-                Feature in Collections
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                Collection
               </label>
-              <div className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800 p-2 space-y-1">
-                {collections.map((col) => {
-                  const isChecked = selectedCollectionIds.includes(col.id);
-                  return (
-                    <label
-                      key={col.id}
-                      className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-pointer text-xs text-gray-800 dark:text-gray-200 select-none"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleCollection(col.id)}
-                        className="rounded border-gray-300 text-[#9B4F5E] focus:ring-[#9B4F5E]"
-                      />
-                      <span>{col.name}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Featured Product Toggle */}
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-                  Featured Product
-                </p>
-                <p className="text-[11px] text-gray-400">
-                  Feature in homepage showcases
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFeatured((p) => !p);
+              <select
+                value={selectedCollectionId}
+                onChange={(e) => {
+                  setSelectedCollectionId(e.target.value);
                   setIsDirty(true);
                 }}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                  isFeatured ? "bg-[#9B4F5E]" : "bg-gray-300 dark:bg-gray-700"
-                }`}
+                className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer"
               >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out ${
-                    isFeatured ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
+                <option value="">-- Select Collection --</option>
+                {collections.map((col) => (
+                  <option key={col.id} value={col.id}>
+                    {col.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tags Multi-Select */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  Tags
+                </label>
+                {selectedTagIds.length > 0 && (
+                  <span className="text-[10px] text-gray-400">
+                    {selectedTagIds.length} selected
+                  </span>
+                )}
+              </div>
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800 p-2 space-y-1">
+                {availableTags.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic p-1.5">No tags available</p>
+                ) : (
+                  availableTags.map((tag) => {
+                    const isChecked = selectedTagIds.includes(tag.id);
+                    return (
+                      <label
+                        key={tag.id}
+                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors cursor-pointer text-xs text-gray-800 dark:text-gray-200 select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleTag(tag.id)}
+                          className="rounded border-gray-300 dark:border-gray-600 text-[#9B4F5E] focus:ring-[#9B4F5E]"
+                        />
+                        <span>{tag.name}</span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>

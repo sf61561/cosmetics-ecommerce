@@ -148,6 +148,22 @@ const productRepository = {
           JOIN collections col ON col.id = pc.collection_id 
           WHERE pc.product_id = p.id
         ) AS collections,
+        -- Associated Tags
+        (
+          SELECT COALESCE(
+            json_agg(
+              json_build_object(
+                'id', tg.id, 
+                'name', tg.name, 
+                'slug', tg.slug
+              ) ORDER BY tg.name ASC
+            ), 
+            '[]'::json
+          ) 
+          FROM product_tags pt 
+          JOIN tags tg ON tg.id = pt.tag_id 
+          WHERE pt.product_id = p.id
+        ) AS tags,
         -- Custom Variants List with Option Labels and Swatches
         (
           SELECT COALESCE(
@@ -312,11 +328,21 @@ const productRepository = {
     `;
     const collectionsRes = await query(collectionsSql, [id]);
 
+    // Get tags
+    const tagsSql = `
+      SELECT t.id, t.name, t.slug
+      FROM tags t
+      JOIN product_tags pt ON pt.tag_id = t.id
+      WHERE pt.product_id = $1
+      ORDER BY t.name ASC;
+    `;
+    const tagsRes = await query(tagsSql, [id]);
+
     // Get options & variants
     const options = await variantRepository.getOptionsByProductId(id);
     const variants = await variantRepository.getVariantsByProductId(id, null, { includeInactive: true });
 
-    return this.formatFullProduct(product, imagesRes.rows, collectionsRes.rows, options, variants);
+    return this.formatFullProduct(product, imagesRes.rows, collectionsRes.rows, options, variants, tagsRes.rows);
   },
 
   /**
@@ -642,6 +668,27 @@ const productRepository = {
   },
 
   /**
+   * Synchronize tags for a product
+   */
+  async syncTags(productId, tagIds = [], dbClient = null) {
+    const executor = dbClient || { query };
+    await executor.query("DELETE FROM product_tags WHERE product_id = $1", [productId]);
+
+    if (Array.isArray(tagIds) && tagIds.length > 0) {
+      for (const tagId of tagIds) {
+        if (tagId) {
+          await executor.query(
+            `INSERT INTO product_tags (product_id, tag_id)
+             VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+            [productId, tagId]
+          );
+        }
+      }
+    }
+  },
+
+  /**
    * Synchronize / Save product images
    */
   async saveImages(productId, images = [], dbClient = null) {
@@ -727,6 +774,9 @@ const productRepository = {
       collections: Array.isArray(row.collections)
         ? row.collections
         : (row.collections ? (typeof row.collections === "string" ? JSON.parse(row.collections) : row.collections) : []),
+      tags: Array.isArray(row.tags)
+        ? row.tags
+        : (row.tags ? (typeof row.tags === "string" ? JSON.parse(row.tags) : row.tags) : []),
       variants: Array.isArray(row.variants)
         ? row.variants
         : (row.variants ? (typeof row.variants === "string" ? JSON.parse(row.variants) : row.variants) : []),
@@ -741,7 +791,7 @@ const productRepository = {
     };
   },
 
-  formatFullProduct(row, images = [], collections = [], options = [], variants = []) {
+  formatFullProduct(row, images = [], collections = [], options = [], variants = [], tags = []) {
     const base = this.formatProductListItem(row);
     const hasCustomVariants = Boolean(
       options && options.length > 0 && variants && variants.some((v) => v.optionsKey !== "default")
@@ -770,6 +820,11 @@ const productRepository = {
         id: c.id,
         name: c.name,
         slug: c.slug,
+      })),
+      tags: (tags || []).map(t => ({
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
       })),
     };
   },

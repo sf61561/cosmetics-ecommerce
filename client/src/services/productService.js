@@ -234,4 +234,16 @@ export const productService = {
     });
     return handleResponse(res);
   },
+
+  /**
+   * Get all tags for product selection
+   */
+  async getTags() {
+    const res = await fetch(`${API_BASE}/api/tags?limit=100`, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    return handleResponse(res);
+  },
 };
