@@ -5,6 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ProductRequestProvider } from "@/context/ProductRequestContext";
+import FloatingChatButton from "@/components/common/FloatingChatButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
               <NotificationProvider>
                 <ProductRequestProvider>
                   <main className="flex-1">{children}</main>
+                  <FloatingChatButton phoneNumber="8801700000000" />
                 </ProductRequestProvider>
               </NotificationProvider>
             </WishlistProvider>
