@@ -220,8 +220,13 @@ export default function RegisterPage() {
       newErrors.phone = "Enter a valid phone number.";
     }
 
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = "Enter a valid email address.";
+    if (form.email) {
+      const trimmedEmail = form.email.trim();
+      if (/^www\./i.test(trimmedEmail)) {
+        newErrors.email = "Email address cannot start with 'www.'. Please remove 'www.' from the beginning.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        newErrors.email = "Enter a valid email address.";
+      }
     }
 
     if (!form.password) {

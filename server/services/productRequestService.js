@@ -57,6 +57,12 @@ const productRequestService = {
 
     // Validate customer email (Optional: "and email is optional")
     if (customerEmail && customerEmail.trim()) {
+      if (/^www\./i.test(customerEmail.trim())) {
+        const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+        error.statusCode = 400;
+        error.field = "customerEmail";
+        throw error;
+      }
       if (!isEmail(customerEmail)) {
         const error = new Error("Please enter a valid email address.");
         error.statusCode = 400;

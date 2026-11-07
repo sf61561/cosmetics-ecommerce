@@ -52,7 +52,9 @@ export default function ProductRequestModal({ isOpen, onClose, initialData = {} 
     }
 
     if (customerEmail.trim()) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+      if (/^www\./i.test(customerEmail.trim())) {
+        newErrors.customerEmail = "Email address cannot start with 'www.'. Please remove 'www.' from the beginning.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
         newErrors.customerEmail = "Please enter a valid email address.";
       }
     }

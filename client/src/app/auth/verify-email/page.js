@@ -154,7 +154,14 @@ function VerifyEmailContent() {
   // Handle Resend Request
   const handleResend = async (e) => {
     e.preventDefault();
-    if (!resendEmail.trim()) return;
+    const trimmed = resendEmail.trim();
+    if (!trimmed) return;
+
+    if (/^www\./i.test(trimmed)) {
+      setResendStatus("error");
+      setResendMessage("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      return;
+    }
 
     setResendLoading(true);
     setResendMessage("");
@@ -166,7 +173,7 @@ function VerifyEmailContent() {
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resendEmail.trim() }),
+        body: JSON.stringify({ email: trimmed }),
       });
       const data = await res.json();
 

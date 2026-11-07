@@ -56,6 +56,13 @@ function validateRegister(req, res, next) {
 
   // 3. Email address validation (optional contact information)
   if (customerEmail) {
+    if (/^www\./i.test(customerEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address cannot start with 'www.'. Please remove 'www.' from the beginning.",
+        field: "email",
+      });
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customerEmail)) {
       return res.status(400).json({

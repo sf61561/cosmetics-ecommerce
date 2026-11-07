@@ -55,6 +55,12 @@ class AuthService {
 
     // 2. Check if an account with this email already exists (if email provided)
     if (email) {
+      if (/^www\./i.test(email.trim())) {
+        const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+        error.statusCode = 400;
+        error.field = "email";
+        throw error;
+      }
       const existingEmailUser = await userRepository.findByEmail(email);
       if (existingEmailUser) {
         // Edge Case: If account was created with email/password, never verified,
@@ -294,6 +300,12 @@ class AuthService {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    if (/^www\./i.test(normalizedEmail)) {
+      const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      error.statusCode = 400;
+      error.field = "email";
+      throw error;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return genericResponse;
     }
@@ -352,6 +364,12 @@ class AuthService {
       message: "If the account is eligible, a password setup link has been sent to its verified email.",
     };
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    if (/^www\./i.test(normalizedEmail)) {
+      const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      error.statusCode = 400;
+      error.field = "email";
+      throw error;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return genericResponse;
 
     const rawToken = crypto.randomBytes(32).toString("base64url");
@@ -503,6 +521,12 @@ class AuthService {
       message: "If an account exists for this email, we've sent a reset link.",
     };
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    if (/^www\./i.test(normalizedEmail)) {
+      const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      error.statusCode = 400;
+      error.field = "email";
+      throw error;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       // Small dummy work to equalize timing
       await bcrypt.hash("dummy_constant_for_timing_normalization", 4);
@@ -762,6 +786,12 @@ class AuthService {
     }
 
     const cleanIdentifier = identifier.trim();
+    if (/^www\./i.test(cleanIdentifier)) {
+      const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      error.statusCode = 400;
+      error.field = "identifier";
+      throw error;
+    }
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanIdentifier);
 
     let user = null;

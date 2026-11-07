@@ -97,6 +97,10 @@ export default function LoginPage() {
       setForgotEmailError("Please enter your email address.");
       return;
     }
+    if (/^www\./i.test(trimmed)) {
+      setForgotEmailError("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       setForgotEmailError("Please enter a valid email address.");
       return;
@@ -150,9 +154,12 @@ export default function LoginPage() {
     const newErrors = {};
 
     // identifier — required, must be a valid email or phone
-    if (!fields.identifier.trim()) {
+    const trimmedId = fields.identifier.trim();
+    if (!trimmedId) {
       newErrors.identifier = "Email or phone number is required.";
-    } else if (!isEmail(fields.identifier) && !isPhone(fields.identifier)) {
+    } else if (/^www\./i.test(trimmedId)) {
+      newErrors.identifier = "Email address cannot start with 'www.'. Please remove 'www.' from the beginning.";
+    } else if (!isEmail(trimmedId) && !isPhone(trimmedId)) {
       newErrors.identifier = "Enter a valid email address or phone number.";
     }
 

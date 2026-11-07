@@ -28,13 +28,25 @@ export default function PasswordSetupPage() {
   const requestLink = async (event) => {
     event.preventDefault();
     setMessage(null);
+    const trimmed = (email || "").trim();
+    if (!trimmed) {
+      setMessage({ type: "error", text: "Please enter your email address." });
+      return;
+    }
+    if (/^www\./i.test(trimmed)) {
+      setMessage({
+        type: "error",
+        text: "Email address cannot start with 'www.'. Please remove 'www.' from the beginning.",
+      });
+      return;
+    }
     setIsSubmitting(true);
     try {
       const response = await fetch(`${API_BASE}/api/auth/password/setup/request`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: trimmed }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "Unable to request a password setup link.");
