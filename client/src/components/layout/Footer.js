@@ -128,21 +128,6 @@ export default function Footer() {
                   FAQs
                 </Link>
               </li>
-              <li>
-                <a href="#shipping" className="hover:text-[#9B4F5E] transition-colors">
-                  Shipping & Delivery
-                </a>
-              </li>
-              <li>
-                <a href="#returns" className="hover:text-[#9B4F5E] transition-colors">
-                  Returns & Exchanges
-                </a>
-              </li>
-              <li>
-                <a href="#guide" className="hover:text-[#9B4F5E] transition-colors">
-                  Care Guide
-                </a>
-              </li>
             </ul>
           </div>
         </div>
