@@ -40,7 +40,6 @@ class ReviewRepository {
     const sql = `
       SELECT 
         pv.id,
-        pv.sku,
         pv.regular_price,
         pv.options_key,
         COALESCE(

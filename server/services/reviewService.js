@@ -6,6 +6,12 @@ const { getClient } = require("../config/db");
 const REVIEW_ELIGIBILITY_DAYS = parseInt(process.env.REVIEW_ELIGIBILITY_DAYS || "90", 10);
 
 class ReviewService {
+  createError(message, statusCode = 400) {
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    return error;
+  }
+
   /**
    * Escape HTML entities to prevent XSS
    */
@@ -72,7 +78,7 @@ class ReviewService {
     // 1. Validate rating
     const parsedRating = parseInt(rating, 10);
     if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
-      throw new Error("Rating is required and must be an integer between 1 and 5 stars.");
+      throw this.createError("Rating is required and must be an integer between 1 and 5 stars.", 400);
     }
 
     // 2. Validate comment length
@@ -80,10 +86,10 @@ class ReviewService {
     if (comment && comment.trim().length > 0) {
       const trimmed = comment.trim();
       if (trimmed.length < 10) {
-        throw new Error("Review comment must be at least 10 characters long.");
+        throw this.createError("Review comment must be at least 10 characters long.", 400);
       }
       if (trimmed.length > 1000) {
-        throw new Error("Review comment cannot exceed 1000 characters.");
+        throw this.createError("Review comment cannot exceed 1000 characters.", 400);
       }
       sanitizedComment = this.sanitizeText(trimmed);
     }
@@ -91,7 +97,7 @@ class ReviewService {
     // 3. Verify eligibility on the server
     const eligibility = await this.checkEligibility(userId, productId);
     if (!eligibility.eligible) {
-      throw new Error(eligibility.reason || "You are not eligible to review this product.");
+      throw this.createError(eligibility.reason || "You are not eligible to review this product.", 400);
     }
 
     const { eligibleItem } = eligibility;
@@ -100,7 +106,7 @@ class ReviewService {
     const uploadedImages = [];
     if (files && files.length > 0) {
       if (files.length > 5) {
-        throw new Error("Maximum of 5 images allowed per review.");
+        throw this.createError("Maximum of 5 images allowed per review.", 400);
       }
 
       for (const file of files) {
@@ -112,7 +118,7 @@ class ReviewService {
           });
         } catch (uploadErr) {
           console.error("Failed to upload review image to Cloudinary:", uploadErr);
-          throw new Error("Failed to upload review images. Please try again.");
+          throw this.createError("Failed to upload review images. Please try again.", 500);
         }
       }
     }
@@ -151,7 +157,7 @@ class ReviewService {
         if (img.publicId) await cloudinaryService.deleteImage(img.publicId);
       }
       if (err.code === "23505") {
-        throw new Error("You can submit only one review per product.");
+        throw this.createError("You can submit only one review per product.", 409);
       }
       throw err;
     } finally {
@@ -166,19 +172,19 @@ class ReviewService {
     // 1. Verify review existence and ownership
     const existing = await reviewRepository.findById(reviewId);
     if (!existing) {
-      throw new Error("Review not found.");
+      throw this.createError("Review not found.", 404);
     }
     if (existing.user_id !== userId) {
-      throw new Error("You are not authorized to edit this review.");
+      throw this.createError("You are not authorized to edit this review.", 403);
     }
     if (existing.status !== "rejected") {
-      throw new Error("Only rejected reviews can be edited and resubmitted.");
+      throw this.createError("Only rejected reviews can be edited and resubmitted.", 400);
     }
 
     // 2. Validate rating
     const parsedRating = parseInt(rating, 10);
     if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
-      throw new Error("Rating is required and must be an integer between 1 and 5 stars.");
+      throw this.createError("Rating is required and must be an integer between 1 and 5 stars.", 400);
     }
 
     // 3. Validate comment length
@@ -186,10 +192,10 @@ class ReviewService {
     if (comment && comment.trim().length > 0) {
       const trimmed = comment.trim();
       if (trimmed.length < 10) {
-        throw new Error("Review comment must be at least 10 characters long.");
+        throw this.createError("Review comment must be at least 10 characters long.", 400);
       }
       if (trimmed.length > 1000) {
-        throw new Error("Review comment cannot exceed 1000 characters.");
+        throw this.createError("Review comment cannot exceed 1000 characters.", 400);
       }
       sanitizedComment = this.sanitizeText(trimmed);
     }
@@ -198,7 +204,7 @@ class ReviewService {
     let newUploadedImages = null;
     if (files && files.length > 0) {
       if (files.length > 5) {
-        throw new Error("Maximum of 5 images allowed per review.");
+        throw this.createError("Maximum of 5 images allowed per review.", 400);
       }
       newUploadedImages = [];
       for (const file of files) {
@@ -279,7 +285,7 @@ class ReviewService {
    */
   async getAdminReviewById(reviewId) {
     const review = await reviewRepository.findById(reviewId);
-    if (!review) throw new Error("Review not found.");
+    if (!review) throw this.createError("Review not found.", 404);
     return review;
   }
 
@@ -302,7 +308,7 @@ class ReviewService {
    */
   async approveReview(reviewId) {
     const review = await reviewRepository.findById(reviewId);
-    if (!review) throw new Error("Review not found.");
+    if (!review) throw this.createError("Review not found.", 404);
 
     const client = await getClient();
     try {
@@ -344,11 +350,11 @@ class ReviewService {
    */
   async rejectReview(reviewId, reason) {
     if (!reason || !reason.trim()) {
-      throw new Error("Rejection reason is required.");
+      throw this.createError("Rejection reason is required.", 400);
     }
 
     const review = await reviewRepository.findById(reviewId);
-    if (!review) throw new Error("Review not found.");
+    if (!review) throw this.createError("Review not found.", 404);
 
     const client = await getClient();
     try {
@@ -391,7 +397,7 @@ class ReviewService {
    */
   async deleteReview(reviewId) {
     const review = await reviewRepository.findById(reviewId);
-    if (!review) throw new Error("Review not found.");
+    if (!review) throw this.createError("Review not found.", 404);
 
     const client = await getClient();
     try {
@@ -426,7 +432,7 @@ class ReviewService {
    */
   async bulkApprove(reviewIds = []) {
     if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
-      throw new Error("At least one review ID must be provided.");
+      throw this.createError("At least one review ID must be provided.", 400);
     }
 
     const client = await getClient();
