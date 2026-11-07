@@ -81,28 +81,18 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/products" className="hover:text-[#9B4F5E] transition-colors">
+                <Link href="/shop" className="hover:text-[#9B4F5E] transition-colors">
                   Best Sellers
                 </Link>
               </li>
               <li>
-                <Link href="/products?status=active" className="hover:text-[#9B4F5E] transition-colors">
+                <Link href="/new-arrivals" className="hover:text-[#9B4F5E] transition-colors">
                   New Arrivals
-                </Link>
-              </li>
-              <li>
-                <Link href="/collections/hydration-and-glow" className="hover:text-[#9B4F5E] transition-colors">
-                  Skin Care
                 </Link>
               </li>
               <li>
                 <Link href="/brands" className="hover:text-[#9B4F5E] transition-colors">
                   Brands
-                </Link>
-              </li>
-              <li>
-                <Link href="/collections/bridal-radiance-glow" className="hover:text-[#9B4F5E] transition-colors">
-                  Gift Sets
                 </Link>
               </li>
             </ul>
