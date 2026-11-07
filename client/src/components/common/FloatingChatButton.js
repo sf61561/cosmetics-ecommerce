@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -12,11 +13,13 @@ import {
 export default function FloatingChatButton({
   phoneNumber,
   defaultMessage,
+  avatarUrl,
   requireAuth = false,
 }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const containerRef = useRef(null);
 
   // 1. Resolve WhatsApp phone number and message from props or NEXT_PUBLIC environment variables
@@ -29,6 +32,11 @@ export default function FloatingChatButton({
     defaultMessage ||
     process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
     "Hello Elourá! I have a question about authentic skincare products.";
+
+  const resolvedAvatar =
+    avatarUrl ||
+    process.env.NEXT_PUBLIC_CHAT_AVATAR_URL ||
+    "https://res.cloudinary.com/rdol2wze/image/upload/v1794094950/eloura/branding/eloura_support_avatar.jpg";
 
   // 2. Never show on admin or staff routes
   const isAdminRoute = pathname?.startsWith("/admin");
@@ -88,10 +96,23 @@ export default function FloatingChatButton({
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-serif font-bold text-base shadow-xs">
-                E
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full overflow-visible shadow-xs">
+                {!avatarError && resolvedAvatar ? (
+                  <Image
+                    src={resolvedAvatar}
+                    alt="Elourá Support"
+                    width={40}
+                    height={40}
+                    onError={() => setAvatarError(true)}
+                    className="h-10 w-10 rounded-full object-cover border border-pink-200/60 dark:border-gray-700"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-serif font-bold text-base">
+                    E
+                  </div>
+                )}
                 {/* Active online pulse dot */}
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900" />
+                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900 shadow-2xs" />
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
