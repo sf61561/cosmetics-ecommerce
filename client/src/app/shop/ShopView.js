@@ -15,6 +15,7 @@ import {
 import { searchService } from "@/services/searchService";
 import { useCart } from "@/context/CartContext";
 import WishlistButton from "@/components/product/WishlistButton";
+import ProductRatingBadge from "@/components/common/ProductRatingBadge";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80";
@@ -597,6 +598,14 @@ export default function ShopView() {
                             >
                               {product.name}
                             </Link>
+
+                            {/* Review Stars & Count */}
+                            <div className="mt-1.5">
+                              <ProductRatingBadge
+                                rating={product.averageRating || product.average_rating}
+                                reviewCount={product.reviewCount || product.review_count}
+                              />
+                            </div>
                           </div>
                         </div>
 

@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { FaCheckCircle, FaTimesCircle, FaBox, FaTruck, FaClock } from "react-icons/fa";
+import { FaCheckCircle, FaTimesCircle, FaBox, FaTruck, FaClock, FaStar, FaRedo } from "react-icons/fa";
 import ProfileLayout from "@/components/profile/ProfileLayout";
 import { orderService } from "@/services/orderService";
+import { reviewService } from "@/services/reviewService";
+import ReviewModal from "@/components/modals/ReviewModal";
 
 const money = (value) => `৳${Number(value || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
 
@@ -43,18 +45,59 @@ export default function CustomerOrderDetailPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
 
+  // Review states
+  const [reviewsMap, setReviewsMap] = useState({});
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewTargetProduct, setReviewTargetProduct] = useState({});
+  const [reviewTargetItem, setReviewTargetItem] = useState({});
+  const [reviewTargetExisting, setReviewTargetExisting] = useState(null);
+
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
     setError("");
     try {
       const data = await orderService.getById(id);
       setOrder(data);
+
+      if (data && data.status === "delivered" && Array.isArray(data.items) && data.items.length > 0) {
+        try {
+          const itemIds = data.items.map((it) => it.id);
+          const revs = await reviewService.getOrderItemsReviewStatus(itemIds);
+          setReviewsMap(revs || {});
+        } catch {
+          // Non-blocking review status fetch
+        }
+      }
     } catch (err) {
       setError(err.message || "Unable to load order details.");
     } finally {
       setIsLoading(false);
     }
   }, [id]);
+
+  const handleOpenReview = (item, existing = null) => {
+    setReviewTargetProduct({
+      id: item.productId,
+      name: item.productName,
+      thumbnailUrl: item.imageUrl,
+    });
+    setReviewTargetItem({
+      id: item.id,
+      orderId: order?.id,
+      variantText: item.sku || null,
+    });
+    setReviewTargetExisting(existing);
+    setReviewModalOpen(true);
+  };
+
+  const handleReviewSuccess = (savedReview) => {
+    if (savedReview && savedReview.order_item_id) {
+      setReviewsMap((prev) => ({
+        ...prev,
+        [savedReview.order_item_id]: savedReview,
+      }));
+    }
+  };
 
   useEffect(() => {
     loadOrder();
@@ -225,28 +268,76 @@ export default function CustomerOrderDetailPage() {
           <div className="rounded-3xl border border-[#eee6ee] bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Ordered Products ({order.items.length})</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
-                    {item.imageUrl ? (
-                      <Image src={item.imageUrl} alt={item.productName} fill sizes="64px" className="object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-gray-400">
-                        <FaBox className="h-6 w-6" />
+              {order.items.map((item) => {
+                const itemReview = reviewsMap[item.id];
+                const isDelivered = order.status === "delivered";
+
+                return (
+                  <div key={item.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
+                        {item.imageUrl ? (
+                          <Image src={item.imageUrl} alt={item.productName} fill sizes="64px" className="object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-gray-400">
+                            <FaBox className="h-6 w-6" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{item.productName}</h3>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {money(item.unitPrice)} × {item.quantity} {item.sku ? `· SKU: ${item.sku}` : ""}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-sm text-gray-900 dark:text-gray-100">{money(item.lineTotal)}</span>
+                      </div>
+                    </div>
+
+                    {/* Review Action / Status for Delivered Orders */}
+                    {isDelivered && (
+                      <div className="flex items-center justify-end pt-1">
+                        {!itemReview ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReview(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#9B4F5E] text-white hover:bg-[#85414f] transition-colors cursor-pointer shadow-2xs"
+                          >
+                            <FaStar className="w-3 h-3 text-amber-300" />
+                            <span>Write a Review</span>
+                          </button>
+                        ) : itemReview.status === "pending" ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            <FaClock className="w-3 h-3" />
+                            <span>Review submitted, awaiting approval</span>
+                          </span>
+                        ) : itemReview.status === "approved" ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            <FaCheckCircle className="w-3 h-3" />
+                            <span>Review published</span>
+                          </span>
+                        ) : itemReview.status === "rejected" ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                              <FaTimesCircle className="w-3 h-3" />
+                              <span>Review rejected{itemReview.rejection_reason ? `: ${itemReview.rejection_reason}` : ""}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenReview(item, itemReview)}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-[#9B4F5E] dark:text-pink-400 hover:underline cursor-pointer"
+                            >
+                              <FaRedo className="w-2.5 h-2.5" />
+                              <span>Resubmit</span>
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{item.productName}</h3>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {money(item.unitPrice)} × {item.quantity} {item.sku ? `· SKU: ${item.sku}` : ""}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold text-sm text-gray-900 dark:text-gray-100">{money(item.lineTotal)}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -318,6 +409,16 @@ export default function CustomerOrderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Review Submission Modal */}
+      <ReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        product={reviewTargetProduct}
+        orderItem={reviewTargetItem}
+        existingReview={reviewTargetExisting}
+        onSuccess={handleReviewSuccess}
+      />
     </ProfileLayout>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { reviewService } from "@/services/reviewService";
 import { IoClose } from "react-icons/io5";
 
 // ─── 3-Petal Floral Motif for Logo ───
@@ -198,6 +200,31 @@ const navItems = [
 export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () => {} }) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPending = async () => {
+      try {
+        const count = await reviewService.getPendingCount();
+        if (isMounted) setPendingReviewsCount(count || 0);
+      } catch (err) {
+        // Silently catch in sidebar if not admin or unauthenticated
+      }
+    };
+
+    fetchPending();
+    const interval = setInterval(fetchPending, 30000);
+
+    const handleReviewsUpdated = () => fetchPending();
+    window.addEventListener("eloura:reviews-updated", handleReviewsUpdated);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("eloura:reviews-updated", handleReviewsUpdated);
+    };
+  }, []);
 
   const handleLinkClick = () => {
     if (setMobileOpen) setMobileOpen(false);
@@ -272,7 +299,12 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
                   <span className={isActive ? "text-gray-900 dark:text-pink-200" : "text-gray-600 dark:text-gray-400"}>
                     <Icon />
                   </span>
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.href === "/admin/reviews" && pendingReviewsCount > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A46377] text-white shadow-xs">
+                      {pendingReviewsCount > 99 ? "99+" : pendingReviewsCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

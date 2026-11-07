@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ProductReviewsSection from "./ProductReviewsSection";
 import {
   FaCheckCircle,
   FaLeaf,
@@ -29,11 +30,11 @@ export default function ProductTabs({ product }) {
     { id: "how-to-use", label: "How to Use" },
     { id: "specs", label: "Specifications" },
     { id: "shipping", label: "Shipping & Delivery" },
-    { id: "reviews", label: "Customer Reviews (0)" },
+    { id: "reviews", label: `Customer Reviews (${product.reviewCount || 0})` },
   ];
 
   return (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-100 dark:border-gray-800">
+    <section id="customer-reviews" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-100 dark:border-gray-800">
       {/* ── Tab Navigation Bar ── */}
       <div
         role="tablist"
@@ -366,42 +367,9 @@ export default function ProductTabs({ product }) {
             id="panel-reviews"
             role="tabpanel"
             aria-labelledby="tab-reviews"
-            className="space-y-6 max-w-4xl"
+            className="space-y-6 max-w-5xl"
           >
-            <div className="space-y-2">
-              <h3 className="font-serif text-xl sm:text-2xl text-gray-900 dark:text-white font-normal">
-                Customer Ratings & Verified Feedback
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Authentic, transparent reviews from customers who purchased this product.
-              </p>
-            </div>
-
-            {/* Authentic Zero-Review State */}
-            <div className="rounded-3xl border border-dashed border-gray-200 dark:border-gray-800 p-8 sm:p-12 text-center space-y-3 bg-[#FAF7F5]/50 dark:bg-gray-900/30">
-              <div className="flex items-center justify-center gap-1 text-gray-300 dark:text-gray-700 text-lg">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <FaStar key={s} />
-                ))}
-              </div>
-              <h4 className="font-serif text-base sm:text-lg font-medium text-gray-900 dark:text-white">
-                Be the first to review this formulation
-              </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                We only publish reviews from verified buyers who placed an order on Eloura. Once your delivery is completed, an email invitation will be sent to rate this product.
-              </p>
-              <div className="pt-2">
-                <a
-                  href="https://wa.me/8801234567890"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-2xs"
-                >
-                  <FaWhatsapp className="h-3.5 w-3.5" />
-                  Ask Our Skincare Consultant on WhatsApp
-                </a>
-              </div>
-            </div>
+            <ProductReviewsSection product={product} />
           </div>
         )}
       </div>

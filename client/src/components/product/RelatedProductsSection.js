@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FaShoppingCart, FaCheck, FaArrowRight } from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
+import ProductRatingBadge from "@/components/common/ProductRatingBadge";
 
 export default function RelatedProductsSection({ relatedProducts = [] }) {
   const router = useRouter();
@@ -102,6 +103,14 @@ export default function RelatedProductsSection({ relatedProducts = [] }) {
                   <h3 className="font-serif text-sm font-medium text-gray-900 dark:text-white line-clamp-1 group-hover:text-[#9B4F5E] dark:group-hover:text-pink-300 transition-colors">
                     {rel.name}
                   </h3>
+
+                  {/* Review Rating */}
+                  <div className="pt-0.5">
+                    <ProductRatingBadge
+                      rating={rel.averageRating || rel.average_rating}
+                      reviewCount={rel.reviewCount || rel.review_count}
+                    />
+                  </div>
                 </div>
 
                 {/* Pricing in BDT */}

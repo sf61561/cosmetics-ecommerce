@@ -14,6 +14,7 @@ import {
   FaUndo,
   FaMoneyBillWave,
   FaSpinner,
+  FaStar,
 } from "react-icons/fa";
 import { useProductRequest } from "@/context/ProductRequestContext";
 
@@ -204,6 +205,43 @@ export default function ProductInfo({
         <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-gray-900 dark:text-white font-normal tracking-tight leading-snug">
           {product.name}
         </h1>
+
+        {/* ── Star Rating Link & Review Count ── */}
+        <div className="flex items-center gap-2 pt-0.5">
+          {product.reviewCount > 0 ? (
+            <a
+              href="#customer-reviews"
+              onClick={(e) => {
+                e.preventDefault();
+                const elem = document.getElementById("customer-reviews");
+                if (elem) elem.scrollIntoView({ behavior: "smooth" });
+                const reviewTabBtn = document.getElementById("tab-reviews");
+                if (reviewTabBtn) reviewTabBtn.click();
+              }}
+              className="inline-flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 font-bold transition-colors cursor-pointer group"
+            >
+              <FaStar className="w-3.5 h-3.5 fill-current" />
+              <span>{Number(product.averageRating || 0).toFixed(1)}</span>
+              <span className="text-gray-400 dark:text-gray-500 font-medium group-hover:underline">
+                ({product.reviewCount} {product.reviewCount === 1 ? "review" : "reviews"})
+              </span>
+            </a>
+          ) : (
+            <a
+              href="#customer-reviews"
+              onClick={(e) => {
+                e.preventDefault();
+                const elem = document.getElementById("customer-reviews");
+                if (elem) elem.scrollIntoView({ behavior: "smooth" });
+                const reviewTabBtn = document.getElementById("tab-reviews");
+                if (reviewTabBtn) reviewTabBtn.click();
+              }}
+              className="text-xs text-gray-400 hover:text-[#9B4F5E] dark:hover:text-pink-300 font-medium transition-colors cursor-pointer"
+            >
+              No reviews yet · Be the first to review
+            </a>
+          )}
+        </div>
 
         {product.sku && (
           <p className="text-[11px] font-mono text-gray-400">

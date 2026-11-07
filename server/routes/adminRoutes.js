@@ -14,9 +14,13 @@ const adminAuditRoutes = require("./adminAuditRoutes");
 const { adminNotificationRouter } = require("./notificationRoutes");
 const adminProductRequestRoutes = require("./adminProductRequestRoutes");
 const adminTagRoutes = require("./adminTagRoutes");
+const adminReviewRoutes = require("./adminReviewRoutes");
 
 // Protect ALL routes under /api/admin with authentication + ADMIN role requirement
 router.use(authenticate, requireRole("ADMIN"));
+
+// Reviews Management API
+router.use("/reviews", adminReviewRoutes);
 
 // Tags Management API
 router.use("/tags", adminTagRoutes);

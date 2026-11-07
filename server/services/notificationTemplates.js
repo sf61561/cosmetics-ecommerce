@@ -104,6 +104,28 @@ const TEMPLATES = {
     icon: 'gift',
   },
 
+  // ── Customer Review Events ──
+  'review.approved': {
+    category: 'review_updates',
+    required: true,
+    channels: ['in_app', 'email'],
+    title: (data) => `Your review was approved!`,
+    body: (data) => `Your review for "${data.productName || 'product'}" has been approved and published. Thank you for your feedback!`,
+    link: (data) => (data.productSlug ? `/products/${data.productSlug}` : '/orders'),
+    actionText: 'View Product',
+    icon: 'star',
+  },
+  'review.rejected': {
+    category: 'review_updates',
+    required: true,
+    channels: ['in_app', 'email'],
+    title: (data) => `Your review was rejected`,
+    body: (data) => `Your review for "${data.productName || 'product'}" was rejected: ${data.reason || 'Did not meet content guidelines.'} You can resubmit with adjustments.`,
+    link: (data) => (data.orderId ? `/orders/${data.orderId}` : '/orders'),
+    actionText: 'Resubmit Review',
+    icon: 'alert-circle',
+  },
+
   // ── Admin Alerts ──
   'admin.order_placed': {
     category: 'admin_alerts',

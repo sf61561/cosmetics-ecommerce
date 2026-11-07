@@ -9,6 +9,7 @@ import { recommendationService } from "@/services/recommendationService";
 import { interactionService } from "@/services/interactionService";
 import { useCart } from "@/context/CartContext";
 import WishlistButton from "@/components/product/WishlistButton";
+import ProductRatingBadge from "@/components/common/ProductRatingBadge";
 
 export default function RecommendedProducts() {
   const router = useRouter();
@@ -153,6 +154,14 @@ export default function RecommendedProducts() {
                       <h3 className="font-serif text-sm sm:text-base font-normal text-gray-900 dark:text-gray-100 line-clamp-1 mt-1 group-hover:text-[#9B4F5E] dark:group-hover:text-pink-300 transition-colors">
                         {product.name}
                       </h3>
+
+                      {/* Review Rating */}
+                      <div className="mt-1">
+                        <ProductRatingBadge
+                          rating={product.averageRating || product.average_rating}
+                          reviewCount={product.reviewCount || product.review_count}
+                        />
+                      </div>
 
                       {/* Price */}
                       <div className="mt-2 flex items-baseline gap-2">

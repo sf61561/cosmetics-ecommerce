@@ -22,6 +22,7 @@ const searchRoutes = require("./routes/searchRoutes");
 const { notificationRoutes } = require("./routes/notificationRoutes");
 const productRequestRoutes = require("./routes/productRequestRoutes");
 const tagRoutes = require("./routes/tagRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 const notificationWorker = require("./services/notificationWorker");
 const errorHandler = require("./middlewares/errorHandler");
 const requestContext = require("./middlewares/requestContext");
@@ -132,6 +133,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/product-requests", productRequestRoutes);
 app.use("/api/tags", tagRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // 404 Not Found Handler
 app.use((req, res) => {
