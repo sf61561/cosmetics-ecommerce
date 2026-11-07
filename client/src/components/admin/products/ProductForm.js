@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { productService } from "@/services/productService";
 import {
   FaUpload,
   FaTrash,
@@ -125,21 +126,26 @@ export default function ProductForm({
   const [selectedTagIds, setSelectedTagIds] = useState(
     initialProduct?.tags?.map((t) => t.id) || []
   );
-  const [availableTags, setAvailableTags] = useState(tags);
+  const [internalTags, setInternalTags] = useState([]);
 
   useEffect(() => {
-    if (tags && tags.length > 0) {
-      setAvailableTags(tags);
-    } else {
-      productService
-        .getTags()
-        .then((res) => {
-          if (res?.tags) setAvailableTags(res.tags);
-          else if (res?.data) setAvailableTags(res.data);
-        })
-        .catch(() => {});
-    }
+    if (tags && tags.length > 0) return;
+    let isSubscribed = true;
+    productService
+      .getTags()
+      .then((res) => {
+        if (!isSubscribed) return;
+        if (res?.tags) setInternalTags(res.tags);
+        else if (res?.data) setInternalTags(res.data);
+      })
+      .catch(() => {});
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [tags]);
+
+  const availableTags = tags && tags.length > 0 ? tags : internalTags;
   const [shortDescription, setShortDescription] = useState(initialProduct?.shortDescription || "");
   const [description, setDescription] = useState(initialProduct?.description || "");
   const [isFeatured, setIsFeatured] = useState(initialProduct?.isFeatured ?? false);
