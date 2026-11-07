@@ -101,15 +101,8 @@ export default function LoginPage() {
       setForgotEmailError("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(trimmed)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       setForgotEmailError("Please enter a valid email address.");
-      return;
-    }
-    if (
-      process.env.NEXT_PUBLIC_RESEND_SANDBOX !== "false" &&
-      trimmed.toLowerCase() !== "sf61561@gmail.com"
-    ) {
-      setForgotEmailError("This email is not verified in Resend. In testing mode, only 'sf61561@gmail.com' can receive reset links.");
       return;
     }
 

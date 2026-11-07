@@ -1,14 +1,6 @@
 const resend = require("../config/resend");
 require("dotenv").config();
 
-function formatResendError(err) {
-  const msg = err?.message || String(err || "");
-  if (msg.includes("testing emails to your own email address") || msg.includes("validation_error")) {
-    return "This email is not verified in Resend. In sandbox mode, emails can only be sent to sf61561@gmail.com.";
-  }
-  return msg || "Failed to send email via Resend";
-}
-
 class EmailService {
   async sendPasswordSetupEmail({ to, name, setupUrl }) {
     if (!resend) throw new Error("Password setup email is not configured.");
@@ -110,12 +102,11 @@ class EmailService {
         subject: isProviderOnly ? "Set your password" : "Reset your password",
         html: htmlContent,
       });
-      if (error) throw new Error(formatResendError(error));
+      if (error) throw new Error(error.message || "Failed to send email via Resend");
       return { success: true, data };
     } catch (error) {
-      const formatted = formatResendError(error);
-      console.error("Password reset email delivery error:", formatted);
-      throw new Error(formatted);
+      console.error("Password reset email delivery error:", error.message || error);
+      throw error;
     }
   }
 
@@ -295,7 +286,7 @@ class EmailService {
 
       if (error) {
         console.error("❌ Resend API error:", error);
-        throw new Error(formatResendError(error));
+        throw new Error(error.message || "Failed to send email via Resend");
       }
 
       console.log(
@@ -303,9 +294,8 @@ class EmailService {
       );
       return { success: true, data };
     } catch (error) {
-      const formatted = formatResendError(error);
-      console.error("Resend email delivery error:", formatted);
-      throw new Error(formatted);
+      console.error("Resend email delivery error:", error.message || error);
+      throw error;
     }
   }
 

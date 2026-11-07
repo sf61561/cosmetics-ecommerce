@@ -63,32 +63,11 @@ function validateRegister(req, res, next) {
         field: "email",
       });
     }
-
-    if (/\.\./.test(customerEmail) || /^\.|\.@|@\.|\.$/.test(customerEmail)) {
-      return res.status(400).json({
-        success: false,
-        message: "Email address contains invalid dot placement.",
-        field: "email",
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customerEmail)) {
       return res.status(400).json({
         success: false,
         message: "Please provide a valid email address.",
-        field: "email",
-      });
-    }
-
-    // Check Resend Sandbox restrictions if using default test domain
-    const isResendSandbox = (process.env.RESEND_FROM_EMAIL || "").includes("resend.dev");
-    const authorizedTestEmail = (process.env.RESEND_TEST_RECIPIENT || "sf61561@gmail.com").trim().toLowerCase();
-
-    if (isResendSandbox && customerEmail !== authorizedTestEmail) {
-      return res.status(400).json({
-        success: false,
-        message: `This email is not verified in Resend. In sandbox mode, only '${authorizedTestEmail}' can receive emails. Please use '${authorizedTestEmail}' or verify a custom domain in Resend.`,
         field: "email",
       });
     }

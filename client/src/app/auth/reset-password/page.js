@@ -60,20 +60,6 @@ export default function ResetPasswordPage() {
       });
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(trimmed)) {
-      setMessage({ type: "error", text: "Please enter a valid email address." });
-      return;
-    }
-    if (
-      process.env.NEXT_PUBLIC_RESEND_SANDBOX !== "false" &&
-      trimmed.toLowerCase() !== "sf61561@gmail.com"
-    ) {
-      setMessage({
-        type: "error",
-        text: "This email is not verified in Resend. In testing mode, only 'sf61561@gmail.com' can receive reset links.",
-      });
-      return;
-    }
     setIsSubmitting(true);
     try {
       const response = await fetch(`${API_BASE}/api/auth/password/reset/request`, {
