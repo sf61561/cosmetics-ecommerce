@@ -65,6 +65,7 @@ class VariantRepository {
       imagePublicId = null,
       isAvailable = true,
       isActive = true,
+      isDefault = false,
     },
     client = null
   ) {
@@ -74,12 +75,12 @@ class VariantRepository {
         product_id, options_key, price, compare_at_price,
         regular_price, sale_price, cost_price,
         size_value, size_unit, image_url, image_public_id,
-        is_available, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        is_available, is_active, is_default
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, product_id, options_key, price, compare_at_price,
                 regular_price, sale_price, cost_price,
                 size_value, size_unit, image_url, image_public_id,
-                is_available, is_active, created_at, updated_at
+                is_available, is_active, is_default, created_at, updated_at
     `;
     const res = await q(sql, [
       productId,
@@ -95,6 +96,7 @@ class VariantRepository {
       imagePublicId || null,
       isAvailable,
       isActive,
+      Boolean(isDefault),
     ]);
     return res.rows[0];
   }
@@ -116,6 +118,7 @@ class VariantRepository {
       imagePublicId = null,
       isAvailable = true,
       isActive = true,
+      isDefault = false,
     },
     client = null
   ) {
@@ -133,12 +136,13 @@ class VariantRepository {
           image_public_id = $10,
           is_available = $11,
           is_active = $12,
+          is_default = $13,
           updated_at = NOW()
       WHERE id = $1 AND deleted_at IS NULL
       RETURNING id, product_id, options_key, price, compare_at_price,
                 regular_price, sale_price, cost_price,
                 size_value, size_unit, image_url, image_public_id,
-                is_available, is_active, created_at, updated_at
+                is_available, is_active, is_default, created_at, updated_at
     `;
     const res = await q(sql, [
       id,
@@ -153,6 +157,7 @@ class VariantRepository {
       imagePublicId || null,
       isAvailable,
       isActive,
+      Boolean(isDefault),
     ]);
     return res.rows[0];
   }
@@ -231,6 +236,7 @@ class VariantRepository {
         pv.image_public_id,
         pv.is_available,
         pv.is_active,
+        pv.is_default,
         pv.created_at,
         pv.updated_at,
         COALESCE(
@@ -278,6 +284,7 @@ class VariantRepository {
       imagePublicId: row.image_public_id,
       isAvailable: row.is_available,
       isActive: row.is_active,
+      isDefault: Boolean(row.is_default),
       selectedOptions: row.selected_options || [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,

@@ -39,7 +39,39 @@ export default function ProductInfo({
   );
 
   // Track customer selected option values, e.g. { "Shade": "Rose", "Size": "4 ml" }
-  const [selectedOptions, setSelectedOptions] = useState({});
+  // Auto-select the designated Default Variant (or first active available variant) on mount
+  const [selectedOptions, setSelectedOptions] = useState(() => {
+    if (!product?.hasVariants || !product?.variants?.length || !product?.options?.length) {
+      return {};
+    }
+
+    const defaultVar =
+      product.variants.find((v) => v.isActive && v.isAvailable && v.isDefault) ||
+      product.variants.find((v) => v.isActive && v.isDefault) ||
+      product.variants.find((v) => v.isActive && v.isAvailable) ||
+      product.variants.find((v) => v.isActive) ||
+      product.variants[0];
+
+    if (!defaultVar) return {};
+
+    const initial = {};
+    if (Array.isArray(defaultVar.selectedOptions) && defaultVar.selectedOptions.length > 0) {
+      for (const so of defaultVar.selectedOptions) {
+        const oName = so.optionName || so.name;
+        if (oName && so.value) {
+          initial[oName] = so.value;
+        }
+      }
+    } else if (defaultVar.optionsKey && defaultVar.optionsKey !== "default") {
+      const parts = defaultVar.optionsKey.split("/").map((s) => s.trim());
+      product.options.forEach((opt, idx) => {
+        if (parts[idx]) {
+          initial[opt.name] = parts[idx];
+        }
+      });
+    }
+    return initial;
+  });
 
   const allOptionsSelected = hasVariants
     ? product.options.every((opt) => Boolean(selectedOptions[opt.name]))

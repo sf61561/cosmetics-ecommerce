@@ -224,11 +224,16 @@ class ProductService {
 
     // 2. Sync variants
     const activeOptionsKeys = [];
-    for (const v of variants) {
+    const defaultIndex = variants.findIndex((v) => Boolean(v.isDefault ?? v.is_default));
+    const effectiveDefaultIndex = defaultIndex !== -1 ? defaultIndex : 0;
+
+    for (let idx = 0; idx < variants.length; idx++) {
+      const v = variants[idx];
       const optionsKey = v.optionsKey || v.options_key;
       if (!optionsKey) continue;
       activeOptionsKeys.push(optionsKey);
 
+      const isDefault = idx === effectiveDefaultIndex;
       let regularPrice = null;
       let salePrice = null;
       let costPrice = null;
@@ -279,7 +284,7 @@ class ProductService {
       if (v.id) {
         variantRow = await variantRepository.updateVariant(
           v.id,
-          { price, compareAtPrice, regularPrice, salePrice, costPrice, sizeValue, sizeUnit, imageUrl, imagePublicId, isAvailable, isActive },
+          { price, compareAtPrice, regularPrice, salePrice, costPrice, sizeValue, sizeUnit, imageUrl, imagePublicId, isAvailable, isActive, isDefault },
           client
         );
       } else {
@@ -290,13 +295,13 @@ class ProductService {
         if (existingRes.rows.length > 0) {
           variantRow = await variantRepository.updateVariant(
             existingRes.rows[0].id,
-            { price, compareAtPrice, regularPrice, salePrice, costPrice, sizeValue, sizeUnit, imageUrl, imagePublicId, isAvailable, isActive },
+            { price, compareAtPrice, regularPrice, salePrice, costPrice, sizeValue, sizeUnit, imageUrl, imagePublicId, isAvailable, isActive, isDefault },
             client
           );
         } else {
           variantRow = await variantRepository.createVariant(
             productId,
-            { optionsKey, price, compareAtPrice, regularPrice, salePrice, costPrice, sizeValue, sizeUnit, imageUrl, imagePublicId, isAvailable, isActive },
+            { optionsKey, price, compareAtPrice, regularPrice, salePrice, costPrice, sizeValue, sizeUnit, imageUrl, imagePublicId, isAvailable, isActive, isDefault },
             client
           );
         }
@@ -336,17 +341,33 @@ class ProductService {
     // 3. Deactivate or delete stale variants
     await variantRepository.safeDeactivateOrDeleteVariants(productId, activeOptionsKeys, client);
 
-    // 4. Update products.price and cost_price to active variant prices
+    // 4. Update products.price, sale_price and cost_price based on default variant or lowest price
+    const defaultRes = await client.query(
+      "SELECT price, regular_price, sale_price, cost_price FROM product_variants WHERE product_id = $1 AND is_default = true AND deleted_at IS NULL AND is_active = true LIMIT 1",
+      [productId]
+    );
+    const defaultRow = defaultRes.rows[0];
     const lowest = await variantRepository.getLowestPrice(productId, client);
-    if (lowest && lowest.minPrice !== null && lowest.minPrice !== undefined) {
-      const minCostRes = await client.query(
-        "SELECT MIN(cost_price) AS min_cost FROM product_variants WHERE product_id = $1 AND deleted_at IS NULL AND is_active = true",
-        [productId]
-      );
-      const minCost = minCostRes.rows[0]?.min_cost ? Number(minCostRes.rows[0].min_cost) : null;
+
+    const targetPrice = defaultRow
+      ? Number(defaultRow.regular_price || defaultRow.price)
+      : (lowest?.minPrice !== null && lowest?.minPrice !== undefined ? Number(lowest.minPrice) : null);
+    const targetSalePrice = defaultRow?.sale_price !== null && defaultRow?.sale_price !== undefined
+      ? Number(defaultRow.sale_price)
+      : null;
+    const minCostRes = await client.query(
+      "SELECT MIN(cost_price) AS min_cost FROM product_variants WHERE product_id = $1 AND deleted_at IS NULL AND is_active = true",
+      [productId]
+    );
+    const minCost = minCostRes.rows[0]?.min_cost ? Number(minCostRes.rows[0].min_cost) : null;
+    const targetCostPrice = defaultRow?.cost_price !== null && defaultRow?.cost_price !== undefined
+      ? Number(defaultRow.cost_price)
+      : minCost;
+
+    if (targetPrice !== null) {
       await client.query(
-        "UPDATE products SET price = $2, cost_price = COALESCE($3, cost_price) WHERE id = $1",
-        [productId, lowest.minPrice, minCost]
+        "UPDATE products SET price = $2, sale_price = $3, cost_price = COALESCE($4, cost_price) WHERE id = $1",
+        [productId, targetPrice, targetSalePrice, targetCostPrice]
       );
     }
   }

@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
     image_public_id VARCHAR(255),
     is_available BOOLEAN NOT NULL DEFAULT true,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    is_default BOOLEAN NOT NULL DEFAULT false,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

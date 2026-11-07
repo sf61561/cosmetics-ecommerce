@@ -286,6 +286,12 @@ export default function ProductForm({
                 : v.price !== undefined && v.price !== null
                 ? v.price.toString()
                 : "";
+            const sale =
+              v.salePrice !== undefined && v.salePrice !== null
+                ? v.salePrice.toString()
+                : v.sale_price !== undefined && v.sale_price !== null
+                ? v.sale_price.toString()
+                : "";
             const cost =
               v.costPrice !== undefined && v.costPrice !== null
                 ? v.costPrice.toString()
@@ -302,7 +308,9 @@ export default function ProductForm({
               shadeColor: swatchHex,
               shadeName: val || getClosestShadeName(swatchHex),
               regularPrice: reg,
+              salePrice: sale,
               costPrice: cost,
+              isDefault: Boolean(v.isDefault ?? v.is_default ?? (idx === 0)),
               imageUrls: imgs,
             };
           });
@@ -314,7 +322,9 @@ export default function ProductForm({
         shadeColor: "#E8A0B4",
         shadeName: "Rose Pink",
         regularPrice: "",
+        salePrice: "",
         costPrice: "",
+        isDefault: true,
         imageUrls: [],
       },
     ];
@@ -331,7 +341,7 @@ export default function ProductForm({
           .filter((v) => v.optionsKey !== "default")
           .map((v, idx) => {
             const val = v.selectedOptions?.[0]?.value || v.optionsKey || "";
-            const match = val.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
+            const match = String(val).match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
             const sizeVal =
               v.sizeValue !== null && v.sizeValue !== undefined
                 ? v.sizeValue.toString()
@@ -344,6 +354,12 @@ export default function ProductForm({
                 ? v.regularPrice.toString()
                 : v.price !== undefined && v.price !== null
                 ? v.price.toString()
+                : "";
+            const sale =
+              v.salePrice !== undefined && v.salePrice !== null
+                ? v.salePrice.toString()
+                : v.sale_price !== undefined && v.sale_price !== null
+                ? v.sale_price.toString()
                 : "";
             const cost =
               v.costPrice !== undefined && v.costPrice !== null
@@ -361,7 +377,9 @@ export default function ProductForm({
               sizeValue: sizeVal,
               sizeUnit: sizeU,
               regularPrice: reg,
+              salePrice: sale,
               costPrice: cost,
+              isDefault: Boolean(v.isDefault ?? v.is_default ?? (idx === 0)),
               imageUrls: imgs,
             };
           });
@@ -373,7 +391,9 @@ export default function ProductForm({
         sizeValue: "50",
         sizeUnit: "ml",
         regularPrice: "",
+        salePrice: "",
         costPrice: "",
+        isDefault: true,
         imageUrls: [],
       },
     ];
@@ -448,6 +468,12 @@ export default function ProductForm({
               : v.price !== undefined && v.price !== null
               ? v.price.toString()
               : "";
+          const sale =
+            v.salePrice !== undefined && v.salePrice !== null
+              ? v.salePrice.toString()
+              : v.sale_price !== undefined && v.sale_price !== null
+              ? v.sale_price.toString()
+              : "";
           const cost =
             v.costPrice !== undefined && v.costPrice !== null
               ? v.costPrice.toString()
@@ -466,7 +492,9 @@ export default function ProductForm({
             shadeColor,
             shadeName,
             regularPrice: reg,
+            salePrice: sale,
             costPrice: cost,
+            isDefault: Boolean(v.isDefault ?? v.is_default ?? (idx === 0)),
             imageUrls: imgs,
           };
         });
@@ -475,6 +503,7 @@ export default function ProductForm({
   });
 
   const [bulkRegularPrice, setBulkRegularPrice] = useState("");
+  const [bulkSalePrice, setBulkSalePrice] = useState("");
   const [bulkCostPrice, setBulkCostPrice] = useState("");
 
   // Modals & Confirmation States
@@ -630,7 +659,9 @@ export default function ProductForm({
         shadeColor: defaultColor,
         shadeName: defaultName,
         regularPrice: "",
+        salePrice: "",
         costPrice: "",
+        isDefault: prev.length === 0,
         imageUrls: [],
       },
     ]);
@@ -639,7 +670,23 @@ export default function ProductForm({
 
   const handleRemoveShade = (idx) => {
     if (shades.length <= 1) return;
-    setShades((prev) => prev.filter((_, i) => i !== idx));
+    setShades((prev) => {
+      const remaining = prev.filter((_, i) => i !== idx);
+      if (!remaining.some((s) => s.isDefault) && remaining.length > 0) {
+        remaining[0].isDefault = true;
+      }
+      return remaining;
+    });
+    setIsDirty(true);
+  };
+
+  const handleSetDefaultShade = (targetIdx) => {
+    setShades((prev) =>
+      prev.map((s, i) => ({
+        ...s,
+        isDefault: i === targetIdx,
+      }))
+    );
     setIsDirty(true);
   };
 
@@ -677,7 +724,9 @@ export default function ProductForm({
         sizeValue: `${nextIdx * 30}`,
         sizeUnit: "ml",
         regularPrice: "",
+        salePrice: "",
         costPrice: "",
+        isDefault: prev.length === 0,
         imageUrls: [],
       },
     ]);
@@ -686,7 +735,23 @@ export default function ProductForm({
 
   const handleRemoveSize = (idx) => {
     if (sizes.length <= 1) return;
-    setSizes((prev) => prev.filter((_, i) => i !== idx));
+    setSizes((prev) => {
+      const remaining = prev.filter((_, i) => i !== idx);
+      if (!remaining.some((s) => s.isDefault) && remaining.length > 0) {
+        remaining[0].isDefault = true;
+      }
+      return remaining;
+    });
+    setIsDirty(true);
+  };
+
+  const handleSetDefaultSize = (targetIdx) => {
+    setSizes((prev) =>
+      prev.map((s, i) => ({
+        ...s,
+        isDefault: i === targetIdx,
+      }))
+    );
     setIsDirty(true);
   };
 
@@ -787,12 +852,18 @@ export default function ProductForm({
               shadeColor: sh.shadeColor,
               shadeName: sh.shadeName,
               regularPrice: bulkRegularPrice || "",
+              salePrice: bulkSalePrice || "",
               costPrice: bulkCostPrice || "",
+              isDefault: nextCombos.length === 0,
               imageUrls: [],
             });
           }
         });
       });
+
+      if (!nextCombos.some((c) => c.isDefault) && nextCombos.length > 0) {
+        nextCombos[0].isDefault = true;
+      }
 
       return nextCombos;
     });
@@ -800,6 +871,16 @@ export default function ProductForm({
     if (clientErrors.combinations) {
       setClientErrors((p) => ({ ...p, combinations: null, form: null }));
     }
+  };
+
+  const handleSetDefaultCombination = (targetIdx) => {
+    setCombinations((prev) =>
+      prev.map((c, i) => ({
+        ...c,
+        isDefault: i === targetIdx,
+      }))
+    );
+    setIsDirty(true);
   };
 
   const handleCombinationChange = (idx, field, value) => {
@@ -830,6 +911,17 @@ export default function ProductForm({
     setIsDirty(true);
   };
 
+  const handleApplyBulkSaleToCombinations = () => {
+    if (!bulkSalePrice) return;
+    setCombinations((prev) =>
+      prev.map((c) => ({
+        ...c,
+        salePrice: bulkSalePrice,
+      }))
+    );
+    setIsDirty(true);
+  };
+
   const handleApplyBulkCostToCombinations = () => {
     if (!bulkCostPrice) return;
     setCombinations((prev) =>
@@ -844,17 +936,29 @@ export default function ProductForm({
   const handleDeleteCombinationRow = (index) => {
     const row = combinations[index];
     if (!row) return;
-    if (row.regularPrice || row.costPrice || (row.imageUrls && row.imageUrls.length > 0)) {
+    if (row.regularPrice || row.salePrice || row.costPrice || (row.imageUrls && row.imageUrls.length > 0)) {
       setDeleteComboConfirmIndex(index);
     } else {
-      setCombinations((prev) => prev.filter((_, idx) => idx !== index));
+      setCombinations((prev) => {
+        const remaining = prev.filter((_, idx) => idx !== index);
+        if (!remaining.some((c) => c.isDefault) && remaining.length > 0) {
+          remaining[0].isDefault = true;
+        }
+        return remaining;
+      });
       setIsDirty(true);
     }
   };
 
   const handleConfirmDeleteCombination = () => {
     if (deleteComboConfirmIndex !== null) {
-      setCombinations((prev) => prev.filter((_, idx) => idx !== deleteComboConfirmIndex));
+      setCombinations((prev) => {
+        const remaining = prev.filter((_, idx) => idx !== deleteComboConfirmIndex);
+        if (!remaining.some((c) => c.isDefault) && remaining.length > 0) {
+          remaining[0].isDefault = true;
+        }
+        return remaining;
+      });
       setDeleteComboConfirmIndex(null);
       setIsDirty(true);
     }
@@ -1010,7 +1114,16 @@ export default function ProductForm({
 
           const reg = parseFloat(s.regularPrice);
           if (isNaN(reg) || reg <= 0) {
-            errs[`shade_${i}_price`] = "Regular price must be greater than 0.";
+            errs[`shade_${i}_regularPrice`] = "Regular price must be greater than 0.";
+          }
+
+          if (s.salePrice && s.salePrice.trim() !== "") {
+            const sale = parseFloat(s.salePrice);
+            if (isNaN(sale) || sale < 0) {
+              errs[`shade_${i}_salePrice`] = "Discount price must be a positive number.";
+            } else if (!isNaN(reg) && sale >= reg) {
+              errs[`shade_${i}_salePrice`] = "Discount price must be lower than regular price.";
+            }
           }
         }
       }
@@ -1033,7 +1146,16 @@ export default function ProductForm({
 
           const reg = parseFloat(sz.regularPrice);
           if (isNaN(reg) || reg <= 0) {
-            errs[`size_${i}_price`] = "Regular price must be greater than 0.";
+            errs[`size_${i}_regularPrice`] = "Regular price must be greater than 0.";
+          }
+
+          if (sz.salePrice && sz.salePrice.trim() !== "") {
+            const sale = parseFloat(sz.salePrice);
+            if (isNaN(sale) || sale < 0) {
+              errs[`size_${i}_salePrice`] = "Discount price must be a positive number.";
+            } else if (!isNaN(reg) && sale >= reg) {
+              errs[`size_${i}_salePrice`] = "Discount price must be lower than regular price.";
+            }
           }
         }
       }
@@ -1051,7 +1173,16 @@ export default function ProductForm({
           const c = combinations[i];
           const reg = parseFloat(c.regularPrice);
           if (isNaN(reg) || reg <= 0) {
-            errs[`combo_${i}_price`] = "Regular price must be greater than 0.";
+            errs[`combo_${i}_regularPrice`] = "Regular price must be greater than 0.";
+          }
+
+          if (c.salePrice && c.salePrice.trim() !== "") {
+            const sale = parseFloat(c.salePrice);
+            if (isNaN(sale) || sale < 0) {
+              errs[`combo_${i}_salePrice`] = "Discount price must be a positive number.";
+            } else if (!isNaN(reg) && sale >= reg) {
+              errs[`combo_${i}_salePrice`] = "Discount price must be lower than regular price.";
+            }
           }
         }
       }
@@ -1110,17 +1241,20 @@ export default function ProductForm({
       formattedVariants = shades.map((s, idx) => {
         const valTrimmed = s.shadeName.trim();
         const regVal = parseFloat(s.regularPrice);
+        const saleVal = s.salePrice ? parseFloat(s.salePrice) : null;
+        const hasDiscount = saleVal !== null && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
         const costVal = parseFloat(s.costPrice);
         const primImg = s.imageUrls?.[0] || "";
 
         return {
           id: s.id?.startsWith("shade_") ? undefined : s.id,
           optionsKey: valTrimmed,
-          price: regVal.toString(),
-          compareAtPrice: "",
+          price: (hasDiscount ? saleVal : regVal).toString(),
+          compareAtPrice: hasDiscount ? regVal.toString() : "",
           regularPrice: regVal.toString(),
-          salePrice: "",
+          salePrice: hasDiscount ? saleVal.toString() : "",
           costPrice: !isNaN(costVal) && costVal > 0 ? costVal.toString() : "",
+          isDefault: Boolean(s.isDefault),
           sizeValue: null,
           sizeUnit: null,
           imageUrl: primImg,
@@ -1137,16 +1271,23 @@ export default function ProductForm({
         };
       });
 
-      variantPayload.variants = shades.map((s) => ({
-        size: null,
-        size_value: null,
-        size_unit: null,
-        shade_name: s.shadeName.trim(),
-        shade_color: s.shadeColor || "#E8A0B4",
-        image_urls: s.imageUrls || [],
-        regular_price: parseFloat(s.regularPrice) || 0,
-        cost_price: s.costPrice ? parseFloat(s.costPrice) : null,
-      }));
+      variantPayload.variants = shades.map((s) => {
+        const regVal = parseFloat(s.regularPrice) || 0;
+        const saleVal = s.salePrice ? parseFloat(s.salePrice) : null;
+        const hasDiscount = saleVal !== null && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
+        return {
+          size: null,
+          size_value: null,
+          size_unit: null,
+          shade_name: s.shadeName.trim(),
+          shade_color: s.shadeColor || "#E8A0B4",
+          image_urls: s.imageUrls || [],
+          regular_price: regVal,
+          sale_price: hasDiscount ? saleVal : null,
+          cost_price: s.costPrice ? parseFloat(s.costPrice) : null,
+          is_default: Boolean(s.isDefault),
+        };
+      });
     } else if (variantType === "size_only") {
       formattedOptions = [
         {
@@ -1165,17 +1306,20 @@ export default function ProductForm({
       formattedVariants = sizes.map((s, idx) => {
         const valTrimmed = `${s.sizeValue.trim()}${s.sizeUnit}`;
         const regVal = parseFloat(s.regularPrice);
+        const saleVal = s.salePrice ? parseFloat(s.salePrice) : null;
+        const hasDiscount = saleVal !== null && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
         const costVal = parseFloat(s.costPrice);
         const primImg = s.imageUrls?.[0] || "";
 
         return {
           id: s.id?.startsWith("size_") ? undefined : s.id,
           optionsKey: valTrimmed,
-          price: regVal.toString(),
-          compareAtPrice: "",
+          price: (hasDiscount ? saleVal : regVal).toString(),
+          compareAtPrice: hasDiscount ? regVal.toString() : "",
           regularPrice: regVal.toString(),
-          salePrice: "",
+          salePrice: hasDiscount ? saleVal.toString() : "",
           costPrice: !isNaN(costVal) && costVal > 0 ? costVal.toString() : "",
+          isDefault: Boolean(s.isDefault),
           sizeValue: s.sizeValue.trim(),
           sizeUnit: s.sizeUnit,
           imageUrl: primImg,
@@ -1191,16 +1335,23 @@ export default function ProductForm({
         };
       });
 
-      variantPayload.variants = sizes.map((s) => ({
-        size: `${s.sizeValue.trim()}${s.sizeUnit}`,
-        size_value: parseFloat(s.sizeValue) || null,
-        size_unit: s.sizeUnit,
-        shade_name: null,
-        shade_color: null,
-        image_urls: s.imageUrls || [],
-        regular_price: parseFloat(s.regularPrice) || 0,
-        cost_price: s.costPrice ? parseFloat(s.costPrice) : null,
-      }));
+      variantPayload.variants = sizes.map((s) => {
+        const regVal = parseFloat(s.regularPrice) || 0;
+        const saleVal = s.salePrice ? parseFloat(s.salePrice) : null;
+        const hasDiscount = saleVal !== null && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
+        return {
+          size: `${s.sizeValue.trim()}${s.sizeUnit}`,
+          size_value: parseFloat(s.sizeValue) || null,
+          size_unit: s.sizeUnit,
+          shade_name: null,
+          shade_color: null,
+          image_urls: s.imageUrls || [],
+          regular_price: regVal,
+          sale_price: hasDiscount ? saleVal : null,
+          cost_price: s.costPrice ? parseFloat(s.costPrice) : null,
+          is_default: Boolean(s.isDefault),
+        };
+      });
     } else if (variantType === "size_shade") {
       const uniqueSizes = Array.from(
         new Set(combinations.map((c) => `${c.sizeValue}${c.sizeUnit}`))
@@ -1243,17 +1394,20 @@ export default function ProductForm({
         const sizeStr = `${c.sizeValue}${c.sizeUnit}`;
         const comboKey = `${sizeStr} / ${c.shadeName}`;
         const regVal = parseFloat(c.regularPrice);
+        const saleVal = c.salePrice ? parseFloat(c.salePrice) : null;
+        const hasDiscount = saleVal !== null && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
         const costVal = parseFloat(c.costPrice);
         const primImg = c.imageUrls?.[0] || "";
 
         return {
           id: c.id?.startsWith("combo_") ? undefined : c.id,
           optionsKey: comboKey,
-          price: regVal.toString(),
-          compareAtPrice: "",
+          price: (hasDiscount ? saleVal : regVal).toString(),
+          compareAtPrice: hasDiscount ? regVal.toString() : "",
           regularPrice: regVal.toString(),
-          salePrice: "",
+          salePrice: hasDiscount ? saleVal.toString() : "",
           costPrice: !isNaN(costVal) && costVal > 0 ? costVal.toString() : "",
+          isDefault: Boolean(c.isDefault),
           sizeValue: c.sizeValue,
           sizeUnit: c.sizeUnit,
           imageUrl: primImg,
@@ -1274,19 +1428,26 @@ export default function ProductForm({
         };
       });
 
-      variantPayload.variants = combinations.map((c) => ({
-        size: `${c.sizeValue}${c.sizeUnit}`,
-        size_value: parseFloat(c.sizeValue) || null,
-        size_unit: c.sizeUnit,
-        shade_name: c.shadeName,
-        shade_color: c.shadeColor || "#E8A0B4",
-        image_urls: c.imageUrls || [],
-        regular_price: parseFloat(c.regularPrice) || 0,
-        cost_price: c.costPrice ? parseFloat(c.costPrice) : null,
-      }));
+      variantPayload.variants = combinations.map((c) => {
+        const regVal = parseFloat(c.regularPrice) || 0;
+        const saleVal = c.salePrice ? parseFloat(c.salePrice) : null;
+        const hasDiscount = saleVal !== null && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
+        return {
+          size: `${c.sizeValue}${c.sizeUnit}`,
+          size_value: parseFloat(c.sizeValue) || null,
+          size_unit: c.sizeUnit,
+          shade_name: c.shadeName,
+          shade_color: c.shadeColor || "#E8A0B4",
+          image_urls: c.imageUrls || [],
+          regular_price: regVal,
+          sale_price: hasDiscount ? saleVal : null,
+          cost_price: c.costPrice ? parseFloat(c.costPrice) : null,
+          is_default: Boolean(c.isDefault),
+        };
+      });
     }
 
-    // Set effective product price to lowest variant price
+    // Set effective product price based on default variant (or lowest variant price)
     const minP = formattedVariants.reduce((min, v) => {
       const num = parseFloat(v.price);
       return !isNaN(num) && (min === null || num < min) ? num : min;
@@ -1299,9 +1460,14 @@ export default function ProductForm({
     }, null);
     const effectiveCostPrice = minCost !== null ? minCost.toString() : "";
 
-    formData.append("price", parseFloat(effectivePrice || 0).toString());
-    formData.append("salePrice", "");
-    formData.append("costPrice", effectiveCostPrice ? parseFloat(effectiveCostPrice).toString() : "");
+    const defaultVariant = formattedVariants.find((v) => v.isDefault) || formattedVariants[0];
+    const defaultRegularPrice = defaultVariant ? defaultVariant.regularPrice : effectivePrice;
+    const defaultSalePrice = defaultVariant ? defaultVariant.salePrice : "";
+    const defaultCostPrice = defaultVariant ? defaultVariant.costPrice : effectiveCostPrice;
+
+    formData.append("price", parseFloat(defaultRegularPrice || 0).toString());
+    formData.append("salePrice", defaultSalePrice ? parseFloat(defaultSalePrice).toString() : "");
+    formData.append("costPrice", defaultCostPrice ? parseFloat(defaultCostPrice).toString() : "");
     formData.append("hasVariants", "true");
     formData.append("options", JSON.stringify(formattedOptions));
     formData.append("variants", JSON.stringify(formattedVariants));
@@ -1661,6 +1827,28 @@ export default function ProductForm({
               Organization
             </h3>
 
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                Category
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setIsDirty(true);
+                }}
+                className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer"
+              >
+                <option value="">-- Select Category --</option>
+                {(categories || []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Brand */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
@@ -1675,7 +1863,7 @@ export default function ProductForm({
                 className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer"
               >
                 <option value="">-- Select Brand --</option>
-                {brands.map((b) => (
+                {(brands || []).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>
@@ -2138,11 +2326,13 @@ export default function ProductForm({
               <table className="w-full text-left text-xs">
                 <thead className="bg-gray-50/90 dark:bg-gray-800/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                   <tr>
-                    <th className="py-3 px-3 w-12 text-center">#</th>
+                    <th className="py-3 px-3 w-10 text-center">#</th>
+                    <th className="py-3 px-3 w-28 text-center">Default (PDP)</th>
                     <th className="py-3 px-3 min-w-[150px]">Images</th>
                     <th className="py-3 px-3 min-w-[140px]">Shade Color</th>
                     <th className="py-3 px-3 min-w-[180px]">Shade Name <span className="text-red-500">*</span></th>
                     <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
+                    <th className="py-3 px-3 min-w-[140px]">Discount Price (৳)</th>
                     <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
                     <th className="py-3 px-3 w-12 text-center">Action</th>
                   </tr>
@@ -2150,10 +2340,34 @@ export default function ProductForm({
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
                   {shades.map((shade, idx) => {
                     const marginInfo = getMarginInfo(shade.regularPrice, shade.costPrice);
+                    const regVal = parseFloat(shade.regularPrice);
+                    const saleVal = parseFloat(shade.salePrice);
+                    const hasValidDiscount = !isNaN(regVal) && regVal > 0 && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
+                    const discountPercent = hasValidDiscount ? Math.round(((regVal - saleVal) / regVal) * 100) : null;
+                    const isInvalidDiscount = !isNaN(regVal) && regVal > 0 && !isNaN(saleVal) && saleVal > 0 && saleVal >= regVal;
+
                     return (
-                      <tr key={shade.id || idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors">
+                      <tr key={shade.id || idx} className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors ${shade.isDefault ? "bg-pink-50/20 dark:bg-pink-950/10" : ""}`}>
                         <td className="py-3 px-3 text-center text-xs font-semibold text-gray-400">
                           {idx + 1}
+                        </td>
+
+                        {/* Default Radio */}
+                        <td className="py-3 px-3 text-center">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="radio"
+                              name="default_shade_selection"
+                              checked={Boolean(shade.isDefault)}
+                              onChange={() => handleSetDefaultShade(idx)}
+                              className="h-4 w-4 text-[#9B4F5E] border-gray-300 focus:ring-[#9B4F5E] cursor-pointer"
+                            />
+                            {shade.isDefault && (
+                              <span className="text-[10px] font-bold text-[#9B4F5E] dark:text-pink-400 bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded-md">
+                                ⭐ Default
+                              </span>
+                            )}
+                          </label>
                         </td>
 
                         {/* Images */}
@@ -2254,6 +2468,45 @@ export default function ProductForm({
                           )}
                         </td>
 
+                        {/* Discount / Sale Price */}
+                        <td className="py-3 px-3">
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={shade.salePrice || ""}
+                              onChange={(e) => handleShadeChange(idx, "salePrice", e.target.value)}
+                              placeholder="0.00"
+                              className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                clientErrors[`shade_${idx}_salePrice`] || isInvalidDiscount
+                                  ? "border-amber-500 ring-1 ring-amber-500"
+                                  : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                              }`}
+                            />
+                          </div>
+                          {hasValidDiscount && (
+                            <div className="mt-1">
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                {discountPercent}% OFF
+                              </span>
+                            </div>
+                          )}
+                          {isInvalidDiscount && (
+                            <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+                              ⚠️ Must be &lt; regular price
+                            </p>
+                          )}
+                          {clientErrors[`shade_${idx}_salePrice`] && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                              {clientErrors[`shade_${idx}_salePrice`]}
+                            </p>
+                          )}
+                        </td>
+
                         {/* Cost Price + Margin */}
                         <td className="py-3 px-3">
                           <div className="relative">
@@ -2346,10 +2599,12 @@ export default function ProductForm({
               <table className="w-full text-left text-xs">
                 <thead className="bg-gray-50/90 dark:bg-gray-800/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                   <tr>
-                    <th className="py-3 px-3 w-12 text-center">#</th>
+                    <th className="py-3 px-3 w-10 text-center">#</th>
+                    <th className="py-3 px-3 w-28 text-center">Default (PDP)</th>
                     <th className="py-3 px-3 min-w-[150px]">Images</th>
                     <th className="py-3 px-3 min-w-[200px]">Size / Volume <span className="text-red-500">*</span></th>
                     <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
+                    <th className="py-3 px-3 min-w-[140px]">Discount Price (৳)</th>
                     <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
                     <th className="py-3 px-3 w-12 text-center">Action</th>
                   </tr>
@@ -2357,10 +2612,34 @@ export default function ProductForm({
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
                   {sizes.map((size, idx) => {
                     const marginInfo = getMarginInfo(size.regularPrice, size.costPrice);
+                    const regVal = parseFloat(size.regularPrice);
+                    const saleVal = parseFloat(size.salePrice);
+                    const hasValidDiscount = !isNaN(regVal) && regVal > 0 && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
+                    const discountPercent = hasValidDiscount ? Math.round(((regVal - saleVal) / regVal) * 100) : null;
+                    const isInvalidDiscount = !isNaN(regVal) && regVal > 0 && !isNaN(saleVal) && saleVal > 0 && saleVal >= regVal;
+
                     return (
-                      <tr key={size.id || idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors">
+                      <tr key={size.id || idx} className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors ${size.isDefault ? "bg-pink-50/20 dark:bg-pink-950/10" : ""}`}>
                         <td className="py-3 px-3 text-center text-xs font-semibold text-gray-400">
                           {idx + 1}
+                        </td>
+
+                        {/* Default Radio */}
+                        <td className="py-3 px-3 text-center">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="radio"
+                              name="default_size_selection"
+                              checked={Boolean(size.isDefault)}
+                              onChange={() => handleSetDefaultSize(idx)}
+                              className="h-4 w-4 text-[#9B4F5E] border-gray-300 focus:ring-[#9B4F5E] cursor-pointer"
+                            />
+                            {size.isDefault && (
+                              <span className="text-[10px] font-bold text-[#9B4F5E] dark:text-pink-400 bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded-md">
+                                ⭐ Default
+                              </span>
+                            )}
+                          </label>
                         </td>
 
                         {/* Images */}
@@ -2454,6 +2733,45 @@ export default function ProductForm({
                           {clientErrors[`size_${idx}_regularPrice`] && (
                             <p className="mt-1 text-[10px] text-red-500">
                               {clientErrors[`size_${idx}_regularPrice`]}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Discount / Sale Price */}
+                        <td className="py-3 px-3">
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={size.salePrice || ""}
+                              onChange={(e) => handleSizeChange(idx, "salePrice", e.target.value)}
+                              placeholder="0.00"
+                              className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                clientErrors[`size_${idx}_salePrice`] || isInvalidDiscount
+                                  ? "border-amber-500 ring-1 ring-amber-500"
+                                  : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                              }`}
+                            />
+                          </div>
+                          {hasValidDiscount && (
+                            <div className="mt-1">
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                {discountPercent}% OFF
+                              </span>
+                            </div>
+                          )}
+                          {isInvalidDiscount && (
+                            <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+                              ⚠️ Must be &lt; regular price
+                            </p>
+                          )}
+                          {clientErrors[`size_${idx}_salePrice`] && (
+                            <p className="mt-1 text-[10px] text-red-500">
+                              {clientErrors[`size_${idx}_salePrice`]}
                             </p>
                           )}
                         </td>
@@ -2723,7 +3041,7 @@ export default function ProductForm({
                           value={bulkRegularPrice}
                           onChange={(e) => setBulkRegularPrice(e.target.value)}
                           placeholder="Regular Price"
-                          className="w-32 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                          className="w-28 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
                         />
                       </div>
                       <button
@@ -2731,7 +3049,31 @@ export default function ProductForm({
                         onClick={handleApplyBulkRegularToCombinations}
                         className="px-2.5 py-1 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold text-gray-800 dark:text-gray-200"
                       >
-                        Apply to All
+                        Apply
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                          ৳
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={bulkSalePrice}
+                          onChange={(e) => setBulkSalePrice(e.target.value)}
+                          placeholder="Discount Price"
+                          className="w-28 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleApplyBulkSaleToCombinations}
+                        className="px-2.5 py-1 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold text-gray-800 dark:text-gray-200"
+                      >
+                        Apply
                       </button>
                     </div>
 
@@ -2747,7 +3089,7 @@ export default function ProductForm({
                           value={bulkCostPrice}
                           onChange={(e) => setBulkCostPrice(e.target.value)}
                           placeholder="Cost Price"
-                          className="w-32 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                          className="w-28 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
                         />
                       </div>
                       <button
@@ -2755,7 +3097,7 @@ export default function ProductForm({
                         onClick={handleApplyBulkCostToCombinations}
                         className="px-2.5 py-1 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold text-gray-800 dark:text-gray-200"
                       >
-                        Apply to All
+                        Apply
                       </button>
                     </div>
                   </div>
@@ -2767,10 +3109,12 @@ export default function ProductForm({
                     <thead className="bg-gray-50/90 dark:bg-gray-800/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <tr>
                         <th className="py-3 px-3 w-10 text-center">#</th>
+                        <th className="py-3 px-3 w-28 text-center">Default (PDP)</th>
                         <th className="py-3 px-3 min-w-[100px]">Size</th>
                         <th className="py-3 px-3 min-w-[160px]">Shade</th>
                         <th className="py-3 px-3 min-w-[150px]">Images</th>
                         <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
+                        <th className="py-3 px-3 min-w-[140px]">Discount Price (৳)</th>
                         <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
                         <th className="py-3 px-3 w-12 text-center">Delete</th>
                       </tr>
@@ -2778,10 +3122,34 @@ export default function ProductForm({
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
                       {combinations.map((combo, idx) => {
                         const marginInfo = getMarginInfo(combo.regularPrice, combo.costPrice);
+                        const regVal = parseFloat(combo.regularPrice);
+                        const saleVal = parseFloat(combo.salePrice);
+                        const hasValidDiscount = !isNaN(regVal) && regVal > 0 && !isNaN(saleVal) && saleVal > 0 && saleVal < regVal;
+                        const discountPercent = hasValidDiscount ? Math.round(((regVal - saleVal) / regVal) * 100) : null;
+                        const isInvalidDiscount = !isNaN(regVal) && regVal > 0 && !isNaN(saleVal) && saleVal > 0 && saleVal >= regVal;
+
                         return (
-                          <tr key={combo.id || idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors">
+                          <tr key={combo.id || idx} className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors ${combo.isDefault ? "bg-pink-50/20 dark:bg-pink-950/10" : ""}`}>
                             <td className="py-3 px-3 text-center text-xs font-semibold text-gray-400">
                               {idx + 1}
+                            </td>
+
+                            {/* Default Radio */}
+                            <td className="py-3 px-3 text-center">
+                              <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                <input
+                                  type="radio"
+                                  name="default_combo_selection"
+                                  checked={Boolean(combo.isDefault)}
+                                  onChange={() => handleSetDefaultCombination(idx)}
+                                  className="h-4 w-4 text-[#9B4F5E] border-gray-300 focus:ring-[#9B4F5E] cursor-pointer"
+                                />
+                                {combo.isDefault && (
+                                  <span className="text-[10px] font-bold text-[#9B4F5E] dark:text-pink-400 bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded-md">
+                                    ⭐ Default
+                                  </span>
+                                )}
+                              </label>
                             </td>
 
                             {/* Size (Read-only) */}
@@ -2857,6 +3225,45 @@ export default function ProductForm({
                               {clientErrors[`combo_${idx}_regularPrice`] && (
                                 <p className="mt-1 text-[10px] text-red-500">
                                   {clientErrors[`combo_${idx}_regularPrice`]}
+                                </p>
+                              )}
+                            </td>
+
+                            {/* Discount / Sale Price (Editable) */}
+                            <td className="py-3 px-3">
+                              <div className="relative">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                                  ৳
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={combo.salePrice || ""}
+                                  onChange={(e) => handleCombinationChange(idx, "salePrice", e.target.value)}
+                                  placeholder="0.00"
+                                  className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+                                    clientErrors[`combo_${idx}_salePrice`] || isInvalidDiscount
+                                      ? "border-amber-500 ring-1 ring-amber-500"
+                                      : "border-gray-200 dark:border-gray-700 focus:border-[#9B4F5E] dark:focus:border-pink-500"
+                                  }`}
+                                />
+                              </div>
+                              {hasValidDiscount && (
+                                <div className="mt-1">
+                                  <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                    {discountPercent}% OFF
+                                  </span>
+                                </div>
+                              )}
+                              {isInvalidDiscount && (
+                                <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+                                  ⚠️ Must be &lt; regular price
+                                </p>
+                              )}
+                              {clientErrors[`combo_${idx}_salePrice`] && (
+                                <p className="mt-1 text-[10px] text-red-500">
+                                  {clientErrors[`combo_${idx}_salePrice`]}
                                 </p>
                               )}
                             </td>

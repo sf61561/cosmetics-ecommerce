@@ -176,7 +176,8 @@ const productRepository = {
                 'price', v_sub.price::numeric, 
                 'regularPrice', COALESCE(v_sub.regular_price, v_sub.price)::numeric, 
                 'salePrice', v_sub.sale_price::numeric, 
-                'isAvailable', v_sub.is_available
+                'isAvailable', v_sub.is_available,
+                'isDefault', v_sub.is_default
               ) ORDER BY v_sub.price ASC, v_sub.created_at ASC
             ), 
             '[]'::json
@@ -191,6 +192,7 @@ const productRepository = {
               pv.size_value, 
               pv.size_unit, 
               pv.is_available, 
+              pv.is_default,
               pv.created_at, 
               (
                 SELECT string_agg(ov2.value, ' / ' ORDER BY po2.position ASC) 
