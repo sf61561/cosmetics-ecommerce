@@ -163,6 +163,21 @@ function VerifyEmailContent() {
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(trimmed)) {
+      setResendStatus("error");
+      setResendMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (
+      process.env.NEXT_PUBLIC_RESEND_SANDBOX !== "false" &&
+      trimmed.toLowerCase() !== "sf61561@gmail.com"
+    ) {
+      setResendStatus("error");
+      setResendMessage("This email is not verified in Resend. In testing mode, only 'sf61561@gmail.com' can receive verification emails.");
+      return;
+    }
+
     setResendLoading(true);
     setResendMessage("");
     setResendStatus(null);

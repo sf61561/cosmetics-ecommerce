@@ -224,8 +224,15 @@ export default function RegisterPage() {
       const trimmedEmail = form.email.trim();
       if (/^www\./i.test(trimmedEmail)) {
         newErrors.email = "Email address cannot start with 'www.'. Please remove 'www.' from the beginning.";
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      } else if (/\.\./.test(trimmedEmail) || /^\.|\.@|@\.|\.$/.test(trimmedEmail)) {
+        newErrors.email = "Email address contains invalid dot placement.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(trimmedEmail)) {
         newErrors.email = "Enter a valid email address.";
+      } else if (
+        process.env.NEXT_PUBLIC_RESEND_SANDBOX !== "false" &&
+        trimmedEmail.toLowerCase() !== "sf61561@gmail.com"
+      ) {
+        newErrors.email = "This email is not verified in Resend. In testing mode, only 'sf61561@gmail.com' can receive verification emails.";
       }
     }
 
@@ -313,6 +320,11 @@ export default function RegisterPage() {
         } else {
           setServerError(data.message || "Registration failed. Please check your information.");
         }
+        return;
+      }
+
+      if (data.user?.emailDeliveryError) {
+        setServerError(`Account created, but verification email could not be sent: ${data.user.emailDeliveryError}`);
         return;
       }
 

@@ -61,6 +61,24 @@ class AuthService {
         error.field = "email";
         throw error;
       }
+
+      if (/\.\./.test(email) || /^\.|\.@|@\.|\.$/.test(email)) {
+        const error = new Error("Email address contains invalid dot placement.");
+        error.statusCode = 400;
+        error.field = "email";
+        throw error;
+      }
+
+      const isResendSandbox = (process.env.RESEND_FROM_EMAIL || "").includes("resend.dev");
+      const authorizedTestEmail = (process.env.RESEND_TEST_RECIPIENT || "sf61561@gmail.com").trim().toLowerCase();
+
+      if (isResendSandbox && email !== authorizedTestEmail) {
+        const error = new Error(`This email is not verified in Resend. In sandbox mode, only '${authorizedTestEmail}' can receive verification emails.`);
+        error.statusCode = 400;
+        error.field = "email";
+        throw error;
+      }
+
       const existingEmailUser = await userRepository.findByEmail(email);
       if (existingEmailUser) {
         // Edge Case: If account was created with email/password, never verified,
@@ -306,6 +324,17 @@ class AuthService {
       error.field = "email";
       throw error;
     }
+
+    const isResendSandbox = (process.env.RESEND_FROM_EMAIL || "").includes("resend.dev");
+    const authorizedTestEmail = (process.env.RESEND_TEST_RECIPIENT || "sf61561@gmail.com").trim().toLowerCase();
+
+    if (isResendSandbox && normalizedEmail !== authorizedTestEmail) {
+      const error = new Error(`This email is not verified in Resend. In sandbox mode, only '${authorizedTestEmail}' can receive verification emails.`);
+      error.statusCode = 400;
+      error.field = "email";
+      throw error;
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return genericResponse;
     }
@@ -370,6 +399,17 @@ class AuthService {
       error.field = "email";
       throw error;
     }
+
+    const isResendSandbox = (process.env.RESEND_FROM_EMAIL || "").includes("resend.dev");
+    const authorizedTestEmail = (process.env.RESEND_TEST_RECIPIENT || "sf61561@gmail.com").trim().toLowerCase();
+
+    if (isResendSandbox && normalizedEmail !== authorizedTestEmail) {
+      const error = new Error(`This email is not verified in Resend. In sandbox mode, only '${authorizedTestEmail}' can receive password setup links.`);
+      error.statusCode = 400;
+      error.field = "email";
+      throw error;
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return genericResponse;
 
     const rawToken = crypto.randomBytes(32).toString("base64url");
@@ -527,6 +567,17 @@ class AuthService {
       error.field = "email";
       throw error;
     }
+
+    const isResendSandbox = (process.env.RESEND_FROM_EMAIL || "").includes("resend.dev");
+    const authorizedTestEmail = (process.env.RESEND_TEST_RECIPIENT || "sf61561@gmail.com").trim().toLowerCase();
+
+    if (isResendSandbox && normalizedEmail !== authorizedTestEmail) {
+      const error = new Error(`This email is not verified in Resend. In sandbox mode, only '${authorizedTestEmail}' can receive password reset links.`);
+      error.statusCode = 400;
+      error.field = "email";
+      throw error;
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       // Small dummy work to equalize timing
       await bcrypt.hash("dummy_constant_for_timing_normalization", 4);
