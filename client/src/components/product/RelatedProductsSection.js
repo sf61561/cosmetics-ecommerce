@@ -50,7 +50,7 @@ export default function RelatedProductsSection({ relatedProducts = [] }) {
           COMPLETE YOUR RITUAL
         </span>
         <h2 className="font-serif text-2xl sm:text-3xl text-gray-900 dark:text-white font-normal">
-          Pairs Well With
+          Recommended for You
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
           Curated formulations designed to complement and enhance your current skincare step.
