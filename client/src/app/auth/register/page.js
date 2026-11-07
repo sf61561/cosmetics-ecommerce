@@ -355,6 +355,28 @@ export default function RegisterPage() {
       {/* ── Pink/lavender overlay tint ── */}
       <div className="absolute inset-0 bg-gradient-to-b from-pink-200/40 via-pink-100/20 to-purple-100/30" />
 
+      {/* ── Top-Left: Back to Home Button ── */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/70 hover:bg-white/95 backdrop-blur-md border border-white/60 text-xs sm:text-sm font-medium text-gray-700 hover:text-[#9B4F5E] shadow-xs transition-all duration-200 group cursor-pointer"
+        aria-label="Back to home"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="transition-transform group-hover:-translate-x-0.5"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        <span>Back to Home</span>
+      </Link>
+
       {/* ── Content ── */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
         {/* Top Navigation: Brand Logo (Home link) */}

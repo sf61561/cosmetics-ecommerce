@@ -133,7 +133,28 @@ export default function ResetPasswordPage() {
     <>
       {/* Explicit no-referrer meta tag to ensure token does not leak */}
       <meta name="referrer" content="no-referrer" />
-      <main className="flex min-h-screen items-center justify-center bg-[#FBF7F8] px-4 py-10">
+      <main className="relative flex min-h-screen items-center justify-center bg-[#FBF7F8] px-4 py-10">
+        {/* ── Top-Left: Back to Home Button ── */}
+        <Link
+          href="/"
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-xs sm:text-sm font-medium text-gray-700 hover:text-[#9B4F5E] shadow-xs transition-all duration-200 group cursor-pointer"
+          aria-label="Back to home"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform group-hover:-translate-x-0.5"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <span>Back to Home</span>
+        </Link>
         <section className="w-full max-w-md rounded-3xl border border-[#eee6ee] bg-white p-7 shadow-sm sm:p-9">
           <div className="flex items-center justify-center mb-6">
             <Link
