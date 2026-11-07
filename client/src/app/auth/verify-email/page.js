@@ -684,10 +684,6 @@ export default function VerifyEmailPage() {
             <span className="font-logo text-3xl font-semibold tracking-[0.24em] text-gray-900 group-hover:text-[#9B4F5E] transition-colors pl-[0.24em]">
               ELOURÁ
             </span>
-            <div className="w-12 h-px bg-gray-400/50 mt-1.5 mb-1" />
-            <span className="text-[10px] tracking-[0.25em] uppercase text-gray-600 font-medium pl-[0.25em]">
-              Korean Skincare
-            </span>
           </Link>
         </div>
 

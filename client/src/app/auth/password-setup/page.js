@@ -120,10 +120,6 @@ export default function PasswordSetupPage() {
           <span className="font-logo text-2xl font-semibold tracking-[0.24em] text-gray-900 group-hover:text-[#9B4F5E] transition-colors pl-[0.24em]">
             ELOURÁ
           </span>
-          <div className="w-12 h-px bg-gray-300 mt-1.5 mb-1" />
-          <span className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-medium pl-[0.25em]">
-            Korean Skincare
-          </span>
         </Link>
       </div>
       <h1 className="mt-5 text-2xl font-bold text-gray-900">{complete ? "Password set" : token ? "Set your password" : "Get a password setup link"}</h1>

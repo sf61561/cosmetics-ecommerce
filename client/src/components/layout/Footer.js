@@ -19,13 +19,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex flex-col items-start group">
+            <Link href="/" className="inline-flex items-center group">
               <span className="font-logo text-2xl tracking-[0.24em] font-semibold text-gray-900 group-hover:text-[#9B4F5E] transition-colors">
                 ELOURÁ
-              </span>
-              <div className="w-12 h-px bg-gray-300 dark:bg-gray-700 mt-1 mb-1" />
-              <span className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-medium">
-                Korean Skincare
               </span>
             </Link>
             <p className="text-xs sm:text-sm text-gray-500 leading-relaxed max-w-sm">
