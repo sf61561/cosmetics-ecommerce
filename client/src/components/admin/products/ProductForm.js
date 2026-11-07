@@ -23,6 +23,8 @@ import {
   FaBolt,
   FaImages,
   FaRulerCombined,
+  FaChevronDown,
+  FaSearch,
 } from "react-icons/fa";
 
 const SIZE_UNITS = ["ml", "g", "oz", "fl oz", "pcs", "kg", "l"];
@@ -120,9 +122,36 @@ export default function ProductForm({
   const [isSlugCustomized, setIsSlugCustomized] = useState(isEditMode);
   const [brandId, setBrandId] = useState(initialProduct?.brand?.id || initialProduct?.brandId || "");
   const [categoryId, setCategoryId] = useState(initialProduct?.category?.id || initialProduct?.categoryId || "");
-  const [selectedCollectionId, setSelectedCollectionId] = useState(
-    initialProduct?.collections?.[0]?.id || initialProduct?.collectionId || ""
-  );
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState(() => {
+    if (Array.isArray(initialProduct?.collections)) {
+      return initialProduct.collections.map((c) => c.id).filter(Boolean);
+    }
+    if (initialProduct?.collectionId) {
+      return [initialProduct.collectionId];
+    }
+    return [];
+  });
+  const [isCollectionDropdownOpen, setIsCollectionDropdownOpen] = useState(false);
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const collectionDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        collectionDropdownRef.current &&
+        !collectionDropdownRef.current.contains(event.target)
+      ) {
+        setIsCollectionDropdownOpen(false);
+      }
+    };
+    if (isCollectionDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isCollectionDropdownOpen]);
+
   const [selectedTagIds, setSelectedTagIds] = useState(
     initialProduct?.tags?.map((t) => t.id) || []
   );
@@ -146,6 +175,9 @@ export default function ProductForm({
   }, [tags]);
 
   const availableTags = tags && tags.length > 0 ? tags : internalTags;
+  const filteredCollections = (collections || []).filter((col) =>
+    (col.name || "").toLowerCase().includes(collectionSearch.toLowerCase().trim())
+  );
   const [shortDescription, setShortDescription] = useState(initialProduct?.shortDescription || "");
   const [description, setDescription] = useState(initialProduct?.description || "");
   const [isFeatured, setIsFeatured] = useState(initialProduct?.isFeatured ?? false);
@@ -904,6 +936,13 @@ export default function ProductForm({
     setIsDirty(true);
   };
 
+  const handleToggleCollection = (colId) => {
+    setSelectedCollectionIds((prev) =>
+      prev.includes(colId) ? prev.filter((id) => id !== colId) : [...prev, colId]
+    );
+    setIsDirty(true);
+  };
+
   const handleToggleTag = (tagId) => {
     setSelectedTagIds((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
@@ -1258,7 +1297,7 @@ export default function ProductForm({
     formData.append("seoDescription", (seoDescription || shortDescription).trim());
 
     // Collection & Tag IDs
-    formData.append("collectionIds", JSON.stringify(selectedCollectionId ? [selectedCollectionId] : []));
+    formData.append("collectionIds", JSON.stringify(selectedCollectionIds));
     formData.append("tagIds", JSON.stringify(selectedTagIds));
 
     // Handle primary image ID for existing images
@@ -1620,26 +1659,143 @@ export default function ProductForm({
               </select>
             </div>
 
-            {/* Collection */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                Collection
-              </label>
-              <select
-                value={selectedCollectionId}
-                onChange={(e) => {
-                  setSelectedCollectionId(e.target.value);
-                  setIsDirty(true);
-                }}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden cursor-pointer"
+            {/* Collection Multi-Select Dropdown */}
+            <div className="relative" ref={collectionDropdownRef}>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  Collections
+                </label>
+                {selectedCollectionIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCollectionIds([]);
+                      setIsDirty(true);
+                    }}
+                    className="text-[10px] text-[#9B4F5E] dark:text-pink-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    Clear ({selectedCollectionIds.length})
+                  </button>
+                )}
+              </div>
+
+              {/* Dropdown Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsCollectionDropdownOpen((prev) => !prev)}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 flex items-center justify-between focus:border-[#9B4F5E] focus:outline-hidden transition-colors cursor-pointer text-left shadow-2xs"
               >
-                <option value="">-- Select Collection --</option>
-                {collections.map((col) => (
-                  <option key={col.id} value={col.id}>
-                    {col.name}
-                  </option>
-                ))}
-              </select>
+                <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
+                  {selectedCollectionIds.length === 0 ? (
+                    <span className="text-gray-400 dark:text-gray-500">
+                      -- Select Collections --
+                    </span>
+                  ) : (
+                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                      {selectedCollectionIds.length === 1
+                        ? collections.find((c) => c.id === selectedCollectionIds[0])?.name || "1 selected"
+                        : `${selectedCollectionIds.length} collections selected`}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  {selectedCollectionIds.length > 0 && (
+                    <span className="inline-flex items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 px-2 py-0.5 text-[10px] font-bold text-[#9B4F5E] dark:text-pink-300">
+                      {selectedCollectionIds.length}
+                    </span>
+                  )}
+                  <FaChevronDown
+                    className={`h-3 w-3 text-gray-400 transition-transform duration-200 ${
+                      isCollectionDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
+              </button>
+
+              {/* Selected Collection Chips */}
+              {selectedCollectionIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {selectedCollectionIds.map((id) => {
+                    const col = collections.find((c) => c.id === id);
+                    if (!col) return null;
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 dark:bg-pink-950/40 text-[11px] font-medium text-[#9B4F5E] dark:text-pink-300 border border-pink-100 dark:border-pink-900/40"
+                      >
+                        {col.name}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleCollection(id);
+                          }}
+                          className="hover:text-red-500 transition-colors ml-0.5 cursor-pointer"
+                          aria-label={`Remove ${col.name}`}
+                        >
+                          <FaTimes className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Dropdown Menu Popover */}
+              {isCollectionDropdownOpen && (
+                <div className="absolute left-0 right-0 z-30 mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 shadow-xl space-y-2">
+                  {/* Search inside collections */}
+                  {collections.length > 3 && (
+                    <div className="relative">
+                      <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                      <input
+                        type="text"
+                        value={collectionSearch}
+                        onChange={(e) => setCollectionSearch(e.target.value)}
+                        placeholder="Search collections..."
+                        className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:border-[#9B4F5E] focus:outline-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+
+                  {/* Options List */}
+                  <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                    {filteredCollections.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic p-2 text-center">
+                        {collectionSearch ? "No matching collections" : "No collections available"}
+                      </p>
+                    ) : (
+                      filteredCollections.map((col) => {
+                        const isChecked = selectedCollectionIds.includes(col.id);
+                        return (
+                          <label
+                            key={col.id}
+                            className={`flex items-center justify-between p-2 rounded-xl text-xs transition-colors cursor-pointer select-none ${
+                              isChecked
+                                ? "bg-pink-50/70 dark:bg-pink-950/40 text-[#9B4F5E] dark:text-pink-300 font-medium"
+                                : "hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-800 dark:text-gray-200"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleCollection(col.id)}
+                                className="rounded border-gray-300 dark:border-gray-600 text-[#9B4F5E] focus:ring-[#9B4F5E]"
+                              />
+                              <span className="truncate">{col.name}</span>
+                            </div>
+                            {isChecked && (
+                              <FaCheck className="h-3 w-3 text-[#9B4F5E] dark:text-pink-400 shrink-0" />
+                            )}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Tags Multi-Select */}
