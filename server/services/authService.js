@@ -357,7 +357,7 @@ class AuthService {
       });
     } catch (emailErr) {
       console.error("Failed to dispatch verification email in resendVerificationEmail:", emailErr.message || emailErr);
-      const error = new Error("Unable to send verification email at this moment. Please try again in a few moments.");
+      const error = new Error(`Unable to send verification email: ${emailErr.message || "Please try again in a few moments."}`);
       error.statusCode = 503;
       throw error;
     }
