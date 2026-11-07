@@ -290,7 +290,7 @@ class AuthService {
   async resendVerificationEmail(email) {
     const genericResponse = {
       success: true,
-      message: "If this account needs verification, we've sent a new link.",
+      message: "If the account exists, we've sent a new link.",
     };
 
     if (!email || typeof email !== "string") {

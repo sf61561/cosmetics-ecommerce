@@ -249,7 +249,7 @@ function VerifyEmailContent() {
       } else if (res.ok) {
         setResendStatus("success");
         setResendMessage(
-          data.message || `A fresh verification link has been sent to ${maskEmail(targetEmail)}!`
+          data.message || "If the account exists, we've sent a new link."
         );
         setCooldown(60);
       } else {
