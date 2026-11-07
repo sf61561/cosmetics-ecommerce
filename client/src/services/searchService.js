@@ -50,6 +50,8 @@ export const searchService = {
     if (params.collection && params.collection !== "all") searchParams.set("collection", params.collection);
     if (params.category && params.category !== "all") searchParams.set("category", params.category);
     if (params.brand && params.brand !== "all") searchParams.set("brand", params.brand);
+    if (params.tag) searchParams.set("tag", params.tag);
+    if (params.tags) searchParams.set("tags", params.tags);
     if (params.min !== undefined && params.min !== null && params.min !== "") searchParams.set("min", String(params.min));
     if (params.max !== undefined && params.max !== null && params.max !== "") searchParams.set("max", String(params.max));
     if (params.inStock === true || params.inStock === "true") searchParams.set("inStock", "true");

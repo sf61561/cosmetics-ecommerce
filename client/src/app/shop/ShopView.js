@@ -13,6 +13,7 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import { searchService } from "@/services/searchService";
+import { tagService } from "@/services/tagService";
 import { useCart } from "@/context/CartContext";
 import WishlistButton from "@/components/product/WishlistButton";
 import ProductRatingBadge from "@/components/common/ProductRatingBadge";
@@ -39,11 +40,19 @@ export default function ShopView() {
   // Read URL params
   const collectionParam = searchParams.get("collection") || "";
   const brandParam = searchParams.get("brand") || "";
+  const tagParam = searchParams.get("tag") || searchParams.get("tags") || "";
   const minParam = searchParams.get("min") || "";
   const maxParam = searchParams.get("max") || "";
   const sortParam = searchParams.get("sort") || "relevance";
   const inStockParam = searchParams.get("inStock") === "true";
   const pageParam = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+
+  const selectedTags = tagParam
+    ? tagParam
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
 
   // Component state
   const [data, setData] = useState({
@@ -52,7 +61,7 @@ export default function ShopView() {
     pageSize: 12,
     totalPages: 1,
     items: [],
-    facets: { collections: [], categories: [], brands: [], priceRange: { min: 0, max: 0 } },
+    facets: { collections: [], categories: [], brands: [], tags: [], priceRange: { min: 0, max: 0 } },
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,12 +69,34 @@ export default function ShopView() {
   const [localMin, setLocalMin] = useState(minParam);
   const [localMax, setLocalMax] = useState(maxParam);
   const [addedIds, setAddedIds] = useState(new Set());
+  const [allTags, setAllTags] = useState([]);
+  const [isTagsOpen, setIsTagsOpen] = useState(true);
+  const [tagSearchQuery, setTagSearchQuery] = useState("");
 
   // Sync price inputs with URL
   useEffect(() => {
     setLocalMin(minParam);
     setLocalMax(maxParam);
   }, [minParam, maxParam]);
+
+  // Load public tags for fallback & full list
+  useEffect(() => {
+    let active = true;
+    async function loadTags() {
+      try {
+        const res = await tagService.getPublicTags({ limit: 100 });
+        if (active && res?.tags) {
+          setAllTags(res.tags);
+        }
+      } catch (err) {
+        // non-blocking
+      }
+    }
+    loadTags();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // URL query builder
   const updateQuery = useCallback(
@@ -107,6 +138,8 @@ export default function ShopView() {
             q: "",
             collection: collectionParam,
             brand: brandParam,
+            tag: tagParam,
+            tags: tagParam,
             min: minParam,
             max: maxParam,
             sort: sortParam,
@@ -137,7 +170,7 @@ export default function ShopView() {
       isSubscribed = false;
       controller.abort();
     };
-  }, [collectionParam, brandParam, minParam, maxParam, sortParam, inStockParam, pageParam]);
+  }, [collectionParam, brandParam, tagParam, minParam, maxParam, sortParam, inStockParam, pageParam]);
 
   const handleApplyPrice = (e) => {
     e.preventDefault();
@@ -172,10 +205,18 @@ export default function ShopView() {
     }
   };
 
+  const handleToggleTag = (tagSlug) => {
+    const next = selectedTags.includes(tagSlug)
+      ? selectedTags.filter((t) => t !== tagSlug)
+      : [...selectedTags, tagSlug];
+    updateQuery({ tag: next.length ? next.join(",") : null, tags: null });
+  };
+
   // Active filter count for badge
   const activeFilterCount =
     (collectionParam ? 1 : 0) +
     (brandParam ? 1 : 0) +
+    selectedTags.length +
     (minParam || maxParam ? 1 : 0) +
     (inStockParam ? 1 : 0);
 
@@ -183,6 +224,39 @@ export default function ShopView() {
     ? data.facets.collections
     : data.facets?.categories || [];
   const brandsList = data.facets?.brands || [];
+  const facetTags = data.facets?.tags || [];
+
+  const tagsList = (() => {
+    const map = new Map();
+    // Start with all tags from public tag list
+    allTags.forEach((t) => {
+      map.set(t.slug, { id: t.id, name: t.name, slug: t.slug, count: 0 });
+    });
+    // Overlay counts from search facets
+    facetTags.forEach((t) => {
+      if (map.has(t.slug)) {
+        map.get(t.slug).count = t.count;
+      } else {
+        map.set(t.slug, { id: t.id, name: t.name, slug: t.slug, count: t.count || 0 });
+      }
+    });
+    const list = Array.from(map.values());
+    // Sort: selected tags first, then by count DESC, then alphabetically
+    return list.sort((a, b) => {
+      const aSel = selectedTags.includes(a.slug);
+      const bSel = selectedTags.includes(b.slug);
+      if (aSel && !bSel) return -1;
+      if (!aSel && bSel) return 1;
+      if ((b.count || 0) !== (a.count || 0)) return (b.count || 0) - (a.count || 0);
+      return a.name.localeCompare(b.name);
+    });
+  })();
+
+  const filteredTagsList = tagSearchQuery.trim()
+    ? tagsList.filter((t) =>
+        t.name.toLowerCase().includes(tagSearchQuery.trim().toLowerCase())
+      )
+    : tagsList;
 
   return (
     <div className="py-8 sm:py-12">
@@ -298,6 +372,27 @@ export default function ShopView() {
                 </button>
               </span>
             )}
+
+            {selectedTags.map((tagSlug) => {
+              const tagObj = tagsList.find((t) => t.slug === tagSlug);
+              const tagName = tagObj?.name || tagSlug;
+              return (
+                <span
+                  key={tagSlug}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 px-3 py-1 text-xs text-[#9B4F5E] dark:text-rose-300 font-medium"
+                >
+                  <span>Tag: {tagName}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleTag(tagSlug)}
+                    className="hover:text-red-600 cursor-pointer"
+                    title={`Remove ${tagName} filter`}
+                  >
+                    <FaTimes className="text-[10px]" />
+                  </button>
+                </span>
+              );
+            })}
 
             {(minParam || maxParam) && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 px-3 py-1 text-xs text-[#9B4F5E] dark:text-rose-300 font-medium">
@@ -419,6 +514,111 @@ export default function ShopView() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Tags Multi-Select Dropdown Facet */}
+            <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsTagsOpen((prev) => !prev)}
+                  className="flex items-center gap-2 text-left group cursor-pointer focus:outline-none flex-1"
+                >
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white group-hover:text-[#9B4F5E] transition-colors">
+                    Tags
+                  </h2>
+                  {selectedTags.length > 0 && (
+                    <span className="rounded-full bg-[#9B4F5E]/10 text-[#9B4F5E] dark:bg-rose-900/40 dark:text-rose-300 px-2 py-0.5 text-[10px] font-bold">
+                      {selectedTags.length} selected
+                    </span>
+                  )}
+                </button>
+                <div className="flex items-center gap-2">
+                  {selectedTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => updateQuery({ tag: null, tags: null })}
+                      className="text-[11px] text-[#9B4F5E] hover:underline font-semibold cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsTagsOpen((prev) => !prev)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition cursor-pointer p-0.5"
+                    aria-label="Toggle tags dropdown"
+                  >
+                    <FaChevronDown
+                      className={`text-[10px] transform transition-transform duration-200 ${
+                        isTagsOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {isTagsOpen && (
+                <div className="mt-3 space-y-2">
+                  {tagsList.length > 6 && (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search tags..."
+                        value={tagSearchQuery}
+                        onChange={(e) => setTagSearchQuery(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2.5 py-1.5 text-xs text-gray-800 dark:text-white outline-none focus:ring-1 focus:ring-[#9B4F5E]"
+                      />
+                      {tagSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setTagSearchQuery("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-[10px]"
+                        >
+                          <FaTimes />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                    {filteredTagsList.length === 0 ? (
+                      <p className="text-[11px] text-gray-400 py-3 text-center">
+                        {tagSearchQuery ? "No matching tags" : "No tags available"}
+                      </p>
+                    ) : (
+                      filteredTagsList.map((tag) => {
+                        const isSelected = selectedTags.includes(tag.slug);
+                        return (
+                          <label
+                            key={tag.id || tag.slug}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition cursor-pointer select-none ${
+                              isSelected
+                                ? "bg-[#FBF0F0] dark:bg-gray-800 text-[#9B4F5E] dark:text-pink-400 font-bold"
+                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleTag(tag.slug)}
+                                className="h-3.5 w-3.5 rounded border-gray-300 text-[#9B4F5E] accent-[#9B4F5E] cursor-pointer"
+                              />
+                              <span className="truncate text-left">{tag.name}</span>
+                            </div>
+                            {tag.count !== undefined && tag.count > 0 && (
+                              <span className="text-[10px] text-gray-400 shrink-0 ml-1">
+                                {tag.count}
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Price Range Filter */}
@@ -803,6 +1003,54 @@ export default function ShopView() {
                       <span className="text-[10px] text-gray-400">{b.count}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Mobile Tags Filter */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white">
+                    Tags
+                  </h4>
+                  {selectedTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => updateQuery({ tag: null, tags: null })}
+                      className="text-[10px] text-[#9B4F5E] font-semibold hover:underline"
+                    >
+                      Clear ({selectedTags.length})
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  {tagsList.length === 0 ? (
+                    <p className="text-[11px] text-gray-400 py-2 text-center">No tags available</p>
+                  ) : (
+                    tagsList.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.slug);
+                      return (
+                        <label
+                          key={tag.id || tag.slug}
+                          className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium cursor-pointer select-none ${
+                            isSelected ? "bg-[#FBF0F0] text-[#9B4F5E] font-bold" : "text-gray-600"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleTag(tag.slug)}
+                              className="h-3.5 w-3.5 rounded accent-[#9B4F5E] cursor-pointer"
+                            />
+                            <span className="truncate text-left">{tag.name}</span>
+                          </div>
+                          {tag.count !== undefined && tag.count > 0 && (
+                            <span className="text-[10px] text-gray-400">{tag.count}</span>
+                          )}
+                        </label>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 

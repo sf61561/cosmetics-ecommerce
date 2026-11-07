@@ -175,6 +175,7 @@ class SearchRepository {
     collection = "",
     category = "",
     brand = "",
+    tags = "",
     minPrice = null,
     maxPrice = null,
     inStock = null,
@@ -235,6 +236,26 @@ class SearchRepository {
       params.push(brand);
       const idx = params.length;
       conditions.push(`(b.slug = $${idx} OR b.id::text = $${idx})`);
+    }
+
+    // Tags filter (multiple slugs or IDs)
+    if (tags && (Array.isArray(tags) ? tags.length > 0 : String(tags).trim().length > 0)) {
+      const tagList = Array.isArray(tags)
+        ? tags.map((t) => String(t).trim()).filter(Boolean)
+        : String(tags)
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+
+      if (tagList.length > 0) {
+        params.push(tagList);
+        const idx = params.length;
+        conditions.push(`EXISTS (
+          SELECT 1 FROM product_tags pt
+          JOIN tags tg ON tg.id = pt.tag_id
+          WHERE pt.product_id = p.id AND (tg.slug = ANY($${idx}) OR tg.id::text = ANY($${idx}))
+        )`);
+      }
     }
 
     // Min Price filter
@@ -435,10 +456,23 @@ class SearchRepository {
       LIMIT 15;
     `;
 
-    const [facetRes, colFacetRes, brandFacetRes] = await Promise.all([
+    const tagFacetSql = `
+      SELECT 
+        t.id, t.name, t.slug, COUNT(DISTINCT p.id)::int AS count
+      FROM tags t
+      JOIN product_tags pt ON pt.tag_id = t.id
+      JOIN products p ON p.id = pt.product_id AND p.status = 'ACTIVE'
+      WHERE ${facetWhere}
+      GROUP BY t.id, t.name, t.slug
+      ORDER BY count DESC, t.name ASC
+      LIMIT 30;
+    `;
+
+    const [facetRes, colFacetRes, brandFacetRes, tagFacetRes] = await Promise.all([
       query(facetSql, facetParams),
       query(colFacetSql, facetParams),
       query(brandFacetSql, facetParams),
+      query(tagFacetSql, facetParams),
     ]);
 
     const priceRange = {
@@ -457,6 +491,7 @@ class SearchRepository {
         collections: colFacetRes.rows,
         categories: colFacetRes.rows,
         brands: brandFacetRes.rows,
+        tags: tagFacetRes.rows,
         priceRange,
       },
     };

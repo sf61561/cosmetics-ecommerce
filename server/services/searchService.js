@@ -41,6 +41,7 @@ class SearchService {
       collection: options.collection || options.category || "",
       category: options.category || options.collection || "",
       brand: options.brand || "",
+      tags: options.tags || options.tag || "",
       minPrice: options.minPrice,
       maxPrice: options.maxPrice,
       inStock: options.inStock,
