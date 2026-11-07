@@ -77,6 +77,15 @@ class AuthController {
     }
   }
 
+  async changeUnverifiedEmail(req, res, next) {
+    try {
+      const result = await authService.changeUnverifiedEmail(req.body || {}, req.auditRequest);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async requestPasswordSetup(req, res, next) {
     try {
       const result = await authService.requestPasswordSetup(req.body?.email);

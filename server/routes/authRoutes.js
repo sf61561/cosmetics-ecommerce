@@ -12,6 +12,7 @@ const {
   passwordResetLimiter,
   passwordResetCompleteLimiter,
   emailVerifyLimiter,
+  changeUnverifiedEmailLimiter,
 } = require("../middlewares/rateLimiter");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
@@ -157,6 +158,11 @@ router.post("/verify-email", emailVerifyLimiter, (req, res, next) =>
 // POST /api/auth/resend-verification
 router.post("/resend-verification", resendVerificationLimiter, (req, res, next) =>
   authController.resendVerification(req, res, next)
+);
+
+// POST /api/auth/change-unverified-email (allows mistyped email correction with password confirmation)
+router.post("/change-unverified-email", changeUnverifiedEmailLimiter, (req, res, next) =>
+  authController.changeUnverifiedEmail(req, res, next)
 );
 
 module.exports = router;

@@ -358,6 +358,173 @@ class AuthService {
     return genericResponse;
   }
 
+  /**
+   * Change a mistyped unverified email address
+   * Requires account password, validates that account is currently unverified,
+   * updates the email, invalidates all prior tokens, and dispatches a fresh verification email.
+   */
+  async changeUnverifiedEmail({ currentEmail, password, newEmail }, request = null) {
+    if (!currentEmail || typeof currentEmail !== "string" || !currentEmail.trim()) {
+      const error = new Error("Current email address is required.");
+      error.statusCode = 400;
+      error.field = "currentEmail";
+      throw error;
+    }
+
+    if (!password || typeof password !== "string") {
+      const error = new Error("Account password is required.");
+      error.statusCode = 400;
+      error.field = "password";
+      throw error;
+    }
+
+    if (!newEmail || typeof newEmail !== "string" || !newEmail.trim()) {
+      const error = new Error("New email address is required.");
+      error.statusCode = 400;
+      error.field = "newEmail";
+      throw error;
+    }
+
+    const normCurrent = currentEmail.trim().toLowerCase();
+    const normNew = newEmail.trim().toLowerCase();
+
+    if (/^www\./i.test(normNew)) {
+      const error = new Error("Email address cannot start with 'www.'. Please remove 'www.' from the beginning.");
+      error.statusCode = 400;
+      error.field = "newEmail";
+      throw error;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normNew)) {
+      const error = new Error("Please enter a valid new email address.");
+      error.statusCode = 400;
+      error.field = "newEmail";
+      throw error;
+    }
+
+    if (normCurrent === normNew) {
+      const error = new Error("The new email address cannot be the same as your current email address.");
+      error.statusCode = 400;
+      error.field = "newEmail";
+      throw error;
+    }
+
+    // Look up user by current email
+    const user = await userRepository.findByEmail(normCurrent);
+    if (!user) {
+      await bcrypt.hash("dummy_constant_for_timing_normalization", 10);
+      const error = new Error("Invalid email or password.");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    // Verify account password
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      const error = new Error("Invalid email or password.");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    // Only allowed while email_verified_at is null
+    if (user.email_verified_at) {
+      const error = new Error("This email address is already verified. You cannot change email from this screen.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Check if newEmail is already taken by another user
+    const existingTargetUser = await userRepository.findByEmail(normNew);
+    if (existingTargetUser) {
+      // If target user is verified, do not reassign; return anti-enumeration generic response
+      if (existingTargetUser.email_verified_at) {
+        emailService.sendAccountExistsEmail({ to: normNew, name: existingTargetUser.name }).catch(() => {});
+        return {
+          success: true,
+          message: "If the new email address is eligible, a verification link has been sent.",
+          newEmail: normNew,
+        };
+      }
+
+      // If unverified and older than 72 hours, purge the stale abandoned account
+      const isStale =
+        existingTargetUser.created_at &&
+        Date.now() - new Date(existingTargetUser.created_at).getTime() > 72 * 60 * 60 * 1000;
+
+      if (isStale) {
+        await userRepository.deleteUnverifiedUser(existingTargetUser.id);
+      } else {
+        // Active unverified target user (< 72h): return anti-enumeration generic response
+        return {
+          success: true,
+          message: "If the new email address is eligible, a verification link has been sent.",
+          newEmail: normNew,
+        };
+      }
+    }
+
+    // Atomic update of user email, token invalidation, and new token creation
+    const client = await getClient();
+    let rawToken = "";
+    try {
+      await client.query("BEGIN");
+
+      // 1. Invalidate all prior unused verification tokens for this user
+      await client.query(
+        "UPDATE email_verification_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL",
+        [user.id]
+      );
+
+      // 2. Update user's email address
+      await client.query(
+        "UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2",
+        [normNew, user.id]
+      );
+
+      // 3. Generate a fresh 32-byte crypto verification token
+      rawToken = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await client.query(
+        "INSERT INTO email_verification_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+        [user.id, tokenHash, expiresAt]
+      );
+
+      // 4. Record audit log entry
+      await auditService.record({
+        actor: { id: user.id, role: user.role },
+        action: "CUSTOMER_PROFILE_UPDATED",
+        entityType: "USER",
+        entityId: user.id,
+        metadata: { reason: "mistyped_email_correction" },
+      }, { client, request });
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    // Send verification email to the new address
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    const verificationUrl = `${clientUrl.replace(/\/$/, "")}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+
+    await emailService.sendVerificationEmail({
+      to: normNew,
+      name: user.name,
+      verificationUrl,
+    });
+
+    return {
+      success: true,
+      message: `Your email address has been updated to ${normNew}! A new verification link has been sent to your inbox.`,
+      newEmail: normNew,
+    };
+  }
+
   async requestPasswordSetup(email) {
     const genericResponse = {
       success: true,

@@ -119,11 +119,15 @@ export default function Navbar() {
           </button>
 
           {/* ── Center: Logo ── */}
-          <Link href="/" className="flex flex-col items-center group py-1 select-none">
+          <Link href="/" className="flex flex-col items-center group py-0.5 select-none" aria-label="Elourá Home">
             <span
-              className="font-logo text-xl sm:text-2xl lg:text-3xl font-semibold tracking-[0.24em] text-gray-900 group-hover:text-[#9B4F5E] transition-colors pl-[0.24em]"
+              className="font-logo text-lg sm:text-2xl lg:text-3xl font-semibold tracking-[0.24em] text-gray-900 group-hover:text-[#9B4F5E] transition-colors pl-[0.24em] leading-tight"
             >
               ELOURÁ
+            </span>
+            <div className="w-8 sm:w-11 h-px bg-gray-400/60 my-0.5" />
+            <span className="text-[7px] sm:text-[9px] tracking-[0.28em] uppercase text-gray-600 font-medium pl-[0.28em] leading-none">
+              Korean Skincare
             </span>
           </Link>
 

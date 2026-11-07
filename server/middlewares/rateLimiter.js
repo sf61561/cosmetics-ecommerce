@@ -203,6 +203,24 @@ const searchLimiter = rateLimit({
   }),
 });
 
+/**
+ * Rate limiter for correcting mistyped unverified email address.
+ * Allows 5 attempts per 15-minute window per IP to prevent brute-forcing.
+ */
+const changeUnverifiedEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: 429,
+  handler: (req, res, next, options) => res.status(options.statusCode).json({
+    success: false,
+    code: "CHANGE_EMAIL_RATE_LIMITED",
+    message: "Too many email correction attempts. Please wait 15 minutes before trying again.",
+    retryAfter: "15 minutes",
+  }),
+});
+
 module.exports = {
   registerLimiter,
   interactionLimiter,
@@ -212,6 +230,7 @@ module.exports = {
   passwordSetupCompleteLimiter,
   passwordChangeLimiter,
   resendVerificationLimiter,
+  changeUnverifiedEmailLimiter,
   refreshTokenLimiter,
   passwordResetLimiter,
   passwordResetCompleteLimiter,
