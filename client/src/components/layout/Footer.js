@@ -115,23 +115,18 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/track-order" className="hover:text-[#9B4F5E] transition-colors">
-                  Track My Order
+                  Track Order
                 </Link>
               </li>
               <li>
-                <a href="#support" className="hover:text-[#9B4F5E] transition-colors">
+                <Link href="/contact" className="hover:text-[#9B4F5E] transition-colors">
                   Contact Us
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#faqs" className="hover:text-[#9B4F5E] transition-colors">
                   FAQs
                 </a>
-              </li>
-              <li>
-                <Link href="/orders" className="hover:text-[#9B4F5E] transition-colors">
-                  Track Your Order
-                </Link>
               </li>
               <li>
                 <a href="#shipping" className="hover:text-[#9B4F5E] transition-colors">
@@ -149,11 +144,6 @@ export default function Footer() {
                 </a>
               </li>
             </ul>
-
-            <div className="pt-3 text-[11px] text-gray-500 space-y-1 border-t border-gray-100">
-              <p>Email: <span className="text-gray-700">hello@eloura.com</span></p>
-              <p>WhatsApp: <span className="text-gray-700">+880 1234-567890</span></p>
-            </div>
           </div>
         </div>
 
