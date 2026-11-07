@@ -221,39 +221,15 @@ export default function AdminDashboardPage() {
             </div>
           </section>
 
-          <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
-            <section className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-5">
-                <h2 className="font-semibold">Sales overview</h2>
-                <p className="text-xs text-gray-500">
-                  Delivered orders · grouped by delivery date · {RANGE_LABELS[range]}
-                </p>
-              </div>
-              <SalesChart sales={data.sales} range={range} />
-            </section>
-
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold">Inventory alerts</h2>
-                <Link href="/admin/products" className="text-xs font-semibold text-[#9B4F5E]">View all</Link>
-              </div>
-              {data.inventoryAlerts.length ? (
-                <div className="space-y-3">
-                  {data.inventoryAlerts.slice(0, 5).map((item) => (
-                    <Link href={`/admin/products/${item.id}`} key={item.id} className="flex items-center gap-3">
-                      <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-gray-100">
-                        {item.imageUrl && <Image src={item.imageUrl} alt="" fill sizes="40px" className="object-cover" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-red-600">{item.stockQuantity} left</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : <p className="py-8 text-center text-sm text-gray-500">No low-stock products.</p>}
-            </section>
-          </div>
+          <section className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-5">
+              <h2 className="font-semibold">Sales overview</h2>
+              <p className="text-xs text-gray-500">
+                Delivered orders · grouped by delivery date · {RANGE_LABELS[range]}
+              </p>
+            </div>
+            <SalesChart sales={data.sales} range={range} />
+          </section>
 
           <div className="grid gap-6 xl:grid-cols-2">
             <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
