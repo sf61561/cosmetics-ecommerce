@@ -12,8 +12,8 @@ export default function GlobalError({ error, reset }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF7F5] dark:bg-gray-950 px-4 py-16 text-gray-900 dark:text-gray-100">
       <div className="max-w-md w-full text-center bg-white dark:bg-gray-900 rounded-3xl p-8 sm:p-10 border border-pink-100 dark:border-gray-800 shadow-xl">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9B4F5E] dark:text-pink-400 block mb-2">
-          ELOURÁ BEAUTY
+        <span className="font-logo text-xs font-semibold uppercase tracking-[0.24em] text-[#9B4F5E] dark:text-pink-400 block mb-2 pl-[0.24em]">
+          ELOURÁ
         </span>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-3">
           Something went wrong

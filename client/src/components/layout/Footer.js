@@ -19,11 +19,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2 group">
-              <span className="font-serif text-2xl tracking-tight text-gray-900 group-hover:text-[#9B4F5E] transition-colors">
-                Elourá
+            <Link href="/" className="inline-flex flex-col items-start group">
+              <span className="font-logo text-2xl tracking-[0.24em] font-semibold text-gray-900 group-hover:text-[#9B4F5E] transition-colors">
+                ELOURÁ
               </span>
-              <span className="text-[#A582B4] text-lg font-serif">✿</span>
+              <div className="w-12 h-px bg-gray-300 dark:bg-gray-700 mt-1 mb-1" />
+              <span className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-medium">
+                Korean Skincare
+              </span>
             </Link>
             <p className="text-xs sm:text-sm text-gray-500 leading-relaxed max-w-sm">
               Discover the secrets of authentic Korean beauty with our handpicked skincare and cosmetics, specially curated for South Asian skin and tropical climates.

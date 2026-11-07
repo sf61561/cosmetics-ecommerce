@@ -265,14 +265,19 @@ export default function LoginPage() {
       {/* ── Content ── */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
         {/* Top Navigation: Brand Logo (Home link) */}
-        <div className="w-full flex items-center justify-center mb-5">
+        <div className="w-full flex items-center justify-center mb-6">
           <Link
             href="/"
-            className="text-3xl font-semibold tracking-wide text-gray-800 hover:text-[#9B4F5E] transition-colors"
-            style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+            className="flex flex-col items-center group select-none"
             aria-label="Elourá Home"
           >
-            Elourá
+            <span className="font-logo text-3xl font-semibold tracking-[0.24em] text-gray-900 group-hover:text-[#9B4F5E] transition-colors pl-[0.24em]">
+              ELOURÁ
+            </span>
+            <div className="w-12 h-px bg-gray-400/50 mt-1.5 mb-1" />
+            <span className="text-[10px] tracking-[0.25em] uppercase text-gray-600 font-medium pl-[0.25em]">
+              Korean Skincare
+            </span>
           </Link>
         </div>
 

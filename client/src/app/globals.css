@@ -2,6 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  --font-logo: var(--font-bodoni), "Bodoni Moda", "Didot", "Playfair Display", "Cinzel", "Georgia", serif;
+}
+
+.font-logo {
+  font-family: var(--font-logo);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

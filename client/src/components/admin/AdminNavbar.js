@@ -165,12 +165,10 @@ export default function AdminNavbar({ onToggleSidebar }) {
           <div className="flex items-center gap-2 lg:hidden">
             <Link href="/admin" className="flex items-center">
               <span
-                className="text-xl text-gray-800 dark:text-gray-100"
-                style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+                className="font-logo text-lg font-semibold tracking-[0.2em] text-gray-800 dark:text-gray-100"
               >
-                Elourá
+                ELOURÁ
               </span>
-              <LogoFloralIcon />
             </Link>
             <span className="inline-flex items-center rounded-full bg-[#A46377] px-2.5 py-0.5 text-[11px] font-medium text-white shadow-xs select-none">
               Admin

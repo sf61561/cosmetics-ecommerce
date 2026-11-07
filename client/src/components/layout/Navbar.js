@@ -119,12 +119,11 @@ export default function Navbar() {
           </button>
 
           {/* ── Center: Logo ── */}
-          <Link href="/" className="flex items-center gap-1">
+          <Link href="/" className="flex flex-col items-center group py-1 select-none">
             <span
-              className="text-2xl font-semibold tracking-wide text-gray-800 lg:text-3xl"
-              style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+              className="font-logo text-xl sm:text-2xl lg:text-3xl font-semibold tracking-[0.24em] text-gray-900 group-hover:text-[#9B4F5E] transition-colors pl-[0.24em]"
             >
-              Elourá
+              ELOURÁ
             </span>
           </Link>
 
