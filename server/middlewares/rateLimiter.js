@@ -118,6 +118,7 @@ const passwordChangeLimiter = rateLimit({
 const resendVerificationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
+  skipFailedRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   statusCode: 429,
@@ -210,6 +211,7 @@ const searchLimiter = rateLimit({
 const changeUnverifiedEmailLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
+  skipFailedRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   statusCode: 429,

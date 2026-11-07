@@ -349,11 +349,18 @@ class AuthService {
     const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
     const verificationUrl = `${clientUrl.replace(/\/$/, "")}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
 
-    await emailService.sendVerificationEmail({
-      to: user.email,
-      name: user.name,
-      verificationUrl,
-    });
+    try {
+      await emailService.sendVerificationEmail({
+        to: user.email,
+        name: user.name,
+        verificationUrl,
+      });
+    } catch (emailErr) {
+      console.error("Failed to dispatch verification email in resendVerificationEmail:", emailErr.message || emailErr);
+      const error = new Error("Unable to send verification email at this moment. Please try again in a few moments.");
+      error.statusCode = 503;
+      throw error;
+    }
 
     return genericResponse;
   }

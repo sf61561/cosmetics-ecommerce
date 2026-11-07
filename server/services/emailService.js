@@ -192,7 +192,7 @@ class EmailService {
    */
   async sendVerificationEmail({ to, name, verificationUrl }) {
     const fromAddress =
-      process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@resend.dev>";
+      process.env.RESEND_FROM_EMAIL || "Elourá <onboarding@elouraa.me>";
 
     const htmlContent = `
       <!DOCTYPE html>
