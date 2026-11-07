@@ -42,7 +42,7 @@ export default function RootLayout({ children }) {
               <NotificationProvider>
                 <ProductRequestProvider>
                   <main className="flex-1">{children}</main>
-                  <FloatingChatButton phoneNumber="8801700000000" />
+                  <FloatingChatButton />
                 </ProductRequestProvider>
               </NotificationProvider>
             </WishlistProvider>

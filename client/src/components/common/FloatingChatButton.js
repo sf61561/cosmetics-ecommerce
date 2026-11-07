@@ -10,8 +10,8 @@ import {
 } from "react-icons/io5";
 
 export default function FloatingChatButton({
-  phoneNumber = "8801700000000",
-  defaultMessage = "Hello Elourá! I have a question about authentic skincare products.",
+  phoneNumber,
+  defaultMessage,
   requireAuth = false,
 }) {
   const pathname = usePathname();
@@ -19,13 +19,24 @@ export default function FloatingChatButton({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  // 1. Never show on admin or staff routes
+  // 1. Resolve WhatsApp phone number and message from props or NEXT_PUBLIC environment variables
+  const resolvedPhone =
+    phoneNumber ||
+    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
+    "8801700000000";
+
+  const resolvedMessage =
+    defaultMessage ||
+    process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
+    "Hello Elourá! I have a question about authentic skincare products.";
+
+  // 2. Never show on admin or staff routes
   const isAdminRoute = pathname?.startsWith("/admin");
 
-  // 2. Optional: only show for logged-in customers if requireAuth is enabled
+  // 3. Optional: only show for logged-in customers if requireAuth is enabled
   const shouldHideForAuth = requireAuth && !user;
 
-  // Close when clicking outside
+  // Close when clicking outside or pressing Escape
   useEffect(() => {
     if (!isOpen) return;
 
@@ -57,9 +68,9 @@ export default function FloatingChatButton({
     return null;
   }
 
-  // Pre-filled WhatsApp link URL
-  const cleanPhone = String(phoneNumber).replace(/[^\d]/g, "");
-  const encodedText = encodeURIComponent(defaultMessage);
+  // Pre-filled WhatsApp link URL (sanitizes '+', '-', ' ' or non-digits)
+  const cleanPhone = String(resolvedPhone).replace(/[^\d]/g, "");
+  const encodedText = encodeURIComponent(resolvedMessage);
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
 
   return (
