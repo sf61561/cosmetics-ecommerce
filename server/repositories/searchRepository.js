@@ -433,14 +433,15 @@ class SearchRepository {
 
     const colFacetSql = `
       SELECT 
-        c.id, c.name, c.slug, COUNT(DISTINCT p.id)::int AS count
-      FROM collections c
-      JOIN product_collections pc ON pc.collection_id = c.id
+        col.id, col.name, col.slug, COUNT(DISTINCT p.id)::int AS count
+      FROM collections col
+      JOIN product_collections pc ON pc.collection_id = col.id
       JOIN products p ON p.id = pc.product_id AND p.status = 'ACTIVE'
       LEFT JOIN brands b ON b.id = p.brand_id
+      LEFT JOIN categories c ON c.id = p.category_id
       WHERE ${facetWhere}
-      GROUP BY c.id, c.name, c.slug
-      ORDER BY count DESC, c.name ASC
+      GROUP BY col.id, col.name, col.slug
+      ORDER BY count DESC, col.name ASC
       LIMIT 15;
     `;
 
@@ -462,6 +463,8 @@ class SearchRepository {
       FROM tags t
       JOIN product_tags pt ON pt.tag_id = t.id
       JOIN products p ON p.id = pt.product_id AND p.status = 'ACTIVE'
+      LEFT JOIN brands b ON b.id = p.brand_id
+      LEFT JOIN categories c ON c.id = p.category_id
       WHERE ${facetWhere}
       GROUP BY t.id, t.name, t.slug
       ORDER BY count DESC, t.name ASC
