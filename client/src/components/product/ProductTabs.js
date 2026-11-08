@@ -137,15 +137,15 @@ export default function ProductTabs({ product }) {
                 Full Formulation & Ingredients List
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Full INCI ingredient transparency. Formulated to meet clean skincare standards.
+                Full ingredient transparency. Formulated to meet clean skincare standards.
               </p>
             </div>
 
             {/* Ingredient Badges */}
-            {ingredientList.length > 0 && (
+            {ingredientList.length > 0 ? (
               <div className="space-y-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 block">
-                  Highlighted Actives
+                  Highlighted Actives & Ingredients
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {ingredientList.map((ing, i) => (
@@ -158,17 +158,11 @@ export default function ProductTabs({ product }) {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Raw Formulation Box */}
-            <div className="rounded-2xl bg-gray-50 dark:bg-gray-900/60 p-5 border border-gray-200/70 dark:border-gray-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-2">
-                Complete INCI Composition
-              </span>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-mono">
-                {product.ingredients || "Ingredient details currently unavailable for this batch."}
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Ingredient details currently unavailable for this product.
               </p>
-            </div>
+            )}
           </div>
         )}
 
