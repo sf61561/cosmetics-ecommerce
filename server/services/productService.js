@@ -6,6 +6,18 @@ const { slugify } = require("../utils/slugHelper");
 const { Readable } = require("stream");
 const auditService = require("./auditService");
 
+function sanitizeHowToUse(val) {
+  if (val === undefined || val === null) return val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    return trimmed || null;
+  }
+  if (Array.isArray(val) || typeof val === "object") {
+    return JSON.stringify(val);
+  }
+  return null;
+}
+
 function productAuditSnapshot(product) {
   return {
     name: product.name,
@@ -582,7 +594,7 @@ class ProductService {
         skinConcerns: data.skinConcerns ? data.skinConcerns.trim() : null,
         ingredients: data.ingredients ? data.ingredients.trim() : null,
         countryOfOrigin: data.countryOfOrigin ? data.countryOfOrigin.trim() : null,
-        howToUse: data.howToUse ? data.howToUse.trim() : null,
+        howToUse: sanitizeHowToUse(data.howToUse) || null,
         expiryInfo: data.expiryInfo ? data.expiryInfo.trim() : null,
         seoTitle: data.seoTitle ? data.seoTitle.trim() : null,
         seoDescription: data.seoDescription ? data.seoDescription.trim() : null,
@@ -792,7 +804,7 @@ class ProductService {
         skinConcerns: data.skinConcerns !== undefined ? (data.skinConcerns ? data.skinConcerns.trim() : null) : undefined,
         ingredients: data.ingredients !== undefined ? (data.ingredients ? data.ingredients.trim() : null) : undefined,
         countryOfOrigin: data.countryOfOrigin !== undefined ? (data.countryOfOrigin ? data.countryOfOrigin.trim() : null) : undefined,
-        howToUse: data.howToUse !== undefined ? (data.howToUse ? data.howToUse.trim() : null) : undefined,
+        howToUse: data.howToUse !== undefined ? sanitizeHowToUse(data.howToUse) : undefined,
         expiryInfo: data.expiryInfo !== undefined ? (data.expiryInfo ? data.expiryInfo.trim() : null) : undefined,
         seoTitle: data.seoTitle !== undefined ? (data.seoTitle ? data.seoTitle.trim() : null) : undefined,
         seoDescription: data.seoDescription !== undefined ? (data.seoDescription ? data.seoDescription.trim() : null) : undefined,

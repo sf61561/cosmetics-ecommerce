@@ -247,3 +247,37 @@ export const productService = {
     return handleResponse(res);
   },
 };
+
+/**
+ * Safely parses `howToUse` from the database into structured steps.
+ * Handles JSON array of steps [{ title, description }], single plain text, or empty.
+ */
+export function parseHowToUseSteps(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val
+      .map((s) => ({
+        title: (s?.title || "").trim(),
+        description: (s?.description || s?.text || s?.instruction || "").trim(),
+      }))
+      .filter((s) => s.title || s.description);
+  }
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((s) => ({
+            title: (s?.title || "").trim(),
+            description: (s?.description || s?.text || s?.instruction || "").trim(),
+          }))
+          .filter((s) => s.title || s.description);
+      }
+    } catch {}
+    if (val.trim()) {
+      return [{ title: "Application Ritual", description: val.trim() }];
+    }
+  }
+  return [];
+}
+

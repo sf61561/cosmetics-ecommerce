@@ -20,7 +20,7 @@ import {
   FaCheck,
   FaInfoCircle,
 } from "react-icons/fa";
-import { productService } from "@/services/productService";
+import { productService, parseHowToUseSteps } from "@/services/productService";
 
 export default function ViewProductModal({ isOpen, onClose, product }) {
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
@@ -556,16 +556,41 @@ export default function ViewProductModal({ isOpen, onClose, product }) {
             </div>
 
             {/* How to use */}
-            {p.howToUse && (
-              <div className="p-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-800/30 space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block">
-                  Application & Usage Instructions
-                </span>
-                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                  {p.howToUse}
-                </p>
-              </div>
-            )}
+            {p.howToUse && (() => {
+              const steps = parseHowToUseSteps(p.howToUse);
+              return (
+                <div className="p-4 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-800/30 space-y-2.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block">
+                    Application Ritual & Routine Steps
+                  </span>
+                  {steps.length > 0 ? (
+                    <div className="space-y-2 pt-0.5">
+                      {steps.map((st, idx) => (
+                        <div key={idx} className="flex items-start gap-2.5 text-xs">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-bold text-[10px]">
+                            {idx + 1}
+                          </span>
+                          <div className="space-y-0.5">
+                            {st.title ? (
+                              <strong className="text-gray-900 dark:text-white block font-semibold text-xs">
+                                {st.title}
+                              </strong>
+                            ) : null}
+                            <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed text-xs">
+                              {st.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                      {typeof p.howToUse === "string" ? p.howToUse : JSON.stringify(p.howToUse)}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Key Ingredients */}
             {p.ingredients && (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ProductReviewsSection from "./ProductReviewsSection";
+import { parseHowToUseSteps } from "@/services/productService";
 import {
   FaCheckCircle,
   FaLeaf,
@@ -172,67 +173,67 @@ export default function ProductTabs({ product }) {
         )}
 
         {/* Panel 3: How to Use */}
-        {activeTab === "how-to-use" && (
-          <div
-            id="panel-how-to-use"
-            role="tabpanel"
-            aria-labelledby="tab-how-to-use"
-            className="space-y-6 max-w-4xl"
-          >
-            <div className="space-y-2">
-              <h3 className="font-serif text-xl sm:text-2xl text-gray-900 dark:text-white font-normal">
-                Application Ritual & How to Use
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Maximize the efficacy of this formulation with the following routine order.
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-[#FAF7F5] dark:bg-gray-900/60 p-6 border border-pink-100/60 dark:border-gray-800 space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-bold text-xs">
-                  1
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Cleanse & Prep</h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                    Start with a gentle low-pH cleanser followed by your favorite hydrating toner to balance your skin barrier.
-                  </p>
-                </div>
+        {activeTab === "how-to-use" && (() => {
+          const steps = parseHowToUseSteps(product.howToUse);
+          return (
+            <div
+              id="panel-how-to-use"
+              role="tabpanel"
+              aria-labelledby="tab-how-to-use"
+              className="space-y-6 max-w-4xl"
+            >
+              <div className="space-y-2">
+                <h3 className="font-serif text-xl sm:text-2xl text-gray-900 dark:text-white font-normal">
+                  Application Ritual & How to Use
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Maximize the efficacy of this formulation with the following routine order.
+                </p>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-bold text-xs">
-                  2
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Dispense & Press</h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                    {product.howToUse ||
-                      "Dispense an appropriate amount into palm or fingertips. Gently pat evenly over the face and neck until fully absorbed."}
-                  </p>
-                </div>
+              <div className="rounded-2xl bg-[#FAF7F5] dark:bg-gray-900/60 p-6 border border-pink-100/60 dark:border-gray-800 space-y-4">
+                {steps.length > 0 ? (
+                  steps.map((step, index) => (
+                    <div key={index} className="flex items-start gap-4">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-bold text-xs shadow-2xs">
+                        {index + 1}
+                      </div>
+                      <div className="space-y-1">
+                        {step.title && (
+                          <h4 className="font-semibold text-sm text-gray-900 dark:text-white">
+                            {step.title}
+                          </h4>
+                        )}
+                        <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                          {step.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-bold text-xs shadow-2xs">
+                      1
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white">
+                        Application Ritual
+                      </h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                        Dispense an appropriate amount into palm or fingertips. Gently pat evenly over the face and neck until fully absorbed.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#9B4F5E] text-white font-bold text-xs">
-                  3
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Lock in Moisture</h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                    Follow with your preferred barrier moisturizer to seal in the actives. During the daytime, always finish with broad-spectrum SPF50+.
-                  </p>
-                </div>
+              <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300">
+                <FaClock className="h-4 w-4 shrink-0 text-amber-600" />
+                <span>Recommended use: Twice daily (Morning and Night) or as needed in your skincare routine.</span>
               </div>
             </div>
-
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300">
-              <FaClock className="h-4 w-4 shrink-0 text-amber-600" />
-              <span>Recommended use: Twice daily (Morning and Night) or as needed in your skincare routine.</span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Panel 4: Specifications */}
         {activeTab === "specs" && (
