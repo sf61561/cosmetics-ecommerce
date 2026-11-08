@@ -52,6 +52,14 @@ function changedFields(previous, next, keys) {
   }, { previous: {}, next: {} });
 }
 
+function formatCloudinaryDeliveryUrl(secureUrl) {
+  if (!secureUrl || typeof secureUrl !== "string") return secureUrl;
+  if (secureUrl.includes("/image/upload/") && !secureUrl.includes("/image/upload/f_auto,q_auto")) {
+    return secureUrl.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+  }
+  return secureUrl;
+}
+
 class ProductService {
   /**
    * Helper: Stream an image buffer to Cloudinary in folder 'eloura/products'
@@ -62,13 +70,16 @@ class ProductService {
         {
           folder: "eloura/products",
           resource_type: "image",
-          fetch_format: "auto",
-          quality: "auto",
+          transformation: [
+            { width: 1600, height: 1600, crop: "limit" },
+            { quality: "auto" },
+            { fetch_format: "auto" },
+          ],
         },
         (error, result) => {
           if (error) return reject(error);
           resolve({
-            imageUrl: result.secure_url,
+            imageUrl: formatCloudinaryDeliveryUrl(result.secure_url),
             imagePublicId: result.public_id,
           });
         }

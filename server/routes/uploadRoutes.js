@@ -4,6 +4,14 @@ const upload = require("../middlewares/upload");
 const cloudinary = require("../config/cloudinary");
 const { Readable } = require("stream");
 
+function formatCloudinaryDeliveryUrl(secureUrl) {
+  if (!secureUrl || typeof secureUrl !== "string") return secureUrl;
+  if (secureUrl.includes("/image/upload/") && !secureUrl.includes("/image/upload/f_auto,q_auto")) {
+    return secureUrl.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+  }
+  return secureUrl;
+}
+
 // POST /api/upload
 router.post(
   "/",
@@ -50,9 +58,11 @@ router.post(
           {
             folder: "eloura/avatars",
             resource_type: "image",
-            // Auto optimize quality & format
-            fetch_format: "auto",
-            quality: "auto",
+            transformation: [
+              { width: 1000, height: 1000, crop: "limit" },
+              { quality: "auto" },
+              { fetch_format: "auto" },
+            ],
           },
           (error, result) => {
             if (error) {
@@ -68,7 +78,7 @@ router.post(
       return res.status(200).json({
         success: true,
         message: "Image uploaded successfully.",
-        imageUrl: uploadResult.secure_url,
+        imageUrl: formatCloudinaryDeliveryUrl(uploadResult.secure_url),
         publicId: uploadResult.public_id,
       });
     } catch (error) {

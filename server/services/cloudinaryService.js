@@ -1,6 +1,14 @@
 const cloudinary = require("../config/cloudinary");
 const { Readable } = require("stream");
 
+function formatCloudinaryDeliveryUrl(secureUrl) {
+  if (!secureUrl || typeof secureUrl !== "string") return secureUrl;
+  if (secureUrl.includes("/image/upload/") && !secureUrl.includes("/image/upload/f_auto,q_auto")) {
+    return secureUrl.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+  }
+  return secureUrl;
+}
+
 const cloudinaryService = {
   /**
    * Upload an image buffer directly to Cloudinary
@@ -15,8 +23,11 @@ const cloudinaryService = {
         {
           folder,
           resource_type: "image",
-          fetch_format: "auto",
-          quality: "auto",
+          transformation: [
+            { width: 1600, height: 1600, crop: "limit" },
+            { quality: "auto" },
+            { fetch_format: "auto" },
+          ],
         },
         (error, result) => {
           if (error) {
@@ -24,7 +35,7 @@ const cloudinaryService = {
             return reject(new Error(error.message || "Cloudinary upload failed"));
           }
           resolve({
-            url: result.secure_url,
+            url: formatCloudinaryDeliveryUrl(result.secure_url),
             publicId: result.public_id,
             width: result.width,
             height: result.height,
