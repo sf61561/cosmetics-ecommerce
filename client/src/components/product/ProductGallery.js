@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaExpand, FaTimes, FaShieldAlt } from "react-icons/fa";
 
@@ -20,10 +20,30 @@ export default function ProductGallery({
     : [thumbnailUrl || "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80"];
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeImageOverride, setActiveImageOverride] = useState(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [zoomStyle, setZoomStyle] = useState({ display: "none", backgroundPosition: "0% 0%" });
 
-  const currentImage = selectedImageUrl || gallery[activeIndex] || gallery[0];
+  // When selectedImageUrl changes from variant swatch/size selection, sync gallery
+  useEffect(() => {
+    if (selectedImageUrl) {
+      const matchIndex = gallery.findIndex((img) => img === selectedImageUrl);
+      if (matchIndex !== -1) {
+        setActiveIndex(matchIndex);
+        setActiveImageOverride(null);
+      } else {
+        setActiveImageOverride(selectedImageUrl);
+      }
+    }
+  }, [selectedImageUrl]);
+
+  // When customer clicks any thumbnail, switch to that thumbnail image
+  const handleSelectThumbnail = (index) => {
+    setActiveIndex(index);
+    setActiveImageOverride(null);
+  };
+
+  const currentImage = activeImageOverride || gallery[activeIndex] || gallery[0];
 
   // Desktop hover zoom lens effect
   const handleMouseMove = (e) => {
@@ -124,7 +144,7 @@ export default function ProductGallery({
                 role="tab"
                 aria-selected={isSelected}
                 aria-label={`Thumbnail ${idx + 1} of ${gallery.length}`}
-                onClick={() => setActiveIndex(idx)}
+                onClick={() => handleSelectThumbnail(idx)}
                 className={`relative h-20 w-20 sm:h-22 sm:w-22 rounded-2xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                   isSelected
                     ? "border-[#9B4F5E] ring-2 ring-[#9B4F5E]/20 shadow-xs"
