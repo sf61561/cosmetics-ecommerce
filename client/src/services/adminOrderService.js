@@ -22,4 +22,20 @@ export const adminOrderService = {
     method: "PATCH",
     body: JSON.stringify(payload),
   }),
+  getCostHeaders: () => request("/api/admin/orders/cost-headers"),
+  updateItemCosts: (id, itemCosts = []) => request(`/api/admin/orders/${id}/item-costs`, {
+    method: "PATCH",
+    body: JSON.stringify({ itemCosts }),
+  }),
+  addOtherCost: (id, payload = {}) => request(`/api/admin/orders/${id}/other-costs`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
+  updateOtherCost: (id, costId, payload = {}) => request(`/api/admin/orders/${id}/other-costs/${costId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  }),
+  deleteOtherCost: (id, costId) => request(`/api/admin/orders/${id}/other-costs/${costId}`, {
+    method: "DELETE",
+  }),
 };

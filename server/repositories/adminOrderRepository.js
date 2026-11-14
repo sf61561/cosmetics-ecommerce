@@ -1,4 +1,4 @@
-const { query } = require("../config/db");
+const { pool, query } = require("../config/db");
 
 const allowedSorts = {
   date: "o.created_at",
@@ -31,11 +31,13 @@ function mapList(row) {
     deliveryArea: row.shipping_area || row.delivery_area || null,
     courierName: row.courier_name || null,
     trackingNumber: row.tracking_number || null,
+    hasPendingCosts: Boolean(row.has_pending_costs),
+    pendingCostCount: Number(row.pending_cost_count || 0),
   };
 }
 
 const adminOrderRepository = {
-  async list({ search = "", status = "all", startDate = "", endDate = "", district = "", sortBy = "date", sortOrder = "desc", page = 1, limit = 20 } = {}) {
+  async list({ search = "", status = "all", costStatus = "all", startDate = "", endDate = "", district = "", sortBy = "date", sortOrder = "desc", page = 1, limit = 20 } = {}) {
     const values = [];
     const conditions = [];
     const add = (value) => { values.push(value); return `$${values.length}`; };
@@ -55,6 +57,12 @@ const adminOrderRepository = {
         const statusParam = add(target);
         conditions.push(`(LOWER(o.status) = ${statusParam} OR LOWER(o.order_status) = ${statusParam})`);
       }
+    }
+
+    if (costStatus === "pending") {
+      conditions.push(`EXISTS (SELECT 1 FROM order_items oi_cs WHERE oi_cs.order_id = o.id AND oi_cs.cost_price IS NULL)`);
+    } else if (costStatus === "entered" || costStatus === "completed") {
+      conditions.push(`NOT EXISTS (SELECT 1 FROM order_items oi_cs WHERE oi_cs.order_id = o.id AND oi_cs.cost_price IS NULL)`);
     }
 
     if (startDate) conditions.push(`o.created_at >= ${add(new Date(`${startDate}T00:00:00`))}`);
@@ -88,7 +96,9 @@ const adminOrderRepository = {
              o.total_amount, o.status, o.order_status, o.payment_status, o.payment_method,
              o.shipping_name, o.shipping_phone, o.shipping_area, o.courier_name, o.tracking_number,
              u.name AS customer_name, u.phone AS customer_phone, u.email AS customer_email,
-             a.area AS delivery_area, COUNT(oi.id)::int AS item_count
+             a.area AS delivery_area, COUNT(oi.id)::int AS item_count,
+             CASE WHEN COUNT(oi.id) = 0 THEN false ELSE COALESCE(BOOL_OR(oi.cost_price IS NULL), false) END AS has_pending_costs,
+             COUNT(oi.id) FILTER (WHERE oi.id IS NOT NULL AND oi.cost_price IS NULL)::int AS pending_cost_count
       FROM orders o
       LEFT JOIN users u ON u.id = o.user_id
       LEFT JOIN LATERAL (SELECT area, district FROM addresses WHERE user_id = o.user_id ORDER BY is_default DESC, created_at DESC LIMIT 1) a ON true
@@ -124,7 +134,8 @@ const adminOrderRepository = {
         COUNT(*) FILTER (WHERE LOWER(status) = 'shipped' OR LOWER(order_status) = 'shipped')::int AS shipped,
         COUNT(*) FILTER (WHERE LOWER(status) = 'delivered' OR LOWER(order_status) = 'delivered')::int AS delivered,
         COUNT(*) FILTER (WHERE LOWER(status) = 'cancelled' OR LOWER(order_status) = 'cancelled')::int AS cancelled,
-        COUNT(*) FILTER (WHERE LOWER(status) = 'returned' OR LOWER(order_status) = 'returned')::int AS returned
+        COUNT(*) FILTER (WHERE LOWER(status) = 'returned' OR LOWER(order_status) = 'returned')::int AS returned,
+        COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM order_items oi_c WHERE oi_c.order_id = orders.id AND oi_c.cost_price IS NULL))::int AS cost_pending
       FROM orders
     `);
     return result.rows[0];
@@ -156,15 +167,28 @@ const adminOrderRepository = {
 
     const items = await query(
       `SELECT oi.id, oi.product_id, oi.variant_id, oi.product_name, oi.sku, oi.quantity, oi.unit_price,
-              oi.product_discount, oi.line_total, COALESCE(pv.image_url, pi.image_url) AS image_url
+              oi.product_discount, oi.line_total, oi.cost_price, oi.cost_entered_at,
+              u_c.name AS cost_entered_by_name,
+              COALESCE(pv.image_url, pi.image_url) AS image_url
        FROM order_items oi
        LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+       LEFT JOIN users u_c ON u_c.id = oi.cost_entered_by
        LEFT JOIN LATERAL (
          SELECT image_url FROM product_images
          WHERE product_id = oi.product_id
          ORDER BY is_primary DESC, display_order ASC LIMIT 1
        ) pi ON true
        WHERE oi.order_id = $1 ORDER BY oi.id`,
+      [id]
+    );
+
+    const otherCosts = await query(
+      `SELECT ooc.id, ooc.order_id, ooc.header, ooc.amount, ooc.note, ooc.created_at, ooc.updated_at,
+              u.name AS created_by_name, u.role AS created_by_role
+       FROM order_other_costs ooc
+       LEFT JOIN users u ON u.id = ooc.created_by
+       WHERE ooc.order_id = $1
+       ORDER BY ooc.created_at ASC, ooc.id ASC`,
       [id]
     );
 
@@ -185,6 +209,75 @@ const adminOrderRepository = {
        ORDER BY created_at DESC, id DESC`,
       [id]
     );
+
+    let totalItemCost = 0;
+    let itemsWithCostCount = 0;
+    let pendingCostCount = 0;
+    let itemGrossProfit = 0;
+
+    const mappedItems = items.rows.map((item) => {
+      const cost = item.cost_price !== null && item.cost_price !== undefined ? Number(item.cost_price) : null;
+      const qty = Number(item.quantity);
+      const unitPrice = Number(item.unit_price);
+      const itemProfit = cost !== null ? Number(((unitPrice - cost) * qty).toFixed(2)) : null;
+
+      if (cost !== null) {
+        totalItemCost += cost * qty;
+        itemsWithCostCount += 1;
+        itemGrossProfit += itemProfit;
+      } else {
+        pendingCostCount += 1;
+      }
+
+      return {
+        id: item.id,
+        productId: item.product_id,
+        variantId: item.variant_id,
+        productName: item.product_name,
+        sku: item.sku,
+        quantity: qty,
+        unitPrice,
+        productDiscount: Number(item.product_discount || 0),
+        lineTotal: Number(item.line_total),
+        costPrice: cost,
+        costEnteredAt: item.cost_entered_at || null,
+        costEnteredByName: item.cost_entered_by_name || null,
+        profit: itemProfit,
+        imageUrl: item.image_url || null,
+      };
+    });
+
+    const mappedOtherCosts = otherCosts.rows.map((c) => ({
+      id: c.id,
+      orderId: c.order_id,
+      header: c.header,
+      amount: Number(c.amount),
+      note: c.note || null,
+      createdByName: c.created_by_name || "Admin",
+      createdByRole: c.created_by_role || "ADMIN",
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+    }));
+
+    const totalOtherCost = mappedOtherCosts.reduce((sum, c) => sum + c.amount, 0);
+    const sellingTotal = Number(row.grand_total || row.total_amount || 0);
+    const netProfit = itemsWithCostCount > 0 ? Number((itemGrossProfit - totalOtherCost).toFixed(2)) : null;
+    const netMarginPercentage = (sellingTotal > 0 && netProfit !== null)
+      ? Number(((netProfit / sellingTotal) * 100).toFixed(2))
+      : null;
+
+    const profitSummary = {
+      hasPendingCosts: pendingCostCount > 0,
+      pendingCostCount,
+      itemsWithCostCount,
+      totalItemsCount: mappedItems.length,
+      totalSellingAmount: sellingTotal,
+      totalItemCost: Number(totalItemCost.toFixed(2)),
+      totalOtherCost: Number(totalOtherCost.toFixed(2)),
+      itemGrossProfit: Number(itemGrossProfit.toFixed(2)),
+      netProfit,
+      netMarginPercentage,
+    };
 
     return {
       id: row.id,
@@ -237,17 +330,9 @@ const adminOrderRepository = {
         streetAddress: row.shipping_address || row.street_address,
         postalCode: row.postal_code,
       } : null,
-      items: items.rows.map((item) => ({
-        id: item.id,
-        productId: item.product_id,
-        productName: item.product_name,
-        sku: item.sku,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unit_price),
-        productDiscount: Number(item.product_discount || 0),
-        lineTotal: Number(item.line_total),
-        imageUrl: item.image_url || null,
-      })),
+      items: mappedItems,
+      otherCosts: mappedOtherCosts,
+      profitSummary,
       statusHistory: statusHistory.rows.map((h) => ({
         id: h.id,
         fromStatus: h.from_status ? normalizeStatus(h.from_status) : null,
@@ -274,6 +359,101 @@ const adminOrderRepository = {
         createdAt: entry.created_at,
       })),
     };
+  },
+
+  async updateItemCosts(orderId, itemCosts = [], actorId = null) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const updated = [];
+      for (const item of itemCosts) {
+        const cost = (item.costPrice === "" || item.costPrice === null || item.costPrice === undefined)
+          ? null
+          : Math.max(0, Number(item.costPrice));
+        const res = await client.query(
+          `UPDATE order_items
+           SET cost_price = $1,
+               cost_entered_by = $2,
+               cost_entered_at = CASE WHEN $1::numeric IS NULL THEN NULL ELSE NOW() END
+           WHERE id = $3 AND order_id = $4
+           RETURNING id, product_name, sku, quantity, unit_price, cost_price, cost_entered_at`,
+          [cost, cost !== null ? actorId : null, item.id, orderId]
+        );
+        if (res.rows[0]) updated.push(res.rows[0]);
+      }
+      await client.query("COMMIT");
+      return updated;
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async addOtherCost(orderId, { header, amount, note } = {}, actorId = null) {
+    const cleanHeader = String(header || "").trim().slice(0, 100);
+    const cleanAmount = Math.max(0.01, Number(amount) || 0);
+    const cleanNote = note ? String(note).trim() : null;
+
+    if (cleanHeader) {
+      await query(
+        `INSERT INTO cost_headers (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`,
+        [cleanHeader]
+      );
+    }
+
+    const result = await query(
+      `INSERT INTO order_other_costs (order_id, header, amount, note, created_by, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+       RETURNING id, order_id, header, amount, note, created_by, created_at, updated_at`,
+      [orderId, cleanHeader, cleanAmount, cleanNote, actorId]
+    );
+    return result.rows[0];
+  },
+
+  async updateOtherCost(costId, orderId, { header, amount, note } = {}, actorId = null) {
+    const cleanHeader = header !== undefined ? String(header).trim().slice(0, 100) : undefined;
+    const cleanAmount = amount !== undefined ? Math.max(0.01, Number(amount) || 0) : undefined;
+    const cleanNote = note !== undefined ? (note ? String(note).trim() : null) : undefined;
+
+    if (cleanHeader) {
+      await query(
+        `INSERT INTO cost_headers (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`,
+        [cleanHeader]
+      );
+    }
+
+    const result = await query(
+      `UPDATE order_other_costs
+       SET header = COALESCE($1, header),
+           amount = COALESCE($2, amount),
+           note = CASE WHEN $3::boolean THEN $4 ELSE note END,
+           updated_at = NOW()
+       WHERE id = $5 AND order_id = $6
+       RETURNING id, order_id, header, amount, note, created_by, created_at, updated_at`,
+      [cleanHeader ?? null, cleanAmount ?? null, cleanNote !== undefined, cleanNote ?? null, costId, orderId]
+    );
+    return result.rows[0] || null;
+  },
+
+  async deleteOtherCost(costId, orderId) {
+    const result = await query(
+      `DELETE FROM order_other_costs WHERE id = $1 AND order_id = $2 RETURNING *`,
+      [costId, orderId]
+    );
+    return result.rows[0] || null;
+  },
+
+  async getCostHeaders() {
+    const result = await query(
+      `SELECT DISTINCT name FROM (
+         SELECT name FROM cost_headers WHERE is_active = true
+         UNION
+         SELECT header AS name FROM order_other_costs
+       ) h ORDER BY name ASC`
+    );
+    return result.rows.map((r) => r.name);
   },
 };
 

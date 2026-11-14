@@ -2379,7 +2379,6 @@ export default function ProductForm({
                     <th className="py-3 px-3 min-w-[180px]">Shade Name <span className="text-red-500">*</span></th>
                     <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
                     <th className="py-3 px-3 min-w-[140px]">Discount Price (৳)</th>
-                    <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
                     <th className="py-3 px-3 w-12 text-center">Action</th>
                   </tr>
                 </thead>
@@ -2553,37 +2552,6 @@ export default function ProductForm({
                           )}
                         </td>
 
-                        {/* Cost Price + Margin */}
-                        <td className="py-3 px-3">
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                              ৳
-                            </span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="any"
-                              value={shade.costPrice || ""}
-                              onChange={(e) => handleShadeChange(idx, "costPrice", e.target.value)}
-                              placeholder="0.00"
-                              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 pl-6 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
-                            />
-                          </div>
-                          {marginInfo && (
-                            <div className="mt-1">
-                              {marginInfo.warning ? (
-                                <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                                  ⚠️ Cost exceeds regular price
-                                </span>
-                              ) : (
-                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                                  {marginInfo.margin}% Margin
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </td>
-
                         {/* Delete Row */}
                         <td className="py-3 px-3 text-center">
                           <button
@@ -2651,7 +2619,6 @@ export default function ProductForm({
                     <th className="py-3 px-3 min-w-[200px]">Size / Volume <span className="text-red-500">*</span></th>
                     <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
                     <th className="py-3 px-3 min-w-[140px]">Discount Price (৳)</th>
-                    <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
                     <th className="py-3 px-3 w-12 text-center">Action</th>
                   </tr>
                 </thead>
@@ -2819,37 +2786,6 @@ export default function ProductForm({
                             <p className="mt-1 text-[10px] text-red-500">
                               {clientErrors[`size_${idx}_salePrice`]}
                             </p>
-                          )}
-                        </td>
-
-                        {/* Cost Price + Margin */}
-                        <td className="py-3 px-3">
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                              ৳
-                            </span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="any"
-                              value={size.costPrice || ""}
-                              onChange={(e) => handleSizeChange(idx, "costPrice", e.target.value)}
-                              placeholder="0.00"
-                              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 pl-6 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
-                            />
-                          </div>
-                          {marginInfo && (
-                            <div className="mt-1">
-                              {marginInfo.warning ? (
-                                <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                                  ⚠️ Cost exceeds regular price
-                                </span>
-                              ) : (
-                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                                  {marginInfo.margin}% Margin
-                                </span>
-                              )}
-                            </div>
                           )}
                         </td>
 
@@ -3122,30 +3058,6 @@ export default function ProductForm({
                         Apply
                       </button>
                     </div>
-
-                    <div className="flex items-center gap-1">
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                          ৳
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={bulkCostPrice}
-                          onChange={(e) => setBulkCostPrice(e.target.value)}
-                          placeholder="Cost Price"
-                          className="w-28 rounded-xl border border-gray-200 dark:border-gray-700 pl-6 pr-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleApplyBulkCostToCombinations}
-                        className="px-2.5 py-1 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold text-gray-800 dark:text-gray-200"
-                      >
-                        Apply
-                      </button>
-                    </div>
                   </div>
                 </div>
 
@@ -3161,7 +3073,6 @@ export default function ProductForm({
                         <th className="py-3 px-3 min-w-[150px]">Images</th>
                         <th className="py-3 px-3 min-w-[130px]">Regular Price (৳) <span className="text-red-500">*</span></th>
                         <th className="py-3 px-3 min-w-[140px]">Discount Price (৳)</th>
-                        <th className="py-3 px-3 min-w-[140px]">Cost Price (৳)</th>
                         <th className="py-3 px-3 w-12 text-center">Delete</th>
                       </tr>
                     </thead>
@@ -3311,37 +3222,6 @@ export default function ProductForm({
                                 <p className="mt-1 text-[10px] text-red-500">
                                   {clientErrors[`combo_${idx}_salePrice`]}
                                 </p>
-                              )}
-                            </td>
-
-                            {/* Cost Price (Editable) */}
-                            <td className="py-3 px-3">
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                                  ৳
-                                </span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  value={combo.costPrice || ""}
-                                  onChange={(e) => handleCombinationChange(idx, "costPrice", e.target.value)}
-                                  placeholder="0.00"
-                                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 pl-6 py-1.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:border-[#9B4F5E] dark:focus:border-pink-500"
-                                />
-                              </div>
-                              {marginInfo && (
-                                <div className="mt-1">
-                                  {marginInfo.warning ? (
-                                    <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                                      ⚠️ Cost exceeds regular price
-                                    </span>
-                                  ) : (
-                                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                                      {marginInfo.margin}% Margin
-                                    </span>
-                                  )}
-                                </div>
                               )}
                             </td>
 

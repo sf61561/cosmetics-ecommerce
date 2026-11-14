@@ -49,4 +49,76 @@ module.exports = {
       next(error);
     }
   },
+
+  async getCostHeaders(req, res, next) {
+    try {
+      const data = await service.getCostHeaders();
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateItemCosts(req, res, next) {
+    try {
+      const { itemCosts } = req.body;
+      if (!Array.isArray(itemCosts)) {
+        return res.status(400).json({ success: false, message: "itemCosts must be an array." });
+      }
+      const data = await service.updateItemCosts(
+        req.params.id,
+        itemCosts,
+        req.user,
+        req.auditRequest
+      );
+      res.json({ success: true, message: "Item costs updated successfully.", data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async addOtherCost(req, res, next) {
+    try {
+      const { header, amount, note } = req.body;
+      const data = await service.addOtherCost(
+        req.params.id,
+        { header, amount, note },
+        req.user,
+        req.auditRequest
+      );
+      res.json({ success: true, message: "Other cost added successfully.", data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateOtherCost(req, res, next) {
+    try {
+      const { header, amount, note } = req.body;
+      const data = await service.updateOtherCost(
+        req.params.costId,
+        req.params.id,
+        { header, amount, note },
+        req.user,
+        req.auditRequest
+      );
+      res.json({ success: true, message: "Other cost updated successfully.", data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async deleteOtherCost(req, res, next) {
+    try {
+      const data = await service.deleteOtherCost(
+        req.params.costId,
+        req.params.id,
+        req.user,
+        req.auditRequest
+      );
+      res.json({ success: true, message: "Other cost deleted successfully.", data });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

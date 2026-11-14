@@ -34,6 +34,10 @@ const auditActions = Object.freeze([
   "HERO_SLIDER_STATUS_CHANGED",
   "HERO_SLIDER_DELETED",
   "HERO_SLIDER_REORDERED",
+  "ORDER_COSTS_UPDATED",
+  "ORDER_OTHER_COST_ADDED",
+  "ORDER_OTHER_COST_UPDATED",
+  "ORDER_OTHER_COST_DELETED",
 ]);
 
 module.exports = auditActions;

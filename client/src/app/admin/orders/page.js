@@ -31,6 +31,7 @@ export default function AdminOrdersPage() {
   const [filters, setFilters] = useState({
     search: "",
     status: "all",
+    costStatus: "all",
     sortBy: "date",
     sortOrder: "desc",
     page: 1,
@@ -115,6 +116,27 @@ export default function AdminOrdersPage() {
         ))}
       </div>
 
+      {/* Cost Pending Banner */}
+      {data?.summary?.cost_pending > 0 && filters.costStatus !== "pending" && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+            </span>
+            <span>
+              <strong>{data.summary.cost_pending} order{data.summary.cost_pending > 1 ? "s have" : " has"} pending item costs</strong>. Enter cost prices to calculate accurate order net profit.
+            </span>
+          </div>
+          <button
+            onClick={() => setFilter("costStatus", "pending")}
+            className="inline-flex items-center gap-1 font-bold text-amber-900 underline hover:text-amber-950 dark:text-amber-200 dark:hover:text-amber-100"
+          >
+            Filter Cost Pending ({data.summary.cost_pending}) →
+          </button>
+        </div>
+      )}
+
       {/* Search & Filter Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -123,6 +145,15 @@ export default function AdminOrdersPage() {
           placeholder="Search by order number, customer name, phone, or tracking..."
           className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm dark:border-gray-800 dark:bg-gray-900"
         />
+        <select
+          value={filters.costStatus}
+          onChange={(event) => setFilter("costStatus", event.target.value)}
+          className="rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium dark:border-gray-800 dark:bg-gray-900"
+        >
+          <option value="all">All Costs</option>
+          <option value="pending">Cost Pending {data?.summary?.cost_pending ? `(${data.summary.cost_pending})` : ""}</option>
+          <option value="entered">Costs Complete</option>
+        </select>
         <select
           value={filters.sortBy}
           onChange={(event) => setFilter("sortBy", event.target.value)}
@@ -139,7 +170,7 @@ export default function AdminOrdersPage() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-gray-100 text-xs uppercase text-gray-500 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40">
               <tr>
-                {["Order", "Customer", "Date", "Items", "Total", "Status", "Delivery Area / Courier", "Action"].map((heading) => (
+                {["Order", "Customer", "Date", "Items", "Total", "Status", "Cost Status", "Delivery Area / Courier", "Action"].map((heading) => (
                   <th key={heading} className="px-5 py-4">{heading}</th>
                 ))}
               </tr>
@@ -147,7 +178,7 @@ export default function AdminOrdersPage() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="py-12 text-center text-sm text-gray-500">
                     <div className="inline-flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#9B4F5E] border-t-transparent" />
                       <span>Loading orders...</span>
@@ -177,6 +208,19 @@ export default function AdminOrdersPage() {
                         <span className={`inline-block rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${statusColors[s] || "bg-gray-100 text-gray-700"}`}>
                           {labels[s] || s}
                         </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {order.hasPendingCosts ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                            Cost Pending
+                            {order.pendingCostCount > 0 && <span className="text-[11px] opacity-75">({order.pendingCostCount})</span>}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                            ✓ Entered
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-600 dark:text-gray-300">
                         <div>{order.deliveryArea || "—"}</div>
