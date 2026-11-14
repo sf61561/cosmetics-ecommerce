@@ -22,17 +22,17 @@ import Pagination from "@/components/admin/Pagination";
 const money = (val) => `৳${Number(val || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
 
 const returnStatusBadges = {
-  REQUESTED: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300",
-  INFO_NEEDED: "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 animate-pulse",
-  APPROVED: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300",
-  REJECTED: "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300",
-  PICKUP_SCHEDULED: "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300",
-  IN_TRANSIT: "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300",
-  RECEIVED: "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300",
-  INSPECTED: "bg-cyan-50 text-cyan-800 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300",
-  REFUNDED: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
-  EXCHANGED: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
-  COMPLETED: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200",
+  REQUESTED: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80",
+  INFO_NEEDED: "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80 animate-pulse",
+  APPROVED: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80",
+  REJECTED: "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800/80",
+  PICKUP_SCHEDULED: "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/80",
+  IN_TRANSIT: "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80",
+  RECEIVED: "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/80",
+  INSPECTED: "bg-cyan-50 text-cyan-800 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-300 dark:border-cyan-800/80",
+  REFUNDED: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80",
+  EXCHANGED: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80",
+  COMPLETED: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800/70 dark:text-gray-200 dark:border-gray-700",
 };
 
 const reasonLabels = {
@@ -147,7 +147,7 @@ export default function AdminReturnsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-gray-200 pb-3 dark:border-gray-800">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 border-b border-gray-200 dark:border-gray-800 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {[
           { key: "all", label: "All" },
           { key: "REQUESTED", label: `Pending Review (${summary.requested || 0})` },
@@ -164,7 +164,7 @@ export default function AdminReturnsPage() {
             key={tab.key}
             type="button"
             onClick={() => handleStatusTab(tab.key)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition shrink-0 ${
               filters.status.toUpperCase() === tab.key.toUpperCase()
                 ? "bg-[#9B4F5E] text-white shadow-2xs"
                 : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -213,21 +213,21 @@ export default function AdminReturnsPage() {
 
       {/* Main Table */}
       <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-gray-100 bg-[#FAFAFC] text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-gray-850">
-                <th className="py-3.5 px-4">Return #</th>
-                <th className="py-3.5 px-4">Order #</th>
-                <th className="py-3.5 px-4">Customer</th>
-                <th className="py-3.5 px-4">Reason</th>
-                <th className="py-3.5 px-4">Refund Method & Details</th>
-                <th className="py-3.5 px-4">Est. Refund</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+            <thead className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/60 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <tr>
+                <th className="py-3 px-3 sm:px-4">Return #</th>
+                <th className="py-3 px-3 sm:px-4">Order #</th>
+                <th className="py-3 px-3 sm:px-4">Customer</th>
+                <th className="py-3 px-3 sm:px-4">Reason</th>
+                <th className="py-3 px-3 sm:px-4">Refund Method & Details</th>
+                <th className="py-3 px-3 sm:px-4">Est. Refund</th>
+                <th className="py-3 px-3 sm:px-4">Status</th>
+                <th className="py-3 px-3 sm:px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-700 dark:text-gray-300">
               {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-500">
@@ -244,11 +244,11 @@ export default function AdminReturnsPage() {
               ) : (
                 data.returns.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <Link
                           href={`/admin/returns/${item.id}`}
-                          className="font-mono font-bold text-[#9B4F5E] hover:underline"
+                          className="font-mono font-bold text-[#9B4F5E] dark:text-pink-400 hover:underline"
                         >
                           {item.returnNumber}
                         </Link>
@@ -269,66 +269,66 @@ export default function AdminReturnsPage() {
                       </p>
                     </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                       <Link
                         href={`/admin/orders?search=${item.orderNumber}`}
-                        className="font-medium text-gray-700 hover:text-[#9B4F5E] dark:text-gray-300"
+                        className="font-medium text-gray-700 hover:text-[#9B4F5E] dark:text-gray-300 dark:hover:text-pink-400"
                       >
                         {item.orderNumber}
                       </Link>
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <p className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[140px]">
+                    <td className="py-3 px-3 sm:px-4">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[130px]">
                         {item.customer?.name || "Customer"}
                       </p>
-                      <p className="text-[11px] text-gray-400 truncate max-w-[140px]">
+                      <p className="text-[11px] text-gray-400 truncate max-w-[130px]">
                         {item.customer?.phone || item.customer?.email}
                       </p>
                     </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                       <span className="font-medium text-gray-800 dark:text-gray-200">
                         {reasonLabels[item.reason] || item.reason}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                       <div className="space-y-0.5">
-                        <span className="inline-block rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        <span className="inline-block rounded-md bg-gray-100 border border-gray-200/50 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
                           {item.refundMethod}
                         </span>
                         {item.refundMethod === "MFS" && (
                           <p className="text-[11px] font-mono text-gray-600 dark:text-gray-300">
-                            {item.refundAccountDetails?.provider?.toUpperCase()}: {item.refundAccountDetails?.account_number}
+                            {[item.refundAccountDetails?.provider?.toUpperCase(), item.refundAccountDetails?.account_number].filter(Boolean).join(" • ") || "MFS Wallet"}
                           </p>
                         )}
                         {item.refundMethod === "BANK" && (
                           <p className="text-[11px] text-gray-600 dark:text-gray-300">
-                            {item.refundAccountDetails?.bank_name} • {item.refundAccountDetails?.account_number?.slice(-4)}
+                            {[item.refundAccountDetails?.bank_name, item.refundAccountDetails?.account_number ? `...${item.refundAccountDetails?.account_number?.slice(-4)}` : ""].filter(Boolean).join(" • ") || "Bank Transfer"}
                           </p>
                         )}
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap font-bold text-gray-900 dark:text-gray-100">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap font-bold text-gray-900 dark:text-gray-100">
                       {money(item.refundAmount)}
                     </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-                          returnStatusBadges[item.status] || "bg-gray-100 text-gray-700"
+                          returnStatusBadges[item.status] || "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                         }`}
                       >
                         {item.status.replace(/_/g, " ")}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
                       <Link
                         href={`/admin/returns/${item.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-[#9B4F5E] shadow-2xs hover:bg-[#FBF0F0] dark:border-gray-700 dark:bg-gray-850 dark:hover:bg-pink-950/40"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-[#9B4F5E] shadow-2xs hover:bg-[#FBF0F0] dark:border-gray-700 dark:bg-gray-800 dark:text-pink-300 dark:hover:bg-gray-700/80 transition"
                       >
                         <FaEye className="text-xs" /> Review
                       </Link>

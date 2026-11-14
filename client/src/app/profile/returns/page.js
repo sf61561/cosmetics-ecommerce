@@ -203,7 +203,7 @@ export default function CustomerReturnsPage() {
                 className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xs dark:border-gray-800 dark:bg-gray-900"
               >
                 {/* Header bar */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-[#FAFAFC] px-6 py-4 dark:border-gray-800 dark:bg-gray-850">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/70 px-6 py-4 dark:border-gray-800 dark:bg-gray-800/60">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-[#9B4F5E]">
@@ -367,7 +367,7 @@ export default function CustomerReturnsPage() {
                   </div>
 
                   {/* Return details & reason */}
-                  <div className="grid gap-4 sm:grid-cols-2 rounded-2xl bg-gray-50/70 p-4 dark:bg-gray-850">
+                  <div className="grid gap-4 sm:grid-cols-2 rounded-2xl bg-gray-50/70 p-4 dark:bg-gray-800/60">
                     <div>
                       <p className="text-[11px] font-semibold uppercase text-gray-500">Reason</p>
                       <p className="mt-0.5 text-xs font-bold text-gray-800 dark:text-gray-200">

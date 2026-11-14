@@ -472,7 +472,7 @@ export default function AdminReturnDetailPage() {
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Claim Reason & Statements
             </h3>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2 rounded-2xl bg-gray-50/70 p-4 dark:bg-gray-850">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2 rounded-2xl bg-gray-50/70 p-4 dark:bg-gray-800/60">
               <div>
                 <p className="text-[11px] font-semibold uppercase text-gray-400">Return Reason</p>
                 <p className="mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100">
@@ -618,7 +618,7 @@ export default function AdminReturnDetailPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-850"
+                      className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/60"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs font-bold text-gray-900 dark:text-gray-100">
@@ -1100,7 +1100,7 @@ export default function AdminReturnDetailPage() {
               </div>
 
               {/* Customer Account Target Display */}
-              <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3 text-xs dark:border-gray-800 dark:bg-gray-850">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3 text-xs dark:border-gray-800 dark:bg-gray-800/60">
                 <p className="font-bold text-gray-700 dark:text-gray-300">Customer Refund Target:</p>
                 {refundForm.refundMethod === "MFS" && (
                   <p className="mt-1 font-mono text-gray-800 dark:text-gray-200">
