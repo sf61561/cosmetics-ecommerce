@@ -15,9 +15,13 @@ const { adminNotificationRouter } = require("./notificationRoutes");
 const adminProductRequestRoutes = require("./adminProductRequestRoutes");
 const adminTagRoutes = require("./adminTagRoutes");
 const adminReviewRoutes = require("./adminReviewRoutes");
+const adminReturnRoutes = require("./adminReturnRoutes");
 
 // Protect ALL routes under /api/admin with authentication + ADMIN role requirement
 router.use(authenticate, requireRole("ADMIN"));
+
+// Returns Management API
+router.use("/returns", adminReturnRoutes);
 
 // Reviews Management API
 router.use("/reviews", adminReviewRoutes);

@@ -9,6 +9,7 @@ import ProfileLayout from "@/components/profile/ProfileLayout";
 import { orderService } from "@/services/orderService";
 import { reviewService } from "@/services/reviewService";
 import ReviewModal from "@/components/modals/ReviewModal";
+import ReturnRequestModal from "@/components/modals/ReturnRequestModal";
 
 const money = (value) => `৳${Number(value || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
 
@@ -51,6 +52,10 @@ export default function CustomerOrderDetailPage() {
   const [reviewTargetProduct, setReviewTargetProduct] = useState({});
   const [reviewTargetItem, setReviewTargetItem] = useState({});
   const [reviewTargetExisting, setReviewTargetExisting] = useState(null);
+
+  // Return modal states
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnSuccessNotice, setReturnSuccessNotice] = useState("");
 
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
@@ -162,8 +167,23 @@ export default function CustomerOrderDetailPage() {
                     Cancel order
                   </button>
                 )}
+                {order.status === "delivered" && (
+                  <button
+                    type="button"
+                    onClick={() => setReturnModalOpen(true)}
+                    className="rounded-full border border-[#9B4F5E] bg-[#FBF0F0] px-4 py-1.5 text-xs font-bold text-[#9B4F5E] transition hover:bg-[#F3E5E5] dark:border-pink-800 dark:bg-pink-950/40 dark:text-pink-300 shadow-2xs"
+                  >
+                    Request Return / Refund
+                  </button>
+                )}
               </div>
             </div>
+
+            {returnSuccessNotice && (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                {returnSuccessNotice}
+              </div>
+            )}
 
             {/* Fulfillment Timeline */}
             {!isTerminal ? (
@@ -418,6 +438,17 @@ export default function CustomerOrderDetailPage() {
         orderItem={reviewTargetItem}
         existingReview={reviewTargetExisting}
         onSuccess={handleReviewSuccess}
+      />
+
+      {/* Return Request Modal */}
+      <ReturnRequestModal
+        open={returnModalOpen}
+        onClose={() => setReturnModalOpen(false)}
+        orderId={order?.id}
+        onSuccess={(ret) => {
+          setReturnSuccessNotice(`Return request ${ret.return_number} submitted successfully! Our team will review your request.`);
+          loadOrder();
+        }}
       />
     </ProfileLayout>
   );

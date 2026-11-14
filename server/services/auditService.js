@@ -3,7 +3,7 @@ const { query } = require("../config/db");
 const allowedActions = new Set(require("../constants/auditActions"));
 const allowedEntities = new Set([
   "USER", "PRODUCT", "INVENTORY", "ORDER", "COLLECTION", "BRAND",
-  "COUPON", "DELIVERY_RULE", "HERO_SLIDER", "SYSTEM",
+  "COUPON", "DELIVERY_RULE", "HERO_SLIDER", "RETURN", "SYSTEM",
 ]);
 const allowedActorTypes = new Set(["ADMIN", "CUSTOMER", "SYSTEM", "ANONYMOUS"]);
 const blockedKey = /(password|token|secret|cookie|authorization|credential|card|cvv|email|phone|address|recipient|refresh|hash)/i;

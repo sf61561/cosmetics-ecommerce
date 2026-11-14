@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { FaArrowRight, FaHeart, FaHome, FaLock, FaShoppingBag, FaSignOutAlt, FaUser, FaBell, FaTruck } from "react-icons/fa";
+import { FaArrowRight, FaHeart, FaHome, FaLock, FaShoppingBag, FaSignOutAlt, FaUser, FaBell, FaTruck, FaRedo } from "react-icons/fa";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -13,6 +13,7 @@ const links = [
   ["/profile", "Overview", FaUser],
   ["/profile/personal-information", "Personal information", FaUser],
   ["/orders", "My orders", FaShoppingBag],
+  ["/profile/returns", "My returns & refunds", FaRedo],
   ["/track-order", "Track my order", FaTruck],
   ["/addresses", "Saved addresses", FaHome],
   ["/profile/wishlist", "My wishlist", FaHeart],
