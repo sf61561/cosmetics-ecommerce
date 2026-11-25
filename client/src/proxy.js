@@ -28,7 +28,7 @@ export function proxy(request) {
     const accessToken = request.cookies.get("accessToken")?.value;
     if (accessToken) {
       const payload = decodeJwtPayload(accessToken);
-      if (payload?.role === "ADMIN") {
+      if (payload?.role === "ADMIN" || payload?.role === "SUPERADMIN") {
         return NextResponse.redirect(new URL("/admin", request.url));
       } else if (payload?.role === "CUSTOMER") {
         return NextResponse.redirect(new URL("/", request.url));
@@ -60,8 +60,8 @@ export function proxy(request) {
     if (isAdminPath && accessToken) {
       const payload = decodeJwtPayload(accessToken);
       if (payload) {
-        // If user is NOT an ADMIN (e.g. CUSTOMER) -> Block and redirect to home
-        if (payload.role !== "ADMIN") {
+        // If user is neither ADMIN nor SUPERADMIN -> Block and redirect to home
+        if (payload.role !== "ADMIN" && payload.role !== "SUPERADMIN") {
           const forbiddenResponse = NextResponse.redirect(new URL("/", request.url));
           forbiddenResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
           forbiddenResponse.headers.set("Pragma", "no-cache");

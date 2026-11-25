@@ -113,6 +113,17 @@ function ReturnsIcon() {
   );
 }
 
+function AdminsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
 function AuditIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -193,25 +204,35 @@ function LogOutIcon() {
 // ─── Sidebar Menu Configuration ───
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: DashboardIcon },
-  { label: "Products", href: "/admin/products", icon: ProductsIcon },
-  { label: "Tags", href: "/admin/tags", icon: TagsIcon },
-  { label: "Product Requests", href: "/admin/product-requests", icon: ProductRequestsIcon },
-  { label: "Collections", href: "/admin/collections", icon: CollectionsIcon },
-  { label: "Brands", href: "/admin/brands", icon: BrandsIcon },
-  { label: "Hero Slider", href: "/admin/hero-sliders", icon: HeroSliderIcon },
-  { label: "Orders", href: "/admin/orders", icon: OrdersIcon },
-  { label: "Returns & Refunds", href: "/admin/returns", icon: ReturnsIcon },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: AuditIcon },
-  { label: "Customers", href: "/admin/customers", icon: CustomersIcon },
-  { label: "Reviews", href: "/admin/reviews", icon: ReviewsIcon },
-  { label: "Analytics", href: "/admin/analytics", icon: AnalyticsIcon },
-  { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
+  { label: "Products", href: "/admin/products", icon: ProductsIcon, permission: "products.view" },
+  { label: "Tags", href: "/admin/tags", icon: TagsIcon, permission: "products.view" },
+  { label: "Product Requests", href: "/admin/product-requests", icon: ProductRequestsIcon, permission: "products.view" },
+  { label: "Collections", href: "/admin/collections", icon: CollectionsIcon, permission: "products.view" },
+  { label: "Brands", href: "/admin/brands", icon: BrandsIcon, permission: "products.view" },
+  { label: "Hero Slider", href: "/admin/hero-sliders", icon: HeroSliderIcon, permission: "settings.store_view" },
+  { label: "Orders", href: "/admin/orders", icon: OrdersIcon, permission: "orders.view" },
+  { label: "Returns & Refunds", href: "/admin/returns", icon: ReturnsIcon, permission: "returns.view" },
+  { label: "Admins", href: "/admin/admins", icon: AdminsIcon, superAdminOnly: true },
+  { label: "Audit Logs", href: "/admin/audit-logs", icon: AuditIcon, superAdminOnly: true },
+  { label: "Customers", href: "/admin/customers", icon: CustomersIcon, permission: "customers.view" },
+  { label: "Reviews", href: "/admin/reviews", icon: ReviewsIcon, permission: "products.view" },
+  { label: "Settings", href: "/admin/settings", icon: SettingsIcon, permission: "settings.store_view" },
 ];
 
 export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () => {} }) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user, isSuperAdmin, hasPermission } = useAuth();
   const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.superAdminOnly) {
+      return isSuperAdmin;
+    }
+    if (item.permission) {
+      return isSuperAdmin || hasPermission(item.permission);
+    }
+    return true;
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -269,8 +290,10 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
                   ELOURÁ
                 </span>
               </Link>
-              <span className="inline-flex items-center rounded-full bg-[#A46377] px-3.5 py-0.5 text-xs font-medium text-white shadow-xs select-none">
-                Admin
+              <span className={`inline-flex items-center rounded-full px-3.5 py-0.5 text-xs font-medium text-white shadow-xs select-none ${
+                isSuperAdmin ? "bg-gradient-to-r from-[#8B5CF6] to-[#A46377]" : "bg-[#A46377]"
+              }`}>
+                {isSuperAdmin ? "Super Admin" : "Admin"}
               </span>
             </div>
 
@@ -287,7 +310,7 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
 
           {/* Navigation Links List */}
           <nav className="flex flex-col gap-1.5">
-            {navItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive =
                 item.href === "/admin"

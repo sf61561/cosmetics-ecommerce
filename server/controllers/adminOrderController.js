@@ -3,7 +3,7 @@ const service = require("../services/adminOrderService");
 module.exports = {
   async list(req, res, next) {
     try {
-      res.json({ success: true, data: await service.list(req.query) });
+      res.json({ success: true, data: await service.list(req.query, req.user) });
     } catch (error) {
       next(error);
     }
@@ -11,7 +11,7 @@ module.exports = {
 
   async getById(req, res, next) {
     try {
-      const data = await service.getById(req.params.id);
+      const data = await service.getById(req.params.id, req.user);
       if (!data) return res.status(404).json({ success: false, message: "Order not found." });
       res.json({ success: true, data });
     } catch (error) {

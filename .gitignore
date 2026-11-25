@@ -84,3 +84,10 @@ stack.md
 schema.md
 AGENTS.md
 
+# ─── GSD & AI Agent Framework Files ───
+.agents/
+.planning/
+.gsd/
+.worktrees/
+
+

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const adminBrandController = require("../controllers/adminBrandController");
 const upload = require("../middlewares/upload");
+const { requirePermission } = require("../middlewares/permissionMiddleware");
 
 // Multer upload wrapper with friendly error handling (supports either 'logo' or 'image' field)
 const handleLogoUpload = (req, res, next) => {
@@ -24,7 +25,6 @@ const handleLogoUpload = (req, res, next) => {
         });
       }
 
-      // Normalize file to req.file
       if (req.files) {
         if (req.files.logo && req.files.logo[0]) {
           req.file = req.files.logo[0];
@@ -39,24 +39,35 @@ const handleLogoUpload = (req, res, next) => {
   }
 };
 
-// GET /api/admin/brands - List brands with search, filters, sorting, and pagination
-router.get("/", (req, res, next) => adminBrandController.list(req, res, next));
-
-// GET /api/admin/brands/:id - Get single brand
-router.get("/:id", (req, res, next) => adminBrandController.getById(req, res, next));
-
-// POST /api/admin/brands - Create brand (supports multipart logo upload or JSON)
-router.post("/", handleLogoUpload, (req, res, next) =>
-  adminBrandController.create(req, res, next)
+// GET /api/admin/brands
+router.get("/", requirePermission("products.view"), (req, res, next) =>
+  adminBrandController.list(req, res, next)
 );
 
-// PATCH /api/admin/brands/:id - Update brand
-router.patch("/:id", handleLogoUpload, (req, res, next) =>
-  adminBrandController.update(req, res, next)
+// GET /api/admin/brands/:id
+router.get("/:id", requirePermission("products.view"), (req, res, next) =>
+  adminBrandController.getById(req, res, next)
 );
 
-// DELETE /api/admin/brands/:id - Delete brand
-router.delete("/:id", (req, res, next) => adminBrandController.delete(req, res, next));
+// POST /api/admin/brands
+router.post(
+  "/",
+  requirePermission("products.create"),
+  handleLogoUpload,
+  (req, res, next) => adminBrandController.create(req, res, next)
+);
+
+// PATCH /api/admin/brands/:id
+router.patch(
+  "/:id",
+  requirePermission("products.edit"),
+  handleLogoUpload,
+  (req, res, next) => adminBrandController.update(req, res, next)
+);
+
+// DELETE /api/admin/brands/:id
+router.delete("/:id", requirePermission("products.delete"), (req, res, next) =>
+  adminBrandController.delete(req, res, next)
+);
 
 module.exports = router;
-

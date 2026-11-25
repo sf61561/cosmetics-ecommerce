@@ -24,6 +24,7 @@ const productRequestRoutes = require("./routes/productRequestRoutes");
 const tagRoutes = require("./routes/tagRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const returnRoutes = require("./routes/returnRoutes");
+const superadminRoutes = require("./routes/superadminRoutes");
 const notificationWorker = require("./services/notificationWorker");
 const errorHandler = require("./middlewares/errorHandler");
 const requestContext = require("./middlewares/requestContext");
@@ -116,6 +117,8 @@ const noCache = (req, res, next) => {
 };
 
 app.use("/api/admin", noCache, adminRoutes);
+app.use("/api/superadmin", noCache, superadminRoutes);
+app.use("/superadmin", noCache, superadminRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/products", productRoutes);

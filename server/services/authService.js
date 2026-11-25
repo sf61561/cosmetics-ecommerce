@@ -981,10 +981,17 @@ class AuthService {
       throw error;
     }
 
-    if (user.status === "BLOCKED" || user.status === "SUSPENDED") {
-      const error = new Error("Your account has been suspended or blocked. Please contact support.");
+    if (user.status === "BLOCKED" || user.status === "SUSPENDED" || user.status === "DISABLED") {
+      const error = new Error("Your account has been deactivated or suspended. Please contact support.");
       error.statusCode = 403;
       error.code = "ACCOUNT_BLOCKED";
+      throw error;
+    }
+
+    if (user.status === "INVITED") {
+      const error = new Error("Please complete your administrator account setup via the invitation link sent to your email.");
+      error.statusCode = 403;
+      error.code = "ACCOUNT_INVITED";
       throw error;
     }
 
@@ -1023,7 +1030,12 @@ class AuthService {
     const client = await getClient();
     try {
       await client.query("BEGIN");
-      await client.query("UPDATE users SET refresh_token = $1, previous_refresh_token = NULL, refresh_token_rotated_at = NULL, updated_at = NOW() WHERE id = $2", [refreshToken, user.id]);
+      await client.query(
+        `UPDATE users 
+         SET refresh_token = $1, previous_refresh_token = NULL, refresh_token_rotated_at = NULL, last_login_at = NOW(), updated_at = NOW() 
+         WHERE id = $2`,
+        [refreshToken, user.id]
+      );
       await auditService.record({
         actor: { id: user.id, role: user.role },
         action: "LOGIN_SUCCEEDED",
@@ -1039,13 +1051,22 @@ class AuthService {
       client.release();
     }
 
+    let permissions = [];
+    if (user.role === "SUPERADMIN") {
+      permissions = ["*"];
+    } else if (user.role === "ADMIN") {
+      const superadminService = require("./superadminService");
+      permissions = await superadminService.getUserPermissions(user.id);
+    }
+
     return {
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role, // 'CUSTOMER' or 'ADMIN'
+        role: user.role, // 'CUSTOMER', 'ADMIN', or 'SUPERADMIN'
+        permissions,
         profilePicture: user.profile_picture_link,
         emailVerified: Boolean(user.email_verified_at),
         authProvider: user.authprovider,
@@ -1083,10 +1104,17 @@ class AuthService {
       throw error;
     }
 
-    if (user.status === "BLOCKED" || user.status === "SUSPENDED") {
-      const error = new Error("Your account has been suspended or blocked. Please contact support.");
+    if (user.status === "BLOCKED" || user.status === "SUSPENDED" || user.status === "DISABLED") {
+      const error = new Error("Your account has been deactivated or suspended. Please contact support.");
       error.statusCode = 403;
       error.code = "ACCOUNT_BLOCKED";
+      throw error;
+    }
+
+    if (user.status === "INVITED") {
+      const error = new Error("Please complete your administrator account setup via the invitation link sent to your email.");
+      error.statusCode = 403;
+      error.code = "ACCOUNT_INVITED";
       throw error;
     }
 
@@ -1176,6 +1204,167 @@ class AuthService {
   }
 
   /**
+   * Verify an admin invitation token (48-hour validity)
+   */
+  async verifyAdminInvite(token) {
+    if (!token || !String(token).trim()) {
+      const err = new Error("Invitation token is required.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(String(token).trim()).digest("hex");
+    const result = await query(
+      `SELECT ai.id, ai.user_id, ai.expires_at, ai.used_at,
+              u.email, u.name, u.status, u.role
+       FROM admin_invites ai
+       JOIN users u ON u.id = ai.user_id
+       WHERE ai.token_hash = $1`,
+      [tokenHash]
+    );
+
+    const invite = result.rows[0];
+    if (!invite) {
+      const err = new Error("Invalid or unrecognized invitation link.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (invite.used_at) {
+      const err = new Error("This invitation has already been used. Please log in or request a new invite.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (new Date(invite.expires_at) < new Date()) {
+      const err = new Error("This invitation link has expired (48 hours validity). Please ask the Super Admin to resend an invite.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (invite.status === "DISABLED") {
+      const err = new Error("This administrator account has been disabled.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    return {
+      success: true,
+      email: invite.email,
+      name: invite.name,
+      role: invite.role,
+    };
+  }
+
+  /**
+   * Accept an admin invitation and initialize password
+   */
+  async acceptAdminInvite({ token, name, password }, auditRequest = null) {
+    if (!token || !String(token).trim()) {
+      const err = new Error("Invitation token is required.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (!password || password.length < 8) {
+      const err = new Error("Password must be at least 8 characters long.");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(String(token).trim()).digest("hex");
+    const client = await getClient();
+    let user;
+
+    try {
+      await client.query("BEGIN");
+
+      const result = await client.query(
+        `SELECT ai.id AS invite_id, ai.user_id, ai.expires_at, ai.used_at,
+                u.id, u.email, u.name, u.status, u.role
+         FROM admin_invites ai
+         JOIN users u ON u.id = ai.user_id
+         WHERE ai.token_hash = $1
+         FOR UPDATE OF ai, u`,
+        [tokenHash]
+      );
+
+      const invite = result.rows[0];
+      if (!invite) {
+        const err = new Error("Invalid or unrecognized invitation link.");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      if (invite.used_at) {
+        const err = new Error("This invitation has already been accepted.");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      if (new Date(invite.expires_at) < new Date()) {
+        const err = new Error("This invitation link has expired. Please ask the Super Admin to resend an invite.");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 10);
+      const chosenName = name && name.trim() ? name.trim() : (invite.name || "Administrator");
+
+      // Update user account to ACTIVE
+      await client.query(
+        `UPDATE users
+         SET password_hash = $1,
+             name = $2,
+             status = 'ACTIVE',
+             email_verified_at = COALESCE(email_verified_at, NOW()),
+             updated_at = NOW()
+         WHERE id = $3`,
+        [passwordHash, chosenName, invite.user_id]
+      );
+
+      // Mark invite token as used
+      await client.query(
+        "UPDATE admin_invites SET used_at = NOW() WHERE id = $1",
+        [invite.invite_id]
+      );
+
+      // Invalidate any other pending invite tokens for this user
+      await client.query(
+        "UPDATE admin_invites SET used_at = NOW() WHERE user_id = $1 AND id != $2 AND used_at IS NULL",
+        [invite.user_id, invite.invite_id]
+      );
+
+      // Audit Log
+      await auditService.record(
+        {
+          actor: { id: invite.user_id, role: invite.role },
+          action: "ADMIN_INVITE_ACCEPTED",
+          entityType: "USER",
+          entityId: invite.user_id,
+          metadata: { email: invite.email },
+        },
+        { client, request: auditRequest }
+      );
+
+      await client.query("COMMIT");
+      user = { id: invite.user_id, email: invite.email, name: chosenName, role: invite.role };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    return {
+      success: true,
+      message: "Administrator account activated successfully! You can now log in.",
+      user,
+    };
+  }
+
+  /**
    * Get current authenticated user profile
    */
   async getCurrentUser(userId) {
@@ -1186,12 +1375,21 @@ class AuthService {
       throw error;
     }
 
+    let permissions = [];
+    if (user.role === "SUPERADMIN") {
+      permissions = ["*"];
+    } else if (user.role === "ADMIN") {
+      const superadminService = require("./superadminService");
+      permissions = await superadminService.getUserPermissions(user.id);
+    }
+
     return {
       id: user.id,
       name: user.name,
       email: user.email,
       phone: user.phone,
       role: user.role,
+      permissions,
       profilePicture: user.profile_picture_link,
       emailVerified: Boolean(user.email_verified_at),
       authProvider: user.authprovider,

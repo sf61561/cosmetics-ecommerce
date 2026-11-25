@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { FaBox, FaPrint, FaPlus, FaTrash, FaEdit, FaCoins, FaExclamationTriangle, FaCheck } from "react-icons/fa";
 import { adminOrderService } from "@/services/adminOrderService";
+import { useAuth } from "@/context/AuthContext";
 
 const labels = {
   pending: "Pending",
@@ -41,6 +42,13 @@ const money = (value) => `৳${Number(value || 0).toLocaleString("en-BD", { maxi
 
 export default function AdminOrderDetailsPage() {
   const { id } = useParams();
+  const { isSuperAdmin, hasPermission } = useAuth();
+  const canViewCosts = isSuperAdmin || hasPermission("costs.view");
+  const canEditCosts = isSuperAdmin || hasPermission("costs.edit");
+  const canViewOtherCosts = isSuperAdmin || hasPermission("other_costs.view");
+  const canManageOtherCosts = isSuperAdmin || hasPermission("other_costs.add");
+  const canViewProfit = isSuperAdmin || hasPermission("profit.view");
+
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -349,31 +357,35 @@ export default function AdminOrderDetailsPage() {
               <div>
                 <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <FaCoins className="text-[#9B4F5E]" />
-                  Item Costs & Profit Management ({order.items?.length || 0})
+                  {canViewCosts || canViewProfit ? "Item Costs & Profit Management" : "Ordered Items"} ({order.items?.length || 0})
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Enter actual sourcing cost for each item to compute live unit gross profit.
+                  {canViewCosts
+                    ? "Enter actual sourcing cost for each item to compute live unit gross profit."
+                    : "Line items included in this customer order."}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {costSaveSuccess && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 animate-fade-in">
-                    <FaCheck className="h-3 w-3" /> Costs Saved!
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSaveItemCosts}
-                  disabled={isSavingCosts || !hasCostChanges}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all shadow-xs ${
-                    hasCostChanges
-                      ? "bg-[#9B4F5E] hover:bg-[#843F4E] ring-2 ring-[#9B4F5E]/30"
-                      : "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  {isSavingCosts ? "Saving..." : hasCostChanges ? "Save Costs" : "Costs Saved"}
-                </button>
-              </div>
+              {canEditCosts && (
+                <div className="flex items-center gap-2">
+                  {costSaveSuccess && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 animate-fade-in">
+                      <FaCheck className="h-3 w-3" /> Costs Saved!
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveItemCosts}
+                    disabled={isSavingCosts || !hasCostChanges}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all shadow-xs ${
+                      hasCostChanges
+                        ? "bg-[#9B4F5E] hover:bg-[#843F4E] ring-2 ring-[#9B4F5E]/30"
+                        : "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    {isSavingCosts ? "Saving..." : hasCostChanges ? "Save Costs" : "Costs Saved"}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -383,9 +395,13 @@ export default function AdminOrderDetailsPage() {
                     <th className="px-3 py-3">Product</th>
                     <th className="px-3 py-3 text-center">Qty</th>
                     <th className="px-3 py-3 text-right">Selling Price</th>
-                    <th className="px-3 py-3 min-w-[140px]">Cost Price (৳)</th>
-                    <th className="px-3 py-3 text-right">Unit Profit</th>
-                    <th className="px-3 py-3 text-right">Total Profit</th>
+                    {canViewCosts && <th className="px-3 py-3 min-w-[140px]">Cost Price (৳)</th>}
+                    {canViewProfit && <th className="px-3 py-3 text-right">Unit Profit</th>}
+                    {canViewProfit ? (
+                      <th className="px-3 py-3 text-right">Total Profit</th>
+                    ) : (
+                      <th className="px-3 py-3 text-right">Line Total</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -418,7 +434,7 @@ export default function AdminOrderDetailsPage() {
                               <p className="text-[11px] text-gray-400 font-mono">
                                 SKU: {item.sku || "N/A"}
                               </p>
-                              {item.costEnteredAt && (
+                              {item.costEnteredAt && canViewCosts && (
                                 <p className="text-[10px] text-gray-400">
                                   Saved: {new Date(item.costEnteredAt).toLocaleDateString("en-BD", { month: "short", day: "numeric" })}
                                   {item.costEnteredByName ? ` by ${item.costEnteredByName}` : ""}
@@ -438,60 +454,76 @@ export default function AdminOrderDetailsPage() {
                           {money(item.unitPrice)}
                         </td>
 
-                        {/* Editable Cost Price Input */}
-                        <td className="px-3 py-3">
-                          <div className="space-y-1">
-                            <div className="relative">
-                              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400">৳</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={rawInput}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setItemCostInputs((prev) => ({ ...prev, [item.id]: val }));
-                                }}
-                                placeholder="0.00"
-                                className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs font-semibold transition-colors dark:bg-gray-800 ${
-                                  isLoss
-                                    ? "border-red-400 bg-red-50/50 text-red-900 dark:border-red-600 dark:text-red-300"
-                                    : hasCost
-                                    ? "border-emerald-300 bg-emerald-50/30 text-emerald-900 dark:border-emerald-700 dark:text-emerald-300"
-                                    : "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700"
-                                }`}
-                              />
-                            </div>
-                            {isLoss && (
-                              <p className="flex items-center gap-1 text-[10px] font-semibold text-red-600 dark:text-red-400">
-                                <FaExclamationTriangle className="h-2.5 w-2.5 shrink-0" />
-                                Loss: ৳{(enteredCost - item.unitPrice).toFixed(2)}/unit
-                              </p>
+                        {/* Cost Price */}
+                        {canViewCosts && (
+                          <td className="px-3 py-3">
+                            {canEditCosts ? (
+                              <div className="space-y-1">
+                                <div className="relative">
+                                  <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400">৳</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={rawInput}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setItemCostInputs((prev) => ({ ...prev, [item.id]: val }));
+                                    }}
+                                    placeholder="0.00"
+                                    className={`w-full rounded-xl border pl-6 pr-2.5 py-1.5 text-xs font-semibold transition-colors dark:bg-gray-800 ${
+                                      isLoss
+                                        ? "border-red-400 bg-red-50/50 text-red-900 dark:border-red-600 dark:text-red-300"
+                                        : hasCost
+                                        ? "border-emerald-300 bg-emerald-50/30 text-emerald-900 dark:border-emerald-700 dark:text-emerald-300"
+                                        : "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700"
+                                    }`}
+                                  />
+                                </div>
+                                {isLoss && canViewProfit && (
+                                  <p className="flex items-center gap-1 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                                    <FaExclamationTriangle className="h-2.5 w-2.5 shrink-0" />
+                                    Loss: ৳{(enteredCost - item.unitPrice).toFixed(2)}/unit
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="font-semibold text-gray-800 dark:text-gray-200">
+                                {item.costPrice !== null ? money(item.costPrice) : "—"}
+                              </span>
                             )}
-                          </div>
-                        </td>
+                          </td>
+                        )}
 
                         {/* Unit Profit */}
-                        <td className="px-3 py-3 text-right font-semibold">
-                          {unitProfit !== null ? (
-                            <span className={unitProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
-                              {unitProfit >= 0 ? "+" : ""}{money(unitProfit)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 italic font-normal">Pending</span>
-                          )}
-                        </td>
+                        {canViewProfit && (
+                          <td className="px-3 py-3 text-right font-semibold">
+                            {unitProfit !== null ? (
+                              <span className={unitProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                                {unitProfit >= 0 ? "+" : ""}{money(unitProfit)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic text-[11px]">Pending</span>
+                            )}
+                          </td>
+                        )}
 
-                        {/* Total Line Profit */}
-                        <td className="px-3 py-3 text-right font-bold">
-                          {lineProfit !== null ? (
-                            <span className={lineProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
-                              {lineProfit >= 0 ? "+" : ""}{money(lineProfit)}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 italic font-normal">Pending</span>
-                          )}
-                        </td>
+                        {/* Line Profit / Total */}
+                        {canViewProfit ? (
+                          <td className="px-3 py-3 text-right font-bold">
+                            {lineProfit !== null ? (
+                              <span className={lineProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                                {lineProfit >= 0 ? "+" : ""}{money(lineProfit)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic text-[11px]">Pending</span>
+                            )}
+                          </td>
+                        ) : (
+                          <td className="px-3 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
+                            {money(item.lineTotal || item.unitPrice * item.quantity)}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -503,113 +535,119 @@ export default function AdminOrderDetailsPage() {
           {/* ───────────────────────────────────────────────────────────── */}
           {/* SECTION: Other Operational Costs (Delivery, Packaging, etc.)   */}
           {/* ───────────────────────────────────────────────────────────── */}
-          <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  Other Operational Expenses
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                    {order.otherCosts?.length || 0}
-                  </span>
-                </h2>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Packaging, courier fees, duties, or other order-specific overhead costs.
-                </p>
+          {canViewOtherCosts && (
+            <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    Other Operational Expenses
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                      {order.otherCosts?.length || 0}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Packaging, courier fees, duties, or other order-specific overhead costs.
+                  </p>
+                </div>
+                {canManageOtherCosts && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOtherCostModal({
+                        open: true,
+                        mode: "create",
+                        costId: null,
+                        header: "",
+                        amount: "",
+                        note: "",
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#9B4F5E] bg-[#FBF0F0] px-3.5 py-1.5 text-xs font-bold text-[#9B4F5E] transition-colors hover:bg-[#F3E5E5] dark:border-[#A46377] dark:bg-[#3b2430] dark:text-pink-200 shadow-xs cursor-pointer"
+                  >
+                    <FaPlus className="h-3 w-3" />
+                    Add Expense
+                  </button>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setOtherCostModal({
-                    open: true,
-                    mode: "create",
-                    costId: null,
-                    header: "",
-                    amount: "",
-                    note: "",
-                  })
-                }
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#9B4F5E] bg-[#FBF0F0] px-3.5 py-1.5 text-xs font-bold text-[#9B4F5E] transition-colors hover:bg-[#F3E5E5] dark:border-[#A46377] dark:bg-[#3b2430] dark:text-pink-200 shadow-xs"
-              >
-                <FaPlus className="h-3 w-3" />
-                Add Expense
-              </button>
-            </div>
 
-            {order.otherCosts?.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-gray-100 uppercase text-gray-500 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40">
-                    <tr>
-                      <th className="px-3 py-3">Expense Header</th>
-                      <th className="px-3 py-3 text-right">Amount (৳)</th>
-                      <th className="px-3 py-3">Note</th>
-                      <th className="px-3 py-3">Recorded</th>
-                      <th className="px-3 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {order.otherCosts.map((cost) => (
-                      <tr key={cost.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                        <td className="px-3 py-3 font-semibold text-gray-900 dark:text-gray-100">
-                          {cost.header}
-                        </td>
-                        <td className="px-3 py-3 text-right font-bold text-gray-900 dark:text-gray-100">
-                          {money(cost.amount)}
-                        </td>
-                        <td className="px-3 py-3 text-gray-600 dark:text-gray-400">
-                          {cost.note || <span className="text-gray-400 italic">—</span>}
-                        </td>
-                        <td className="px-3 py-3 text-[11px] text-gray-500">
-                          <div>{new Date(cost.createdAt).toLocaleDateString("en-BD", { month: "short", day: "numeric" })}</div>
-                          <div className="text-gray-400">{cost.createdByName || "Admin"}</div>
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setOtherCostModal({
-                                  open: true,
-                                  mode: "edit",
-                                  costId: cost.id,
-                                  header: cost.header,
-                                  amount: String(cost.amount),
-                                  note: cost.note || "",
-                                })
-                              }
-                              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
-                              title="Edit expense"
-                            >
-                              <FaEdit className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDeleteCostDialog({
-                                  open: true,
-                                  costId: cost.id,
-                                  header: cost.header,
-                                  amount: cost.amount,
-                                })
-                              }
-                              className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
-                              title="Delete expense"
-                            >
-                              <FaTrash className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
+              {order.otherCosts?.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-gray-100 uppercase text-gray-500 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40">
+                      <tr>
+                        <th className="px-3 py-3">Expense Header</th>
+                        <th className="px-3 py-3 text-right">Amount (৳)</th>
+                        <th className="px-3 py-3">Note</th>
+                        <th className="px-3 py-3">Recorded</th>
+                        {canManageOtherCosts && <th className="px-3 py-3 text-right">Actions</th>}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-500 dark:border-gray-800">
-                No additional operational expenses recorded. Click &quot;Add Expense&quot; above to log packaging, delivery partner fees, or duties.
-              </div>
-            )}
-          </section>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {order.otherCosts.map((cost) => (
+                        <tr key={cost.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                          <td className="px-3 py-3 font-semibold text-gray-900 dark:text-gray-100">
+                            {cost.header}
+                          </td>
+                          <td className="px-3 py-3 text-right font-bold text-gray-900 dark:text-gray-100">
+                            {money(cost.amount)}
+                          </td>
+                          <td className="px-3 py-3 text-gray-600 dark:text-gray-400">
+                            {cost.note || <span className="text-gray-400 italic">—</span>}
+                          </td>
+                          <td className="px-3 py-3 text-[11px] text-gray-500">
+                            <div>{new Date(cost.createdAt).toLocaleDateString("en-BD", { month: "short", day: "numeric" })}</div>
+                            <div className="text-gray-400">{cost.createdByName || "Admin"}</div>
+                          </td>
+                          {canManageOtherCosts && (
+                            <td className="px-3 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setOtherCostModal({
+                                      open: true,
+                                      mode: "edit",
+                                      costId: cost.id,
+                                      header: cost.header,
+                                      amount: String(cost.amount),
+                                      note: cost.note || "",
+                                    })
+                                  }
+                                  className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 cursor-pointer"
+                                  title="Edit expense"
+                                >
+                                  <FaEdit className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDeleteCostDialog({
+                                      open: true,
+                                      costId: cost.id,
+                                      header: cost.header,
+                                      amount: cost.amount,
+                                    })
+                                  }
+                                  className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40 cursor-pointer"
+                                  title="Delete expense"
+                                >
+                                  <FaTrash className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-500 dark:border-gray-800">
+                  No additional operational expenses recorded. {canManageOtherCosts ? 'Click "Add Expense" above to log packaging, delivery partner fees, or duties.' : ''}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         {/* Right Column: Financials, Net Profit Card & Timeline (1 col) */}
@@ -648,70 +686,72 @@ export default function AdminOrderDetailsPage() {
           {/* ───────────────────────────────────────────────────────────── */}
           {/* SECTION: Live Net Profit & Margin Card                         */}
           {/* ───────────────────────────────────────────────────────────── */}
-          <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="mb-4 font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-between">
-              <span>Order Net Profit</span>
-              <span className="text-xs font-normal text-gray-400">Admin Only</span>
-            </h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Total Selling Revenue</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{money(profitSummary.totalSellingAmount)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Total Sourcing Cost</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {profitSummary.totalItemCost > 0 ? `-${money(profitSummary.totalItemCost)}` : "৳0"}
-                </span>
-              </div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Other Operating Costs</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {profitSummary.totalOtherCost > 0 ? `-${money(profitSummary.totalOtherCost)}` : "৳0"}
-                </span>
-              </div>
-
-              {/* Net Profit Summary Row */}
-              <div className="border-t border-gray-100 pt-3 dark:border-gray-800">
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Real Net Profit
-                    </span>
-                    {profitSummary.netMarginPercentage !== null && (
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        Margin: <strong className={profitSummary.netMarginPercentage >= 0 ? "text-emerald-600" : "text-red-600"}>{profitSummary.netMarginPercentage}%</strong>
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    {profitSummary.netProfit !== null ? (
-                      <span className={`text-xl font-extrabold ${profitSummary.netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                        {profitSummary.netProfit >= 0 ? "+" : ""}{money(profitSummary.netProfit)}
-                      </span>
-                    ) : (
-                      <span className="text-sm font-semibold italic text-amber-600 dark:text-amber-400">
-                        Cost Pending
-                      </span>
-                    )}
-                  </div>
+          {canViewProfit && profitSummary && (
+            <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-gray-900">
+              <h2 className="mb-4 font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-between">
+                <span>Order Net Profit</span>
+                <span className="text-xs font-normal text-gray-400">Financials</span>
+              </h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>Total Selling Revenue</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{money(profitSummary.totalSellingAmount)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>Total Sourcing Cost</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {profitSummary.totalItemCost > 0 ? `-${money(profitSummary.totalItemCost)}` : "৳0"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>Other Operating Costs</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {profitSummary.totalOtherCost > 0 ? `-${money(profitSummary.totalOtherCost)}` : "৳0"}
+                  </span>
                 </div>
 
-                {/* Loss or Pending Warning */}
-                {profitSummary.netProfit !== null && profitSummary.netProfit < 0 && (
-                  <div className="mt-3 flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-                    <FaExclamationTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span>This order results in an overall net financial loss.</span>
+                {/* Net Profit Summary Row */}
+                <div className="border-t border-gray-100 pt-3 dark:border-gray-800">
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Real Net Profit
+                      </span>
+                      {profitSummary.netMarginPercentage !== null && (
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Margin: <strong className={profitSummary.netMarginPercentage >= 0 ? "text-emerald-600" : "text-red-600"}>{profitSummary.netMarginPercentage}%</strong>
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {profitSummary.netProfit !== null ? (
+                        <span className={`text-xl font-extrabold ${profitSummary.netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                          {profitSummary.netProfit >= 0 ? "+" : ""}{money(profitSummary.netProfit)}
+                        </span>
+                      ) : (
+                        <span className="text-sm font-semibold italic text-amber-600 dark:text-amber-400">
+                          Cost Pending
+                        </span>
+                      )}
+                    </div>
                   </div>
-                )}
-                {profitSummary.hasPendingCosts && (
-                  <div className="mt-3 rounded-xl bg-amber-50/70 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                    ⚠️ <strong>Partial Calculation:</strong> {profitSummary.pendingCostCount} item(s) have no cost recorded. Profit shown reflects only items with entered costs.
-                  </div>
-                )}
+
+                  {/* Loss or Pending Warning */}
+                  {profitSummary.netProfit !== null && profitSummary.netProfit < 0 && (
+                    <div className="mt-3 flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+                      <FaExclamationTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>This order results in an overall net financial loss.</span>
+                    </div>
+                  )}
+                  {profitSummary.hasPendingCosts && (
+                    <div className="mt-3 rounded-xl bg-amber-50/70 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+                      ⚠️ <strong>Partial Calculation:</strong> {profitSummary.pendingCostCount} item(s) have no cost recorded. Profit shown reflects only items with entered costs.
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Fulfillment Status History */}
           <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800 dark:bg-gray-900">

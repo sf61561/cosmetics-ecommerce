@@ -16,6 +16,7 @@ const adminProductRequestRoutes = require("./adminProductRequestRoutes");
 const adminTagRoutes = require("./adminTagRoutes");
 const adminReviewRoutes = require("./adminReviewRoutes");
 const adminReturnRoutes = require("./adminReturnRoutes");
+const adminProfileController = require("../controllers/adminProfileController");
 
 // Protect ALL routes under /api/admin with authentication + ADMIN role requirement
 router.use(authenticate, requireRole("ADMIN"));
@@ -49,6 +50,14 @@ router.use("/orders", adminOrderRoutes);
 router.use("/audit-logs", adminAuditRoutes);
 router.use("/notifications", adminNotificationRouter);
 router.use("/", adminPromotionRoutes);
+
+// Admin / Super Admin Profile Password Management with Email OTP
+router.post("/profile/password/request-code", (req, res, next) =>
+  adminProfileController.requestPasswordChangeCode(req, res, next)
+);
+router.post("/profile/password/confirm", (req, res, next) =>
+  adminProfileController.confirmPasswordChange(req, res, next)
+);
 
 /**
  * GET /api/admin/check

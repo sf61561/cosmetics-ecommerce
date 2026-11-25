@@ -631,6 +631,152 @@ class EmailService {
       return { success: false, error: error.message };
     }
   }
+
+  /**
+   * Send Administrator Invitation Email
+   */
+  async sendAdminInviteEmail({ to, name, inviteUrl, expiresHours = 48 }) {
+    const fromAddress = this.getFromAddress();
+    const safeName = name ? String(name).trim() : "there";
+
+    const htmlContent = `
+      <!doctype html>
+      <html>
+      <head><meta charset="utf-8" /></head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #faf5f6; margin: 0; padding: 40px 16px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #f3e2e5; box-shadow: 0 4px 16px rgba(155, 79, 94, 0.08); overflow: hidden;">
+          <tr>
+            <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
+              <h1 style="color: #9B4F5E; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">Elourá</h1>
+              <p style="color: #71717a; font-size: 13px; margin: 6px 0 0; text-transform: uppercase; letter-spacing: 1px;">Admin Portal Invitation</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 28px;">
+              <h2 style="font-size: 20px; font-weight: 700; color: #18181b; margin: 0 0 12px;">You've been invited as an Admin</h2>
+              <p style="font-size: 14px; color: #52525b; line-height: 1.6; margin: 0 0 16px;">
+                Hello <strong>${safeName}</strong>, you have been invited to join the <strong>Elourá Administration Portal</strong>.
+              </p>
+              <p style="font-size: 14px; color: #52525b; line-height: 1.6; margin: 0 0 24px;">
+                Please click the button below to verify your email address and set your permanent password to activate your account.
+              </p>
+              <div style="text-align: center; margin-bottom: 28px;">
+                <a href="${inviteUrl}" target="_blank" style="display: inline-block; background-color: #9B4F5E; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; padding: 14px 36px; border-radius: 9999px; box-shadow: 0 4px 12px rgba(155, 79, 94, 0.25);">
+                  Accept Invite & Set Password
+                </a>
+              </div>
+              <p style="font-size: 13px; color: #71717a; line-height: 1.5; margin: 0 0 8px;">
+                ⏳ This invitation link expires in <strong>${expiresHours} hours</strong> and can only be used once.
+              </p>
+              <p style="font-size: 12px; color: #a1a1aa; line-height: 1.5; margin: 0;">
+                If you did not expect this invitation, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
+              <p style="font-size: 12px; color: #71717a; margin: 0;">© ${new Date().getFullYear()} Elourá Cosmetics Administration.</p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    if (!resend) {
+      console.log("\n==================================================");
+      console.log("📧 [DEV MOCK EMAIL] Admin Invite:", to);
+      console.log("🔗 Setup Link:", inviteUrl);
+      console.log("==================================================\n");
+      return { success: true, mocked: true };
+    }
+
+    try {
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to: [to],
+        subject: "You have been invited as an Admin - Elourá",
+        html: htmlContent,
+      });
+      if (error) console.warn("Admin invite email error:", error.message);
+      return { success: true, data };
+    } catch (error) {
+      console.warn("Admin invite email delivery failed:", error.message || error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Send Password Change Verification Code (OTP) Email
+   */
+  async sendPasswordVerificationCodeEmail({ to, name, code, expiresMinutes = 15 }) {
+    const fromAddress = this.getFromAddress();
+    const safeName = name ? String(name).trim() : "there";
+
+    const htmlContent = `
+      <!doctype html>
+      <html>
+      <head><meta charset="utf-8" /></head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #faf5f6; margin: 0; padding: 40px 16px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #f3e2e5; box-shadow: 0 4px 16px rgba(155, 79, 94, 0.08); overflow: hidden;">
+          <tr>
+            <td align="center" style="padding: 32px 24px 20px; background: linear-gradient(135deg, #fcecee 0%, #f7e6ea 100%); border-bottom: 1px solid #f3e2e5;">
+              <h1 style="color: #9B4F5E; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">Elourá</h1>
+              <p style="color: #71717a; font-size: 13px; margin: 6px 0 0; text-transform: uppercase; letter-spacing: 1px;">Security Verification</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 28px;">
+              <h2 style="font-size: 20px; font-weight: 700; color: #18181b; margin: 0 0 12px;">Password Change Request</h2>
+              <p style="font-size: 14px; color: #52525b; line-height: 1.6; margin: 0 0 16px;">
+                Hello <strong>${safeName}</strong>, a request was received to change the password for your Elourá administrative account.
+              </p>
+              <p style="font-size: 14px; color: #52525b; line-height: 1.6; margin: 0 0 20px;">
+                Use the verification code below to authorize this change:
+              </p>
+              <div style="text-align: center; background-color: #faf5f6; border: 2px dashed #9B4F5E; border-radius: 12px; padding: 18px 24px; margin-bottom: 24px;">
+                <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #9B4F5E; font-family: monospace;">${code}</span>
+              </div>
+              <p style="font-size: 13px; color: #71717a; line-height: 1.5; margin: 0 0 8px;">
+                ⏳ This code is valid for <strong>${expiresMinutes} minutes</strong> and can only be used once.
+              </p>
+              <p style="font-size: 12px; color: #ef4444; line-height: 1.5; margin: 0;">
+                ⚠️ If you did not make this request, please contact your Super Admin immediately.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 20px; background-color: #faf5f6; border-top: 1px solid #f3e2e5;">
+              <p style="font-size: 12px; color: #71717a; margin: 0;">© ${new Date().getFullYear()} Elourá Cosmetics Security.</p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    if (!resend) {
+      console.log("\n==================================================");
+      console.log("📧 [DEV MOCK EMAIL] Password OTP for:", to);
+      console.log("🔑 Verification Code:", code);
+      console.log("==================================================\n");
+      return { success: true, mocked: true };
+    }
+
+    try {
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to: [to],
+        subject: `Your Elourá Password Verification Code: ${code}`,
+        html: htmlContent,
+      });
+      if (error) console.warn("Password verification code email error:", error.message);
+      return { success: true, data };
+    } catch (error) {
+      console.warn("Password verification code email delivery failed:", error.message || error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 module.exports = new EmailService();

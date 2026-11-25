@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const adminProductController = require("../controllers/adminProductController");
 const upload = require("../middlewares/upload");
+const { requirePermission } = require("../middlewares/permissionMiddleware");
 
 // Middleware to handle multer upload errors cleanly
 const handleMultiUpload = (req, res, next) => {
@@ -29,20 +30,36 @@ const handleMultiUpload = (req, res, next) => {
 };
 
 // ─── Categories Helper ───
-router.get("/categories/all", (req, res, next) => adminProductController.getCategories(req, res, next));
+router.get("/categories/all", requirePermission("products.view"), (req, res, next) =>
+  adminProductController.getCategories(req, res, next)
+);
 
 // ─── Standalone Multi-Image Upload ───
-router.post("/upload-images", handleMultiUpload, (req, res, next) =>
-  adminProductController.uploadImages(req, res, next)
+router.post(
+  "/upload-images",
+  requirePermission(["products.create", "products.edit"], { mode: "any" }),
+  handleMultiUpload,
+  (req, res, next) => adminProductController.uploadImages(req, res, next)
 );
 
 // ─── Product CRUD ───
-router.get("/", (req, res, next) => adminProductController.list(req, res, next));
-router.get("/:id", (req, res, next) => adminProductController.getById(req, res, next));
-router.post("/", handleMultiUpload, (req, res, next) => adminProductController.create(req, res, next));
-router.patch("/:id", handleMultiUpload, (req, res, next) => adminProductController.update(req, res, next));
-router.patch("/:id/status", (req, res, next) => adminProductController.updateStatus(req, res, next));
-router.delete("/:id", (req, res, next) => adminProductController.delete(req, res, next));
+router.get("/", requirePermission("products.view"), (req, res, next) =>
+  adminProductController.list(req, res, next)
+);
+router.get("/:id", requirePermission("products.view"), (req, res, next) =>
+  adminProductController.getById(req, res, next)
+);
+router.post("/", requirePermission("products.create"), handleMultiUpload, (req, res, next) =>
+  adminProductController.create(req, res, next)
+);
+router.patch("/:id", requirePermission("products.edit"), handleMultiUpload, (req, res, next) =>
+  adminProductController.update(req, res, next)
+);
+router.patch("/:id/status", requirePermission("products.edit"), (req, res, next) =>
+  adminProductController.updateStatus(req, res, next)
+);
+router.delete("/:id", requirePermission("products.delete"), (req, res, next) =>
+  adminProductController.delete(req, res, next)
+);
 
 module.exports = router;
-

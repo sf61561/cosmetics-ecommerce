@@ -44,12 +44,16 @@ async function authenticate(req, res, next) {
           });
         }
 
-        if (user.status === "BLOCKED" || user.status === "SUSPENDED") {
-          await logDenied(req, "ACCOUNT_BLOCKED");
+        if (user.status === "BLOCKED" || user.status === "SUSPENDED" || user.status === "DISABLED" || user.status === "INVITED") {
+          await logDenied(req, "ACCOUNT_NOT_ACTIVE");
           return res.status(403).json({
             success: false,
-            code: "ACCOUNT_BLOCKED",
-            message: "Your account has been suspended or blocked. Please contact support.",
+            code: "ACCOUNT_NOT_ACTIVE",
+            message: user.status === "INVITED"
+              ? "Your invitation is pending. Please verify your email to set your password."
+              : user.status === "DISABLED"
+              ? "Your administrative account has been disabled. Please contact the Super Admin."
+              : "Your account has been suspended or blocked. Please contact support.",
           });
         }
 
@@ -112,6 +116,11 @@ function requireRole(...allowedRoles) {
         success: false,
         message: "Authentication required.",
       });
+    }
+
+    // Super Admin automatically inherits and satisfies all admin checks
+    if (req.user.role === "SUPERADMIN") {
+      return next();
     }
 
     if (!allowedRoles.includes(req.user.role)) {

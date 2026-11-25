@@ -165,4 +165,12 @@ router.post("/change-unverified-email", changeUnverifiedEmailLimiter, (req, res,
   authController.changeUnverifiedEmail(req, res, next)
 );
 
+// Administrator Invitation Onboarding
+router.get("/admin-invite/verify", (req, res, next) =>
+  authController.verifyAdminInvite(req, res, next)
+);
+router.post("/admin-invite/accept", (req, res, next) =>
+  authController.acceptAdminInvite(req, res, next)
+);
+
 module.exports = router;

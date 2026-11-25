@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useAdminTheme } from "@/context/AdminThemeContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { FaStore, FaSignOutAlt, FaRegUser, FaShoppingBag, FaSun, FaMoon, FaCheck } from "react-icons/fa";
+import { IoKeyOutline } from "react-icons/io5";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 // ─── 3-Petal Floral Motif for Eloura Logo ───
 function LogoFloralIcon() {
@@ -90,11 +92,12 @@ function formatAdminTime(dateStr) {
 }
 
 export default function AdminNavbar({ onToggleSidebar }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin } = useAuth();
   const { isDark, toggleTheme } = useAdminTheme();
   const { notifications = [], unreadCount = 0, markAsRead, markAllAsRead } = useNotifications();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const profileRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -346,8 +349,12 @@ export default function AdminNavbar({ onToggleSidebar }) {
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
                     {user?.email || "admin@eloura.com"}
                   </p>
-                  <span className="inline-block mt-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
-                    Administrator
+                  <span className={`inline-block mt-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    isSuperAdmin
+                      ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300"
+                      : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                  }`}>
+                    {isSuperAdmin ? "Super Admin" : "Administrator"}
                   </span>
                 </div>
 
@@ -368,6 +375,17 @@ export default function AdminNavbar({ onToggleSidebar }) {
                     <FaRegUser className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
                     <span>Admin Settings</span>
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      setChangePasswordOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors text-left cursor-pointer"
+                  >
+                    <IoKeyOutline className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                    <span>Change Password</span>
+                  </button>
                 </div>
 
                 <div className="border-t border-gray-100 dark:border-gray-800 pt-1">
@@ -388,6 +406,12 @@ export default function AdminNavbar({ onToggleSidebar }) {
           </div>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </header>
   );
 }

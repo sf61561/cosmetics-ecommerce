@@ -269,6 +269,32 @@ class AuthController {
       next(error);
     }
   }
+
+  /**
+   * Verify an invited admin token
+   */
+  async verifyAdminInvite(req, res, next) {
+    try {
+      const token = req.query.token || req.body.token;
+      const result = await authService.verifyAdminInvite(token);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Accept an invited admin invite and set password
+   */
+  async acceptAdminInvite(req, res, next) {
+    try {
+      const { token, name, password } = req.body;
+      const result = await authService.acceptAdminInvite({ token, name, password }, req.auditRequest);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuthController();

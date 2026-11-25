@@ -22,7 +22,7 @@ function AdminLayoutContent({ children }) {
       if (event.persisted) {
         try {
           const freshUser = await refreshAuth();
-          if (!freshUser || freshUser.role !== "ADMIN") {
+          if (!freshUser || (freshUser.role !== "ADMIN" && freshUser.role !== "SUPERADMIN")) {
             window.location.replace("/auth/login");
           }
         } catch {
@@ -40,7 +40,7 @@ function AdminLayoutContent({ children }) {
     if (!isLoading && !isLoggingOut) {
       if (!user) {
         window.location.replace("/auth/login");
-      } else if (user.role !== "ADMIN") {
+      } else if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
         window.location.replace("/");
       }
     }
@@ -71,7 +71,7 @@ function AdminLayoutContent({ children }) {
   }
 
   // Non-admin (Customer trying to access Admin route)
-  if (user.role !== "ADMIN") {
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#FBF0F0] px-4 text-center">
         <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4 shadow-sm">

@@ -5,7 +5,7 @@ const allowedEntities = new Set([
   "USER", "PRODUCT", "INVENTORY", "ORDER", "COLLECTION", "BRAND",
   "COUPON", "DELIVERY_RULE", "HERO_SLIDER", "RETURN", "SYSTEM",
 ]);
-const allowedActorTypes = new Set(["ADMIN", "CUSTOMER", "SYSTEM", "ANONYMOUS"]);
+const allowedActorTypes = new Set(["SUPERADMIN", "ADMIN", "CUSTOMER", "SYSTEM", "ANONYMOUS"]);
 const blockedKey = /(password|token|secret|cookie|authorization|credential|card|cvv|email|phone|address|recipient|refresh|hash)/i;
 const blockedString = /(bearer\s+|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,})/i;
 const securityRate = new Map();

@@ -1,32 +1,48 @@
 const express = require("express");
 const router = express.Router();
 const reviewController = require("../controllers/reviewController");
+const { requirePermission } = require("../middlewares/permissionMiddleware");
 
 // Protected under /api/admin/reviews (authenticated + ADMIN role via adminRoutes)
 
 // GET /api/admin/reviews/metrics
-router.get("/metrics", (req, res, next) => reviewController.getAdminMetrics(req, res, next));
+router.get("/metrics", requirePermission("reviews.view"), (req, res, next) =>
+  reviewController.getAdminMetrics(req, res, next)
+);
 
 // GET /api/admin/reviews/pending-count
-router.get("/pending-count", (req, res, next) => reviewController.getPendingCount(req, res, next));
+router.get("/pending-count", requirePermission("reviews.view"), (req, res, next) =>
+  reviewController.getPendingCount(req, res, next)
+);
 
 // POST /api/admin/reviews/bulk-approve
-router.post("/bulk-approve", (req, res, next) => reviewController.bulkApprove(req, res, next));
+router.post("/bulk-approve", requirePermission("reviews.moderate"), (req, res, next) =>
+  reviewController.bulkApprove(req, res, next)
+);
 
 // GET /api/admin/reviews
-router.get("/", (req, res, next) => reviewController.getAdminReviews(req, res, next));
+router.get("/", requirePermission("reviews.view"), (req, res, next) =>
+  reviewController.getAdminReviews(req, res, next)
+);
 
 // GET /api/admin/reviews/:id
-router.get("/:id", (req, res, next) => reviewController.getAdminReviewById(req, res, next));
+router.get("/:id", requirePermission("reviews.view"), (req, res, next) =>
+  reviewController.getAdminReviewById(req, res, next)
+);
 
 // POST /api/admin/reviews/:id/approve
-router.post("/:id/approve", (req, res, next) => reviewController.approveReview(req, res, next));
+router.post("/:id/approve", requirePermission("reviews.moderate"), (req, res, next) =>
+  reviewController.approveReview(req, res, next)
+);
 
 // POST /api/admin/reviews/:id/reject
-router.post("/:id/reject", (req, res, next) => reviewController.rejectReview(req, res, next));
+router.post("/:id/reject", requirePermission("reviews.moderate"), (req, res, next) =>
+  reviewController.rejectReview(req, res, next)
+);
 
 // DELETE /api/admin/reviews/:id
-router.delete("/:id", (req, res, next) => reviewController.deleteReview(req, res, next));
+router.delete("/:id", requirePermission("reviews.moderate"), (req, res, next) =>
+  reviewController.deleteReview(req, res, next)
+);
 
 module.exports = router;
-

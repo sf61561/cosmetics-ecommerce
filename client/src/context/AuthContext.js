@@ -9,6 +9,9 @@ const AuthContext = createContext({
   isLoading: true,
   isLoggingOut: false,
   isAuthenticated: false,
+  isSuperAdmin: false,
+  isAdmin: false,
+  hasPermission: () => false,
   login: async () => {},
   logout: async () => {},
   setAuthSession: () => {},
@@ -44,7 +47,8 @@ export function AuthProvider({ children }) {
         prevUser.emailVerified === newUser.emailVerified &&
         prevUser.authProvider === newUser.authProvider &&
         prevUser.hasPassword === newUser.hasPassword &&
-        prevUser.profilePicture === newUser.profilePicture
+        prevUser.profilePicture === newUser.profilePicture &&
+        JSON.stringify(prevUser.permissions) === JSON.stringify(newUser.permissions)
       ) {
         return prevUser;
       }
@@ -197,6 +201,26 @@ export function AuthProvider({ children }) {
     [saveAuthSession]
   );
 
+  /**
+   * Check if the authenticated user has a specific permission
+   */
+  const hasPermission = useCallback(
+    (permissionKey) => {
+      if (!user) return false;
+      if (user.role === "SUPERADMIN") return true;
+      if (user.role !== "ADMIN") return false;
+      if (!Array.isArray(user.permissions)) return false;
+      if (Array.isArray(permissionKey)) {
+        return permissionKey.every((k) => user.permissions.includes(k));
+      }
+      return user.permissions.includes(permissionKey);
+    },
+    [user]
+  );
+
+  const isSuperAdmin = user?.role === "SUPERADMIN";
+  const isAdmin = user?.role === "ADMIN" || isSuperAdmin;
+
   return (
     <AuthContext.Provider
       value={{
@@ -204,6 +228,9 @@ export function AuthProvider({ children }) {
         isLoading,
         isLoggingOut,
         isAuthenticated: Boolean(user),
+        isSuperAdmin,
+        isAdmin,
+        hasPermission,
         login,
         logout,
         setAuthSession,
