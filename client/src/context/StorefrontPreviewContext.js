@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { Suspense, createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { API_BASE } from "@/services/apiConfig";
 import { IoEyeOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
@@ -9,26 +9,41 @@ const StorefrontPreviewContext = createContext({
   isPreviewMode: false,
   canPreviewDrafts: false,
   isChecking: false,
+  hasChecked: false,
   blockedNotice: "",
 });
 
 const PREVIEW_STORAGE_KEY = "eloura_preview_frame";
 
+/**
+ * Isolated query reader wrapped in its own <Suspense> so RootLayout {children} never suspend.
+ */
+function StorefrontPreviewQueryObserver({ onQueryPreviewChange }) {
+  const searchParams = useSearchParams();
+  const previewParam = searchParams?.get("preview");
+  const hasPreviewQuery = previewParam === "1" || previewParam === "true";
+
+  useEffect(() => {
+    onQueryPreviewChange(hasPreviewQuery);
+  }, [hasPreviewQuery, onQueryPreviewChange]);
+
+  return null;
+}
+
 export function StorefrontPreviewProvider({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const isBackofficeRoute =
     pathname?.startsWith("/admin") || pathname?.startsWith("/superadmin");
 
-  const previewParam = searchParams?.get("preview");
-  const hasPreviewQuery = previewParam === "1" || previewParam === "true";
-
+  const [hasPreviewQuery, setHasPreviewQuery] = useState(false);
+  const [inIframeSession, setInIframeSession] = useState(false);
   const [verifiedState, setVerifiedState] = useState({
     authorized: false,
     canPreviewDrafts: false,
     isChecking: false,
+    hasChecked: false,
   });
   const [blockedNotice, setBlockedNotice] = useState("");
 
@@ -45,6 +60,9 @@ export function StorefrontPreviewProvider({ children }) {
     if (!wantsPreview) return;
 
     let active = true;
+    Promise.resolve().then(() => {
+      if (active) setVerifiedState((prev) => ({ ...prev, isChecking: true }));
+    });
 
     fetch(`${API_BASE}/api/storefront-preview/session`, {
       method: "GET",
@@ -61,29 +79,42 @@ export function StorefrontPreviewProvider({ children }) {
         if (authorized) {
           if (typeof window !== "undefined" && inIframe) {
             window.sessionStorage?.setItem(PREVIEW_STORAGE_KEY, "1");
+            setInIframeSession(true);
           }
-          setVerifiedState({ authorized: true, canPreviewDrafts, isChecking: false });
+          setVerifiedState({
+            authorized: true,
+            canPreviewDrafts,
+            isChecking: false,
+            hasChecked: true,
+          });
         } else {
           if (typeof window !== "undefined") {
             window.sessionStorage?.removeItem(PREVIEW_STORAGE_KEY);
           }
-          setVerifiedState({ authorized: false, canPreviewDrafts: false, isChecking: false });
+          setInIframeSession(false);
+          setVerifiedState({
+            authorized: false,
+            canPreviewDrafts: false,
+            isChecking: false,
+            hasChecked: true,
+          });
         }
       })
       .catch(() => {
         if (!active) return;
-        setVerifiedState({ authorized: false, canPreviewDrafts: false, isChecking: false });
+        setInIframeSession(false);
+        setVerifiedState({
+          authorized: false,
+          canPreviewDrafts: false,
+          isChecking: false,
+          hasChecked: true,
+        });
       });
 
     return () => {
       active = false;
     };
   }, [isBackofficeRoute, hasPreviewQuery, pathname]);
-
-  const inIframeSession =
-    typeof window !== "undefined" &&
-    window.self !== window.top &&
-    window.sessionStorage?.getItem(PREVIEW_STORAGE_KEY) === "1";
 
   const isPreviewMode =
     !isBackofficeRoute && (hasPreviewQuery || inIframeSession) && verifiedState.authorized;
@@ -99,7 +130,12 @@ export function StorefrontPreviewProvider({ children }) {
       if (!anchor) return;
 
       const rawHref = anchor.getAttribute("href") || "";
-      if (!rawHref || rawHref.startsWith("#") || rawHref.startsWith("mailto:") || rawHref.startsWith("tel:")) {
+      if (
+        !rawHref ||
+        rawHref.startsWith("#") ||
+        rawHref.startsWith("mailto:") ||
+        rawHref.startsWith("tel:")
+      ) {
         return;
       }
 
@@ -117,6 +153,19 @@ export function StorefrontPreviewProvider({ children }) {
           event.preventDefault();
           event.stopPropagation();
           setBlockedNotice("Admin routes are blocked inside Storefront Preview.");
+          setTimeout(() => setBlockedNotice(""), 3000);
+          return;
+        }
+
+        if (
+          parsed.pathname.startsWith("/profile") ||
+          parsed.pathname.startsWith("/orders") ||
+          parsed.pathname.startsWith("/addresses") ||
+          parsed.pathname.startsWith("/auth/")
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          setBlockedNotice("Customer account & auth pages are disabled in Storefront Preview.");
           setTimeout(() => setBlockedNotice(""), 3000);
           return;
         }
@@ -141,9 +190,13 @@ export function StorefrontPreviewProvider({ children }) {
         isPreviewMode,
         canPreviewDrafts,
         isChecking: verifiedState.isChecking,
+        hasChecked: verifiedState.hasChecked,
         blockedNotice,
       }}
     >
+      <Suspense fallback={null}>
+        <StorefrontPreviewQueryObserver onQueryPreviewChange={setHasPreviewQuery} />
+      </Suspense>
       {isPreviewMode && (
         <div
           role="status"

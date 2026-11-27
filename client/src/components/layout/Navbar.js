@@ -157,7 +157,7 @@ export default function Navbar() {
                   aria-label="Account"
                   onClick={() => setProfileDropdownOpen((prev) => !prev)}
                 >
-                  {user ? (
+                  {user && !isPreviewMode ? (
                     avatarUrl ? (
                       // Render customer's profile picture if present
                       // eslint-disable-next-line @next/next/no-img-element
@@ -181,7 +181,57 @@ export default function Navbar() {
                 {/* Dropdown Menu */}
                 {profileDropdownOpen && (
                   <div className="absolute right-0 top-10 w-56 rounded-xl bg-white shadow-xl border border-pink-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-100">
-                    {user && !isPreviewMode ? (
+                    {isPreviewMode ? (
+                      // ── PREVIEW MODE CUSTOMER MENU (NO ADMIN UI OR LIVE LOGOUT) ──
+                      <>
+                        <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-xs font-medium text-gray-400">Customer Preview</p>
+                          <p className="text-sm font-semibold text-gray-800">Guest / Customer View</p>
+                        </div>
+                        <div className="py-1">
+                          <Link
+                            href="/shop"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                          >
+                            Shop All
+                          </Link>
+                          <Link
+                            href="/track-order"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                          >
+                            Track My Order
+                          </Link>
+                          <Link
+                            href="/wishlist"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                          >
+                            <span>My Wishlist</span>
+                            {wishlistCount > 0 && (
+                              <span className="rounded-full bg-[#9B4F5E] px-2 py-0.5 text-[11px] font-bold text-white">
+                                {wishlistCount}
+                              </span>
+                            )}
+                          </Link>
+                          <Link
+                            href="/cart"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                          >
+                            Shopping Bag
+                          </Link>
+                          <Link
+                            href="/contact"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                          >
+                            Contact Us
+                          </Link>
+                        </div>
+                      </>
+                    ) : user ? (
                       // ── CUSTOMER / ADMIN LOGGED IN MENU ──
                       <>
                         <div className="px-4 py-2 border-b border-gray-100">
@@ -305,8 +355,8 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Notification Bell (for authenticated users) */}
-              {user && (
+              {/* Notification Bell (for authenticated users, hidden in preview) */}
+              {user && !isPreviewMode && (
                 <div className="relative" ref={notificationDropdownRef}>
                   <button
                     type="button"
@@ -458,7 +508,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile User Header / Section */}
-            {user ? (
+            {user && !isPreviewMode ? (
               <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#FBF0F0] p-3 border border-[#F5D5D5]">
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -543,7 +593,24 @@ export default function Navbar() {
 
             {/* Mobile Account links */}
             <div className="mt-3 flex flex-col gap-1">
-              {user && !isPreviewMode ? (
+              {isPreviewMode ? (
+                <div className="space-y-1">
+                  <Link
+                    href="/track-order"
+                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Track My Order
+                  </Link>
+                  <Link
+                    href="/contact"
+                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Contact Us
+                  </Link>
+                </div>
+              ) : user ? (
                 <>
                   {user.role === "SUPERADMIN" && (
                     <Link

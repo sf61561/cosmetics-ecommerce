@@ -14,9 +14,9 @@ import {
 } from "react-icons/io5";
 
 const DEVICES = [
-  { id: "desktop", label: "Desktop", icon: IoDesktopOutline, widthClass: "w-full" },
-  { id: "tablet", label: "Tablet", icon: IoTabletPortraitOutline, widthClass: "w-[768px] max-w-full" },
-  { id: "mobile", label: "Mobile", icon: IoPhonePortraitOutline, widthClass: "w-[390px] max-w-full" },
+  { id: "desktop", label: "Desktop", icon: IoDesktopOutline, targetWidth: 1280 },
+  { id: "tablet", label: "Tablet", icon: IoTabletPortraitOutline, targetWidth: 768 },
+  { id: "mobile", label: "Mobile", icon: IoPhonePortraitOutline, targetWidth: 390 },
 ];
 
 const STATIC_PAGES = [
@@ -57,10 +57,36 @@ export default function StorefrontPreviewFrame({
   const [customPath, setCustomPath] = useState(initialPath !== "/" ? initialPath : "");
 
   const [device, setDevice] = useState("desktop");
+  const [stageSize, setStageSize] = useState({ width: 0, height: 620 });
+  const stageRef = useRef(null);
   const [cacheBust, setCacheBust] = useState(() => Date.now());
   const [frameLoading, setFrameLoading] = useState(true);
   const [frameError, setFrameError] = useState("");
   const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0) {
+        setStageSize({
+          width: Math.floor(rect.width),
+          height: Math.max(540, Math.floor(window.innerHeight - 250)),
+        });
+      }
+    };
+
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(el);
+    window.addEventListener("resize", updateSize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateSize);
+    };
+  }, []);
 
   const filteredProducts = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
@@ -122,6 +148,20 @@ export default function StorefrontPreviewFrame({
   }, [iframeSrc]);
 
   const activeDeviceConfig = DEVICES.find((d) => d.id === device) || DEVICES[0];
+
+  // Compute logical iframe dimensions & proportional scale so Desktop always renders >=1280px
+  // (preventing laptop sidebar width from collapsing desktop storefront navbar into mobile hamburger)
+  const logicalWidth =
+    device === "desktop" && stageSize.width > activeDeviceConfig.targetWidth
+      ? stageSize.width
+      : activeDeviceConfig.targetWidth;
+  const scale =
+    stageSize.width > 0 && logicalWidth > stageSize.width
+      ? stageSize.width / logicalWidth
+      : 1;
+  const displayWidth = Math.round(logicalWidth * scale);
+  const displayHeight = stageSize.height;
+  const logicalHeight = Math.round(displayHeight / scale);
 
   const handleRefresh = () => {
     setFrameError("");
@@ -329,54 +369,72 @@ export default function StorefrontPreviewFrame({
       </div>
 
       {/* Centered Iframe Stage */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-950 p-2 sm:p-4 overflow-x-auto">
-        <div
-          className={`relative mx-auto transition-all duration-200 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white shadow-sm ${activeDeviceConfig.widthClass} ${heightClass}`}
-        >
-          {frameLoading && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xs">
-              <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#9B4F5E] border-t-transparent" />
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Loading storefront preview...
-              </p>
-            </div>
-          )}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-950 p-2 sm:p-4">
+        <div ref={stageRef} className="w-full overflow-hidden">
+          <div
+            style={{
+              width: device === "desktop" ? "100%" : `${displayWidth}px`,
+              height: `${displayHeight}px`,
+            }}
+            className={`relative mx-auto transition-all duration-200 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white shadow-sm ${
+              scale === 1 && device === "desktop" ? heightClass : ""
+            }`}
+          >
+            {frameLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xs">
+                <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#9B4F5E] border-t-transparent" />
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Loading storefront preview...
+                </p>
+              </div>
+            )}
 
-          {frameError ? (
-            <div className="flex h-full flex-col items-center justify-center p-6 text-center space-y-3 bg-white dark:bg-gray-900">
-              <IoAlertCircleOutline className="h-8 w-8 text-rose-500" aria-hidden="true" />
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Preview failed to load
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
-                {frameError}
-              </p>
-              <button
-                type="button"
-                onClick={handleRefresh}
-                className="rounded-full bg-[#9B4F5E] px-5 py-2 text-xs font-semibold text-white hover:bg-[#843F4E] cursor-pointer"
-              >
-                Retry
-              </button>
-            </div>
-          ) : (
-            <iframe
-              key={iframeSrc}
-              src={iframeSrc}
-              title="Storefront preview"
-              onLoad={() => {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                setFrameError("");
-                setFrameLoading(false);
-              }}
-              onError={() => {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                setFrameLoading(false);
-                setFrameError("Unable to load the storefront frame.");
-              }}
-              className="h-full w-full border-0 bg-white"
-            />
-          )}
+            {frameError ? (
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center space-y-3 bg-white dark:bg-gray-900">
+                <IoAlertCircleOutline className="h-8 w-8 text-rose-500" aria-hidden="true" />
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Preview failed to load
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+                  {frameError}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  className="rounded-full bg-[#9B4F5E] px-5 py-2 text-xs font-semibold text-white hover:bg-[#843F4E] cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <iframe
+                key={iframeSrc}
+                src={iframeSrc}
+                title="Storefront preview"
+                style={
+                  scale < 1
+                    ? {
+                        width: `${logicalWidth}px`,
+                        height: `${logicalHeight}px`,
+                        transform: `scale(${scale})`,
+                        transformOrigin: "top left",
+                      }
+                    : undefined
+                }
+                onLoad={() => {
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                  setFrameError("");
+                  setFrameLoading(false);
+                }}
+                onError={() => {
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                  setFrameLoading(false);
+                  setFrameError("Unable to load the storefront frame.");
+                }}
+                className={`${scale < 1 ? "" : "h-full w-full"} border-0 bg-white`}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
