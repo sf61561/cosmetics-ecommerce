@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
+const { requirePermission } = require("../middlewares/permissionMiddleware");
 const { query } = require("../config/db");
 const adminCollectionRoutes = require("./adminCollectionRoutes");
 const adminBrandRoutes = require("./adminBrandRoutes");
@@ -10,7 +11,6 @@ const adminPromotionRoutes = require("./adminPromotionRoutes");
 const adminHeroSliderRoutes = require("./adminHeroSliderRoutes");
 const dashboardService = require("../services/dashboardService");
 const adminOrderRoutes = require("./adminOrderRoutes");
-const adminAuditRoutes = require("./adminAuditRoutes");
 const { adminNotificationRouter } = require("./notificationRoutes");
 const adminProductRequestRoutes = require("./adminProductRequestRoutes");
 const adminTagRoutes = require("./adminTagRoutes");
@@ -18,8 +18,8 @@ const adminReviewRoutes = require("./adminReviewRoutes");
 const adminReturnRoutes = require("./adminReturnRoutes");
 const adminProfileController = require("../controllers/adminProfileController");
 
-// Protect ALL routes under /api/admin with authentication + ADMIN role requirement
-router.use(authenticate, requireRole("ADMIN"));
+// Protect ALL routes under /api/admin with authentication + explicit ADMIN or SUPERADMIN role requirement
+router.use(authenticate, requireRole("ADMIN", "SUPERADMIN"));
 
 // Returns Management API
 router.use("/returns", adminReturnRoutes);
@@ -47,11 +47,10 @@ router.use("/brands", adminBrandRoutes);
 router.use("/hero-sliders", adminHeroSliderRoutes);
 router.use("/sliders", adminHeroSliderRoutes);
 router.use("/orders", adminOrderRoutes);
-router.use("/audit-logs", adminAuditRoutes);
 router.use("/notifications", adminNotificationRouter);
 router.use("/", adminPromotionRoutes);
 
-// Admin / Super Admin Profile Password Management with Email OTP
+// Admin Profile Password Management with Email OTP
 router.post("/profile/password/request-code", (req, res, next) =>
   adminProfileController.requestPasswordChangeCode(req, res, next)
 );
@@ -107,9 +106,9 @@ router.get("/dashboard", async (req, res, next) => {
 
 /**
  * GET /api/admin/users
- * List all users with roles (accessible strictly to ADMIN)
+ * List all users with roles (requires customers.view permission)
  */
-router.get("/users", async (req, res, next) => {
+router.get("/users", requirePermission("customers.view"), async (req, res, next) => {
   try {
     const result = await query(
       "SELECT id, name, email, phone, role, email_verified_at, authprovider, created_at FROM users ORDER BY created_at DESC"

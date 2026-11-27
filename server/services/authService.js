@@ -1159,6 +1159,14 @@ class AuthService {
 
     const newAccessToken = generateAccessToken(user, authTime);
 
+    let permissions = [];
+    if (user.role === "SUPERADMIN") {
+      permissions = ["*"];
+    } else if (user.role === "ADMIN") {
+      const superadminService = require("./superadminService");
+      permissions = await superadminService.getUserPermissions(user.id);
+    }
+
     return {
       user: {
         id: user.id,
@@ -1166,6 +1174,7 @@ class AuthService {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        permissions,
         profilePicture: user.profile_picture_link,
         emailVerified: Boolean(user.email_verified_at),
         authProvider: user.authprovider,

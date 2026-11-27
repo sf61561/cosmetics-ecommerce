@@ -157,7 +157,9 @@ export default function RegisterPage() {
   // Reverse case: redirect already-authenticated users away from register page
   useEffect(() => {
     if (!isLoading && !isLoggingOut && user) {
-      if (user.role === "ADMIN") {
+      if (user.role === "SUPERADMIN") {
+        window.location.replace("/superadmin");
+      } else if (user.role === "ADMIN") {
         window.location.replace("/admin");
       } else {
         window.location.replace("/");

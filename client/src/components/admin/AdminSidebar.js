@@ -201,9 +201,18 @@ function LogOutIcon() {
   );
 }
 
+function PresetsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
 // ─── Sidebar Menu Configuration ───
 const navItems = [
-  { label: "Dashboard", href: "/admin", icon: DashboardIcon },
+  { label: "Dashboard", href: "/admin", superadminHref: "/superadmin", icon: DashboardIcon },
   { label: "Products", href: "/admin/products", icon: ProductsIcon, permission: "products.view" },
   { label: "Tags", href: "/admin/tags", icon: TagsIcon, permission: "products.view" },
   { label: "Product Requests", href: "/admin/product-requests", icon: ProductRequestsIcon, permission: "products.view" },
@@ -212,22 +221,24 @@ const navItems = [
   { label: "Hero Slider", href: "/admin/hero-sliders", icon: HeroSliderIcon, permission: "settings.store_view" },
   { label: "Orders", href: "/admin/orders", icon: OrdersIcon, permission: "orders.view" },
   { label: "Returns & Refunds", href: "/admin/returns", icon: ReturnsIcon, permission: "returns.view" },
-  { label: "Admins", href: "/admin/admins", icon: AdminsIcon, superAdminOnly: true },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: AuditIcon, superAdminOnly: true },
   { label: "Customers", href: "/admin/customers", icon: CustomersIcon, permission: "customers.view" },
-  { label: "Reviews", href: "/admin/reviews", icon: ReviewsIcon, permission: "products.view" },
+  { label: "Reviews", href: "/admin/reviews", icon: ReviewsIcon, permission: "reviews.view" },
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon, permission: "settings.store_view" },
+];
+
+const superadminSectionItems = [
+  { label: "Admins", href: "/superadmin/admins", icon: AdminsIcon },
+  { label: "Permission Presets", href: "/superadmin/presets", icon: PresetsIcon },
+  { label: "Audit Logs", href: "/superadmin/audit-logs", icon: AuditIcon },
 ];
 
 export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () => {} }) {
   const pathname = usePathname();
-  const { logout, user, isSuperAdmin, hasPermission } = useAuth();
+  const { logout, isSuperAdmin, hasPermission } = useAuth();
   const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
+  const canViewReviews = isSuperAdmin || hasPermission("reviews.view");
 
   const filteredNavItems = navItems.filter((item) => {
-    if (item.superAdminOnly) {
-      return isSuperAdmin;
-    }
     if (item.permission) {
       return isSuperAdmin || hasPermission(item.permission);
     }
@@ -235,6 +246,7 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
   });
 
   useEffect(() => {
+    if (!canViewReviews) return;
     let isMounted = true;
     const fetchPending = async () => {
       try {
@@ -256,7 +268,7 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
       clearInterval(interval);
       window.removeEventListener("eloura:reviews-updated", handleReviewsUpdated);
     };
-  }, []);
+  }, [canViewReviews]);
 
   const handleLinkClick = () => {
     if (setMobileOpen) setMobileOpen(false);
@@ -274,25 +286,27 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
 
       {/* ── Sidebar Container ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col justify-between border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-6 overflow-y-auto transition-all duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col justify-between border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3.5 py-6 overflow-y-auto overflow-x-hidden no-scrollbar transition-all duration-200 ease-in-out lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Top: Logo & Nav Links */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 min-w-0">
           {/* Header Brand */}
-          <div className="flex items-center justify-between px-3">
-            <div className="flex items-center gap-3">
-              <Link href="/admin" className="flex items-center" onClick={handleLinkClick}>
+          <div className="flex items-center justify-between gap-2 px-1.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Link href={isSuperAdmin ? "/superadmin" : "/admin"} className="flex items-center shrink-0" onClick={handleLinkClick}>
                 <span
-                  className="font-logo text-xl font-semibold tracking-[0.2em] text-gray-800 dark:text-gray-100"
+                  className="font-logo text-lg font-semibold tracking-[0.18em] text-gray-800 dark:text-gray-100"
                 >
                   ELOURÁ
                 </span>
               </Link>
-              <span className={`inline-flex items-center rounded-full px-3.5 py-0.5 text-xs font-medium text-white shadow-xs select-none ${
-                isSuperAdmin ? "bg-gradient-to-r from-[#8B5CF6] to-[#A46377]" : "bg-[#A46377]"
-              }`}>
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white shadow-xs select-none whitespace-nowrap shrink-0 ${
+                  isSuperAdmin ? "bg-gradient-to-r from-[#8B5CF6] to-[#A46377]" : "bg-[#A46377]"
+                }`}
+              >
                 {isSuperAdmin ? "Super Admin" : "Admin"}
               </span>
             </div>
@@ -301,45 +315,77 @@ export default function AdminSidebar({ mobileOpen = false, setMobileOpen = () =>
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
+              className="lg:hidden shrink-0 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
               aria-label="Close sidebar"
             >
-              <IoClose className="h-6 w-6" />
+              <IoClose className="h-5 w-5" />
             </button>
           </div>
 
           {/* Navigation Links List */}
-          <nav className="flex flex-col gap-1.5">
+          <nav className="flex flex-col gap-1.5 min-w-0">
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
+              const targetHref = isSuperAdmin && item.superadminHref ? item.superadminHref : item.href;
               const isActive =
                 item.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(item.href);
+                  ? pathname === "/admin" || pathname === "/superadmin"
+                  : pathname.startsWith(targetHref);
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={targetHref}
                   onClick={handleLinkClick}
-                  className={`flex items-center gap-3.5 rounded-full px-4 py-2.5 text-sm transition-colors ${
+                  className={`flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm transition-colors min-w-0 ${
                     isActive
                       ? "bg-[#EED9DC] text-gray-900 dark:bg-[#9B4F5E]/30 dark:text-pink-100 font-medium shadow-2xs"
                       : "text-gray-700 dark:text-gray-300 hover:bg-[#FDF6F7] dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white font-normal"
                   }`}
                 >
-                  <span className={isActive ? "text-gray-900 dark:text-pink-200" : "text-gray-600 dark:text-gray-400"}>
+                  <span className={`shrink-0 ${isActive ? "text-gray-900 dark:text-pink-200" : "text-gray-600 dark:text-gray-400"}`}>
                     <Icon />
                   </span>
-                  <span className="flex-1">{item.label}</span>
+                  <span className="flex-1 truncate">{item.label}</span>
                   {item.href === "/admin/reviews" && pendingReviewsCount > 0 && (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A46377] text-white shadow-xs">
+                    <span className="inline-flex shrink-0 items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A46377] text-white shadow-xs">
                       {pendingReviewsCount > 99 ? "99+" : pendingReviewsCount}
                     </span>
                   )}
                 </Link>
               );
             })}
+
+            {/* Additional Admin Management Section (Super Admin Only) */}
+            {isSuperAdmin && (
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1.5 min-w-0">
+                <p className="px-3.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#8B5CF6] dark:text-purple-400 truncate">
+                  Admin Management
+                </p>
+                {superadminSectionItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname.startsWith(item.href);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleLinkClick}
+                      className={`flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm transition-colors min-w-0 ${
+                        isActive
+                          ? "bg-purple-100/80 text-purple-950 dark:bg-purple-950/60 dark:text-purple-100 font-medium shadow-2xs"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-purple-50/70 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white font-normal"
+                      }`}
+                    >
+                      <span className={`shrink-0 ${isActive ? "text-purple-700 dark:text-purple-300" : "text-gray-600 dark:text-gray-400"}`}>
+                        <Icon />
+                      </span>
+                      <span className="flex-1 truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </nav>
         </div>
 

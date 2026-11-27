@@ -1,4 +1,5 @@
 const superadminService = require("../services/superadminService");
+const superadminDashboardService = require("../services/superadminDashboardService");
 
 class SuperadminController {
   async listAdmins(req, res, next) {
@@ -11,6 +12,51 @@ class SuperadminController {
         limit: limit ? parseInt(limit, 10) : 20,
       });
       res.status(200).json({ success: true, ...data });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getDashboardOverview(req, res, next) {
+    try {
+      const overview = await superadminService.getDashboardOverview();
+      res.status(200).json({ success: true, data: overview });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getDashboardSummary(req, res, next) {
+    try {
+      const { from, to, preset, compare } = req.query;
+      const data = await superadminDashboardService.getSummary({ from, to, preset, compare });
+      res.status(200).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getDashboardCharts(req, res, next) {
+    try {
+      const { from, to, preset, refresh } = req.query;
+      const bypassCache = refresh === "true" || refresh === "1";
+      const data = await superadminDashboardService.getCharts({
+        from,
+        to,
+        preset,
+        refresh: bypassCache,
+      });
+      res.status(200).json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getDashboardActivity(req, res, next) {
+    try {
+      const { page, limit, actorId, action } = req.query;
+      const data = await superadminDashboardService.getActivity({ page, limit, actorId, action });
+      res.status(200).json({ success: true, data });
     } catch (err) {
       next(err);
     }

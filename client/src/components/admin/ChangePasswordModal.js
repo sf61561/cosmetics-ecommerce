@@ -6,7 +6,7 @@ import superadminService from "@/services/superadminService";
 import { IoClose, IoKeyOutline, IoMailOutline, IoEyeOutline, IoEyeOffOutline, IoCheckmarkCircle } from "react-icons/io5";
 
 export default function ChangePasswordModal({ isOpen, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, isSuperAdmin, logout } = useAuth();
   const [step, setStep] = useState(1); // 1: Send OTP, 2: Enter OTP & New Password
   const [code, setCode] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -34,7 +34,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     setLoading(true);
     setError("");
     try {
-      const res = await superadminService.requestPasswordChangeCode();
+      await superadminService.requestPasswordChangeCode(isSuperAdmin);
       setStep(2);
       setResendCooldown(60);
     } catch (err) {
@@ -66,11 +66,14 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     setLoading(true);
     setError("");
     try {
-      await superadminService.confirmPasswordChange({
-        code: code.trim(),
-        currentPassword,
-        newPassword,
-      });
+      await superadminService.confirmPasswordChange(
+        {
+          code: code.trim(),
+          currentPassword,
+          newPassword,
+        },
+        isSuperAdmin
+      );
       setSuccess(true);
       setTimeout(() => {
         onClose();

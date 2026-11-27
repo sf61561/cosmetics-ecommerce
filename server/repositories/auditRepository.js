@@ -1,9 +1,11 @@
 const { query } = require("../config/db");
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
 const actions = new Set(require("../constants/auditActions"));
-const entities = new Set(["USER", "PRODUCT", "INVENTORY", "ORDER", "COLLECTION", "BRAND", "COUPON", "DELIVERY_RULE", "HERO_SLIDER", "SYSTEM"]);
-const actorTypes = new Set(["ADMIN", "CUSTOMER", "SYSTEM", "ANONYMOUS"]);
+const entities = new Set(["USER", "PRODUCT", "INVENTORY", "ORDER", "COLLECTION", "BRAND", "COUPON", "DELIVERY_RULE", "HERO_SLIDER", "RETURN", "SYSTEM"]);
+const actorTypes = new Set(["SUPERADMIN", "ADMIN", "CUSTOMER", "SYSTEM", "ANONYMOUS"]);
 
 function badRequest(message) {
   const error = new Error(message);
@@ -40,14 +42,20 @@ function validateFilters(input = {}) {
   }
   for (const key of ["from", "to"]) {
     if (input[key]) {
-      const value = String(input[key]);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))) {
-        badRequest(`${key === "from" ? "Start" : "End"} date must use YYYY-MM-DD.`);
+      const value = String(input[key]).trim();
+      const isDate = DATE_RE.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+      const isIsoTs = ISO_TS_RE.test(value) && !Number.isNaN(Date.parse(value));
+      if (!isDate && !isIsoTs) {
+        badRequest(`${key === "from" ? "Start" : "End"} date must use YYYY-MM-DD or ISO-8601 timestamp.`);
       }
       filters[key] = value;
     }
   }
-  if (filters.from && filters.to && filters.from > filters.to) badRequest("Start date cannot be after end date.");
+  if (filters.from && filters.to) {
+    const fromMs = DATE_RE.test(filters.from) ? Date.parse(`${filters.from}T00:00:00+06:00`) : Date.parse(filters.from);
+    const toMs = DATE_RE.test(filters.to) ? Date.parse(`${filters.to}T23:59:59.999+06:00`) : Date.parse(filters.to);
+    if (fromMs > toMs) badRequest("Start date cannot be after end date.");
+  }
   if (input.search) filters.search = String(input.search).trim().slice(0, 100);
   return filters;
 }
@@ -86,8 +94,20 @@ const auditRepository = {
     if (filters.entityId) addCondition(conditions, values, "entity_id = ?", filters.entityId);
     if (filters.actorType) addCondition(conditions, values, "actor_type = ?", filters.actorType);
     if (filters.actorId) addCondition(conditions, values, "actor_id = ?", filters.actorId);
-    if (filters.from) addCondition(conditions, values, "created_at >= (?::date::timestamp AT TIME ZONE 'Asia/Dhaka')", filters.from);
-    if (filters.to) addCondition(conditions, values, "created_at < ((?::date + 1)::timestamp AT TIME ZONE 'Asia/Dhaka')", filters.to);
+    if (filters.from) {
+      if (ISO_TS_RE.test(filters.from)) {
+        addCondition(conditions, values, "created_at >= ?::timestamptz", filters.from);
+      } else {
+        addCondition(conditions, values, "created_at >= (?::date::timestamp AT TIME ZONE 'Asia/Dhaka')", filters.from);
+      }
+    }
+    if (filters.to) {
+      if (ISO_TS_RE.test(filters.to)) {
+        addCondition(conditions, values, "created_at <= ?::timestamptz", filters.to);
+      } else {
+        addCondition(conditions, values, "created_at < ((?::date + 1)::timestamp AT TIME ZONE 'Asia/Dhaka')", filters.to);
+      }
+    }
     if (filters.search) {
       values.push(`%${filters.search}%`);
       const index = values.length;

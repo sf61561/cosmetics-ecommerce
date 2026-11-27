@@ -39,8 +39,9 @@ export default function EditPermissionsModal({ isOpen, admin, onClose, onSuccess
   if (!isOpen || !admin) return null;
 
   const categories = permissions.reduce((acc, p) => {
-    acc[p.category] = acc[p.category] || [];
-    acc[p.category].push(p);
+    const groupName = p.group || p.category || "General";
+    acc[groupName] = acc[groupName] || [];
+    acc[groupName].push(p);
     return acc;
   }, {});
 
@@ -197,7 +198,7 @@ export default function EditPermissionsModal({ isOpen, admin, onClose, onSuccess
                                 className="mt-0.5 h-4 w-4 rounded-sm border-gray-300 text-[#8B5CF6] focus:ring-[#8B5CF6]"
                               />
                               <div className="space-y-0.5">
-                                <p className="text-xs font-medium leading-none">{perm.name}</p>
+                                <p className="text-xs font-medium leading-none">{perm.label || perm.name}</p>
                                 {perm.description && (
                                   <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">
                                     {perm.description}

@@ -4,8 +4,8 @@ const notificationController = require('../controllers/notificationController');
 
 const router = express.Router();
 
-// ── Customer Notification Routes (Requires Authentication) ──
-router.use(authenticate);
+// ── Customer Notification Routes (Requires CUSTOMER Role) ──
+router.use(authenticate, requireRole('CUSTOMER'));
 
 router.get('/', (req, res, next) => notificationController.getNotifications(req, res, next));
 router.get('/unread-count', (req, res, next) => notificationController.getUnreadCount(req, res, next));
@@ -15,9 +15,9 @@ router.delete('/:id', (req, res, next) => notificationController.deleteNotificat
 router.get('/preferences', (req, res, next) => notificationController.getPreferences(req, res, next));
 router.put('/preferences', (req, res, next) => notificationController.updatePreferences(req, res, next));
 
-// ── Admin Notification Routes (Requires Admin Role) ──
+// ── Admin Notification Routes (Requires Admin or Super Admin Role) ──
 const adminNotificationRouter = express.Router();
-adminNotificationRouter.use(authenticate, requireRole('ADMIN'));
+adminNotificationRouter.use(authenticate, requireRole('ADMIN', 'SUPERADMIN'));
 
 adminNotificationRouter.get('/', (req, res, next) => notificationController.getAdminNotifications(req, res, next));
 adminNotificationRouter.get('/unread-count', (req, res, next) => notificationController.getAdminUnreadCount(req, res, next));

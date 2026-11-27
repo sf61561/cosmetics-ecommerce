@@ -12,6 +12,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { getDashboardOverview } from "@/services/dashboardService";
+import { AdminSalesBarChart } from "@/components/charts/RechartsWidgets";
 
 const DHAKA_TIME_ZONE = "Asia/Dhaka";
 const RANGE_LABELS = { today: "Today", "7": "Last 7 days", "30": "Last 30 days", "90": "Last 90 days" };
@@ -75,47 +76,6 @@ function getBucketDescription(period, range) {
     year: "numeric",
     timeZone: DHAKA_TIME_ZONE,
   });
-}
-
-function SalesChart({ sales, range }) {
-  const max = Math.max(...sales.map((item) => item.revenue), 1);
-  const hasSales = sales.some((item) => item.revenue > 0);
-  const widthClass = range === "30" ? "min-w-[900px]" : range === "today" ? "min-w-[760px]" : "min-w-[560px]";
-  const labelInterval = range === "today" || range === "30" ? 3 : range === "90" ? 2 : 1;
-
-  return (
-    <div>
-      {!hasSales && <p className="mb-3 text-xs text-gray-500">No delivered sales in this period. Each time bucket is shown as zero.</p>}
-      <div className="overflow-x-auto" aria-label={`${RANGE_LABELS[range]} delivered sales chart`}>
-        <div className={`flex h-60 items-end gap-2 border-b border-l border-gray-200 px-3 dark:border-gray-700 ${widthClass}`}>
-          {sales.map((item, index) => {
-            const label = getBucketLabel(item.period, range);
-            const description = getBucketDescription(item.period, range);
-            const showLabel = index % labelInterval === 0 || index === sales.length - 1;
-            const barHeight = item.revenue ? Math.max((item.revenue / max) * 78, 4) : 1;
-
-            return (
-              <div key={String(item.period)} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                <span className="max-w-full truncate text-[10px] text-gray-500" title={`${description}: ${money(item.revenue)}`}>
-                  {item.revenue ? money(item.revenue) : "\u00A0"}
-                </span>
-                <div
-                  className="w-full max-w-10 rounded-t-md bg-[#9B4F5E] transition-all"
-                  style={{ height: `${barHeight}%` }}
-                  title={`${description} · ${money(item.revenue)} · ${item.orderCount} delivered orders`}
-                  role="img"
-                  aria-label={`${description}: ${money(item.revenue)}, ${item.orderCount} delivered orders`}
-                />
-                <span className="h-4 whitespace-nowrap text-[10px] text-gray-500" title={description}>
-                  {showLabel ? label : "\u00A0"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function getSalesComparison(metrics) {
@@ -228,7 +188,11 @@ export default function AdminDashboardPage() {
                 Delivered orders · grouped by delivery date · {RANGE_LABELS[range]}
               </p>
             </div>
-            <SalesChart sales={data.sales} range={range} />
+            <AdminSalesBarChart
+              sales={data.sales}
+              formatLabel={(period) => getBucketLabel(period, range)}
+              formatDescription={(period) => getBucketDescription(period, range)}
+            />
           </section>
 
           <div className="grid gap-6 xl:grid-cols-2">

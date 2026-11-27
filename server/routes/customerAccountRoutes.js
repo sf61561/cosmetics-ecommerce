@@ -10,7 +10,7 @@ const { profileAvatarLimiter, passwordChangeLimiter } = require("../middlewares/
 const notificationService = require("../services/notificationService");
 
 const router = express.Router();
-router.use(authenticate);
+router.use(authenticate, requireRole("CUSTOMER"));
 
 function validationError(message) {
   const error = new Error(message);

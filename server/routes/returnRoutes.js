@@ -1,12 +1,12 @@
 const express = require("express");
-const { authenticate } = require("../middlewares/authMiddleware");
+const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
 const controller = require("../controllers/returnController");
 
 const router = express.Router();
 
-// All customer return endpoints require login
-router.use(authenticate);
+// All customer return endpoints require CUSTOMER login
+router.use(authenticate, requireRole("CUSTOMER"));
 
 // Upload photo evidence (Cloudinary memory streaming)
 router.post(

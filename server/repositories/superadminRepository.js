@@ -86,9 +86,17 @@ const superadminRepository = {
       WHERE role::text IN ('ADMIN', 'SUPERADMIN')
     `);
 
+    const summary = summaryRes.rows[0] || { total_admins: 0, active_admins: 0, invited_admins: 0, disabled_admins: 0 };
+
     return {
       admins: dataRes.rows,
-      summary: summaryRes.rows[0] || { total_admins: 0, active_admins: 0, invited_admins: 0, disabled_admins: 0 },
+      summary,
+      counts: {
+        all: summary.total_admins || 0,
+        active: summary.active_admins || 0,
+        invited: summary.invited_admins || 0,
+        disabled: summary.disabled_admins || 0,
+      },
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -431,6 +439,44 @@ const superadminRepository = {
   async deletePreset(presetId, client = null) {
     const runner = client || { query };
     await runner.query(`DELETE FROM permission_presets WHERE id = $1`, [presetId]);
+  },
+
+  /**
+   * Super Admin Governance Dashboard Overview
+   */
+  async getDashboardOverview() {
+    const [adminCountsRes, presetsRes, permissionsRes, recentAuditsRes] = await Promise.all([
+      query(`
+        SELECT 
+          COUNT(*) FILTER (WHERE role::text = 'ADMIN')::int AS total_admins,
+          COUNT(*) FILTER (WHERE role::text = 'ADMIN' AND status = 'ACTIVE')::int AS active_admins,
+          COUNT(*) FILTER (WHERE role::text = 'ADMIN' AND status = 'INVITED')::int AS invited_admins,
+          COUNT(*) FILTER (WHERE role::text = 'ADMIN' AND status = 'DISABLED')::int AS disabled_admins,
+          COUNT(*) FILTER (WHERE role::text = 'SUPERADMIN' AND status = 'ACTIVE')::int AS active_superadmins
+        FROM users
+      `),
+      query(`SELECT COUNT(*)::int AS total_presets FROM permission_presets`),
+      query(`SELECT COUNT(*)::int AS total_permissions FROM permissions`),
+      query(`
+        SELECT id, actor_id, actor_type, action, entity_type, entity_id, created_at
+        FROM audit_logs
+        ORDER BY created_at DESC, id DESC
+        LIMIT 8
+      `),
+    ]);
+
+    return {
+      admins: adminCountsRes.rows[0] || {
+        total_admins: 0,
+        active_admins: 0,
+        invited_admins: 0,
+        disabled_admins: 0,
+        active_superadmins: 0,
+      },
+      totalPresets: presetsRes.rows[0]?.total_presets || 0,
+      totalPermissions: permissionsRes.rows[0]?.total_permissions || 0,
+      recentAuditLogs: recentAuditsRes.rows || [],
+    };
   },
 };
 

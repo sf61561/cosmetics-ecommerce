@@ -22,8 +22,10 @@ function AdminLayoutContent({ children }) {
       if (event.persisted) {
         try {
           const freshUser = await refreshAuth();
-          if (!freshUser || (freshUser.role !== "ADMIN" && freshUser.role !== "SUPERADMIN")) {
+          if (!freshUser) {
             window.location.replace("/auth/login");
+          } else if (freshUser.role !== "ADMIN" && freshUser.role !== "SUPERADMIN") {
+            window.location.replace("/");
           }
         } catch {
           window.location.replace("/auth/login");

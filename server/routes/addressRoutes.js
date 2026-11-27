@@ -1,9 +1,9 @@
 const express = require("express");
-const { authenticate } = require("../middlewares/authMiddleware");
+const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const { query } = require("../config/db");
 
 const router = express.Router();
-router.use(authenticate);
+router.use(authenticate, requireRole("CUSTOMER"));
 
 router.get("/", async (req, res, next) => {
   try {

@@ -32,14 +32,17 @@ export default function AdminOrdersPage() {
   const { isSuperAdmin, hasPermission } = useAuth();
   const canViewCosts = isSuperAdmin || hasPermission("costs.view");
 
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "all",
-    costStatus: "all",
-    sortBy: "date",
-    sortOrder: "desc",
-    page: 1,
-    limit: 10,
+  const [filters, setFilters] = useState(() => {
+    const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    return {
+      search: "",
+      status: params?.get("status") || "all",
+      costStatus: params?.get("costStatus") || "all",
+      sortBy: "date",
+      sortOrder: "desc",
+      page: 1,
+      limit: 10,
+    };
   });
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -169,6 +172,59 @@ export default function AdminOrdersPage() {
           <option value="total">Order total</option>
         </select>
       </div>
+
+      {/* Visible Active Filter Chips */}
+      {(filters.costStatus !== "all" || filters.status !== "all" || filters.search) && (
+        <div className="flex flex-wrap items-center gap-2" aria-label="Active order filters">
+          {filters.costStatus !== "all" && (
+            <button
+              type="button"
+              onClick={() => setFilter("costStatus", "all")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-200 cursor-pointer"
+            >
+              <span>
+                Cost Status: {filters.costStatus === "pending" ? "Cost Pending" : "Costs Complete"}
+              </span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          {filters.status !== "all" && (
+            <button
+              type="button"
+              onClick={() => setFilter("status", "all")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#9B4F5E]/40 bg-[#FBF0F0] px-3 py-1 text-xs font-semibold text-[#9B4F5E] dark:border-[#A46377]/50 dark:bg-[#3b2430] dark:text-pink-200 cursor-pointer"
+            >
+              <span>Status: {labels[filters.status] || filters.status}</span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          {filters.search && (
+            <button
+              type="button"
+              onClick={() => setFilter("search", "")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
+            >
+              <span>Search: {filters.search}</span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              setFilters((current) => ({
+                ...current,
+                search: "",
+                status: "all",
+                costStatus: "all",
+                page: 1,
+              }))
+            }
+            className="text-xs font-medium text-gray-500 hover:text-gray-900 underline dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Orders Table */}
       <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 shadow-xs">

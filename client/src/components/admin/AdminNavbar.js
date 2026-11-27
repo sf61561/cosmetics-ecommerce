@@ -164,17 +164,21 @@ export default function AdminNavbar({ onToggleSidebar }) {
             </button>
           )}
 
-          {/* On mobile: display Eloura + Admin badge */}
+          {/* On mobile: display Eloura + Role badge */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Link href="/admin" className="flex items-center">
+            <Link href={isSuperAdmin ? "/superadmin" : "/admin"} className="flex items-center">
               <span
                 className="font-logo text-lg font-semibold tracking-[0.2em] text-gray-800 dark:text-gray-100"
               >
                 ELOURÁ
               </span>
             </Link>
-            <span className="inline-flex items-center rounded-full bg-[#A46377] px-2.5 py-0.5 text-[11px] font-medium text-white shadow-xs select-none">
-              Admin
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white shadow-xs select-none whitespace-nowrap ${
+                isSuperAdmin ? "bg-gradient-to-r from-[#8B5CF6] to-[#A46377]" : "bg-[#A46377]"
+              }`}
+            >
+              {isSuperAdmin ? "Super Admin" : "Admin"}
             </span>
           </div>
         </div>
@@ -349,11 +353,13 @@ export default function AdminNavbar({ onToggleSidebar }) {
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
                     {user?.email || "admin@eloura.com"}
                   </p>
-                  <span className={`inline-block mt-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                    isSuperAdmin
-                      ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300"
-                      : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
-                  }`}>
+                  <span
+                    className={`inline-block mt-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      isSuperAdmin
+                        ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300"
+                        : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                    }`}
+                  >
                     {isSuperAdmin ? "Super Admin" : "Administrator"}
                   </span>
                 </div>

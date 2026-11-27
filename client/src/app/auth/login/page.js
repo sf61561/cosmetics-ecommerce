@@ -47,7 +47,9 @@ export default function LoginPage() {
   // Reverse case: redirect already-authenticated users away from login page
   useEffect(() => {
     if (!isLoading && !isLoggingOut && user) {
-      if (user.role === "ADMIN") {
+      if (user.role === "SUPERADMIN") {
+        window.location.replace("/superadmin");
+      } else if (user.role === "ADMIN") {
         window.location.replace("/admin");
       } else {
         const safeRedirect = sanitizeRedirectPath(new URLSearchParams(window.location.search).get("redirect"));
@@ -135,12 +137,12 @@ export default function LoginPage() {
     }
   };
 
-  // Strip invalid, circular /auth, or /admin redirect parameters from the address bar on load
+  // Strip invalid, circular /auth, /admin, or /superadmin redirect parameters from the address bar on load
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect");
-      if (redirect && (!sanitizeRedirectPath(redirect) || redirect.startsWith("/admin"))) {
+      if (redirect && (!sanitizeRedirectPath(redirect) || redirect.startsWith("/admin") || redirect.startsWith("/superadmin"))) {
         params.delete("redirect");
         const newSearch = params.toString();
         const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}${window.location.hash}`;
@@ -221,10 +223,15 @@ export default function LoginPage() {
       const rawRedirect = new URLSearchParams(window.location.search).get("redirect");
       const safeRedirect = sanitizeRedirectPath(rawRedirect);
 
-      // Force clean document navigation: admins always route directly to /admin
-      const targetPath = res?.user?.role === "ADMIN"
-        ? "/admin"
-        : (safeRedirect && !safeRedirect.startsWith("/admin") ? safeRedirect : "/");
+      // Force clean document navigation per exact role
+      const targetPath =
+        res?.user?.role === "SUPERADMIN"
+          ? "/superadmin"
+          : res?.user?.role === "ADMIN"
+          ? "/admin"
+          : safeRedirect && !safeRedirect.startsWith("/admin") && !safeRedirect.startsWith("/superadmin")
+          ? safeRedirect
+          : "/";
       window.location.href = targetPath;
     } catch (err) {
       console.error("Login error:", err);

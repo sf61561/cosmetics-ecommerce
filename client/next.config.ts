@@ -49,14 +49,27 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/:path*`,
       },
-      {
-        source: "/superadmin/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/superadmin/:path*`,
-      },
     ];
   },
   async headers() {
     return [
+      {
+        source: "/superadmin/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, max-age=0",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      },
       {
         source: "/admin/:path*",
         headers: [

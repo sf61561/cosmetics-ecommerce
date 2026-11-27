@@ -19,10 +19,10 @@ export function NotificationProvider({ children }) {
       return;
     }
     try {
-      if (user.role === "ADMIN") {
+      if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
         const count = await notificationService.getAdminUnreadCount();
         setUnreadCount(count);
-      } else {
+      } else if (user.role === "CUSTOMER") {
         const count = await notificationService.getUnreadCount();
         setUnreadCount(count);
       }
@@ -38,10 +38,10 @@ export function NotificationProvider({ children }) {
     }
     setIsLoading(true);
     try {
-      if (user.role === "ADMIN") {
+      if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
         const res = await notificationService.getAdminNotifications({ limit: 10 });
         setNotifications(res.notifications || []);
-      } else {
+      } else if (user.role === "CUSTOMER") {
         const res = await notificationService.getNotifications({ limit: 10 });
         setNotifications(res.notifications || []);
       }
@@ -94,9 +94,9 @@ export function NotificationProvider({ children }) {
     setUnreadCount((prev) => Math.max(0, prev - 1));
 
     try {
-      if (user?.role === "ADMIN") {
+      if (user?.role === "ADMIN" || user?.role === "SUPERADMIN") {
         await notificationService.markAdminAsRead(id);
-      } else {
+      } else if (user?.role === "CUSTOMER") {
         await notificationService.markAsRead(id);
       }
     } catch {
@@ -113,9 +113,9 @@ export function NotificationProvider({ children }) {
     setUnreadCount(0);
 
     try {
-      if (user?.role === "ADMIN") {
+      if (user?.role === "ADMIN" || user?.role === "SUPERADMIN") {
         await notificationService.markAllAdminAsRead();
-      } else {
+      } else if (user?.role === "CUSTOMER") {
         await notificationService.markAllAsRead();
       }
     } catch {

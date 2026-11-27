@@ -636,6 +636,10 @@ class SuperadminService {
   async listAllPermissions() {
     return await superadminRepository.listAllPermissions();
   }
+
+  async getDashboardOverview() {
+    return await superadminRepository.getDashboardOverview();
+  }
 }
 
 module.exports = new SuperadminService();

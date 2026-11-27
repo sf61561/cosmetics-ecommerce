@@ -3,7 +3,7 @@ const auditService = require("../services/auditService");
 
 /**
  * Middleware factory to enforce specific operational permissions for Admins.
- * Super Admins automatically bypass all permission checks.
+ * Super Admins hold unrestricted operational access; Admins require explicit capabilities.
  *
  * @param {string|string[]} required - Single permission key or array of keys
  * @param {object} [options] - Configuration options { mode: "all" | "any" }
@@ -21,13 +21,11 @@ function requirePermission(required, options = { mode: "all" }) {
         });
       }
 
-      // Super Admin inherits all operational permissions unconditionally
       if (user.role === "SUPERADMIN") {
         req.userPermissions = ["*"];
         return next();
       }
 
-      // Non-admin roles cannot access admin permissioned endpoints
       if (user.role !== "ADMIN") {
         return res.status(403).json({
           success: false,

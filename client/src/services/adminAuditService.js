@@ -16,9 +16,9 @@ export const adminAuditService = {
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== "" && value !== null && value !== undefined) params.set(key, value);
     });
-    return request(`/api/admin/audit-logs?${params.toString()}`);
+    return request(`/api/superadmin/audit-logs?${params.toString()}`);
   },
   getById(id) {
-    return request(`/api/admin/audit-logs/${encodeURIComponent(id)}`);
+    return request(`/api/superadmin/audit-logs/${encodeURIComponent(id)}`);
   },
 };

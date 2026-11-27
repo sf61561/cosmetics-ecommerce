@@ -190,6 +190,11 @@ export default function Navbar() {
                           {user.email && (
                             <p className="text-xs text-gray-500 truncate">{user.email}</p>
                           )}
+                          {user.role === "SUPERADMIN" && (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">
+                              <FaShieldAlt className="h-2.5 w-2.5" /> Super Admin
+                            </span>
+                          )}
                           {user.role === "ADMIN" && (
                             <span className="mt-1 inline-flex items-center gap-1 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">
                               <FaShieldAlt className="h-2.5 w-2.5" /> Admin
@@ -198,6 +203,15 @@ export default function Navbar() {
                         </div>
 
                         <div className="py-1">
+                          {user.role === "SUPERADMIN" && (
+                            <Link
+                              href="/superadmin"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm font-medium text-[#8B5CF6] hover:bg-purple-50 transition-colors"
+                            >
+                              Super Admin Console
+                            </Link>
+                          )}
                           {user.role === "ADMIN" && (
                             <Link
                               href="/admin"
@@ -207,46 +221,50 @@ export default function Navbar() {
                               Admin Panel
                             </Link>
                           )}
-                          <Link
-                            href="/profile"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
-                          >
-                            My Profile
-                          </Link>
-                          <Link
-                            href="/orders"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
-                          >
-                            My Orders
-                          </Link>
-                          <Link
-                            href="/track-order"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
-                          >
-                            Track My Order
-                          </Link>
-                          <Link
-                            href="/profile/wishlist"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
-                          >
-                            <span>My Wishlist</span>
-                            {wishlistCount > 0 && (
-                              <span className="rounded-full bg-[#9B4F5E] px-2 py-0.5 text-[11px] font-bold text-white">
-                                {wishlistCount}
-                              </span>
-                            )}
-                          </Link>
-                          <Link
-                            href="/addresses"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
-                          >
-                            My Addresses
-                          </Link>
+                          {user.role === "CUSTOMER" && (
+                            <>
+                              <Link
+                                href="/profile"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                              >
+                                My Profile
+                              </Link>
+                              <Link
+                                href="/orders"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                              >
+                                My Orders
+                              </Link>
+                              <Link
+                                href="/track-order"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                              >
+                                Track My Order
+                              </Link>
+                              <Link
+                                href="/profile/wishlist"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                              >
+                                <span>My Wishlist</span>
+                                {wishlistCount > 0 && (
+                                  <span className="rounded-full bg-[#9B4F5E] px-2 py-0.5 text-[11px] font-bold text-white">
+                                    {wishlistCount}
+                                  </span>
+                                )}
+                              </Link>
+                              <Link
+                                href="/addresses"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0] transition-colors"
+                              >
+                                My Addresses
+                              </Link>
+                            </>
+                          )}
                         </div>
 
                         <div className="border-t border-gray-100 pt-1">
@@ -525,6 +543,15 @@ export default function Navbar() {
             <div className="mt-3 flex flex-col gap-1">
               {user ? (
                 <>
+                  {user.role === "SUPERADMIN" && (
+                    <Link
+                      href="/superadmin"
+                      className="block rounded-lg px-3 py-2 text-sm font-semibold text-[#8B5CF6] hover:bg-purple-50"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Super Admin Console
+                    </Link>
+                  )}
                   {user.role === "ADMIN" && (
                     <Link
                       href="/admin"
@@ -534,49 +561,53 @@ export default function Navbar() {
                       Admin Panel
                     </Link>
                   )}
-                  <Link
-                    href="/profile/notifications"
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className="flex items-center gap-2">
-                      <FaBell className="h-4 w-4 text-[#9B4F5E]" />
-                      Notifications
-                    </span>
-                    {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#9B4F5E] text-white">
-                        {unreadCount > 99 ? "99+" : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link
-                    href="/profile"
-                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Profile
-                  </Link>
-                  <Link
-                    href="/orders"
-                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Orders
-                  </Link>
-                  <Link
-                    href="/track-order"
-                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Track My Order
-                  </Link>
-                  <Link
-                    href="/addresses"
-                    className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Addresses
-                  </Link>
+                  {user.role === "CUSTOMER" && (
+                    <>
+                      <Link
+                        href="/profile/notifications"
+                        className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span className="flex items-center gap-2">
+                          <FaBell className="h-4 w-4 text-[#9B4F5E]" />
+                          Notifications
+                        </span>
+                        {unreadCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#9B4F5E] text-white">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link
+                        href="/profile"
+                        className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/orders"
+                        className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        My Orders
+                      </Link>
+                      <Link
+                        href="/track-order"
+                        className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Track My Order
+                      </Link>
+                      <Link
+                        href="/addresses"
+                        className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-[#FBF0F0]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        My Addresses
+                      </Link>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

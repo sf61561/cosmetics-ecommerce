@@ -118,6 +118,7 @@ const noCache = (req, res, next) => {
 
 app.use("/api/admin", noCache, adminRoutes);
 app.use("/api/superadmin", noCache, superadminRoutes);
+app.use("/api/v1/superadmin", noCache, superadminRoutes);
 app.use("/superadmin", noCache, superadminRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/brands", brandRoutes);

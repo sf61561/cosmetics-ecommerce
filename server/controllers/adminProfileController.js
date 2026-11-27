@@ -220,7 +220,12 @@ class AdminProfileController {
         );
 
         // 3. Clear all active refresh tokens across devices
-        await client.query("DELETE FROM refresh_tokens WHERE user_id = $1", [user.id]);
+        await client.query(
+          `UPDATE users
+           SET refresh_token = NULL, previous_refresh_token = NULL, refresh_token_rotated_at = NULL, updated_at = NOW()
+           WHERE id = $1`,
+          [user.id]
+        );
 
         // 4. Audit log
         await auditService.record(

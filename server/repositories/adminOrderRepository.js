@@ -61,6 +61,9 @@ const adminOrderRepository = {
 
     if (costStatus === "pending") {
       conditions.push(`EXISTS (SELECT 1 FROM order_items oi_cs WHERE oi_cs.order_id = o.id AND oi_cs.cost_price IS NULL)`);
+      if (!status || status === "all") {
+        conditions.push(`LOWER(COALESCE(o.order_status, o.status, '')) <> 'cancelled'`);
+      }
     } else if (costStatus === "entered" || costStatus === "completed") {
       conditions.push(`NOT EXISTS (SELECT 1 FROM order_items oi_cs WHERE oi_cs.order_id = o.id AND oi_cs.cost_price IS NULL)`);
     }
@@ -135,7 +138,7 @@ const adminOrderRepository = {
         COUNT(*) FILTER (WHERE LOWER(status) = 'delivered' OR LOWER(order_status) = 'delivered')::int AS delivered,
         COUNT(*) FILTER (WHERE LOWER(status) = 'cancelled' OR LOWER(order_status) = 'cancelled')::int AS cancelled,
         COUNT(*) FILTER (WHERE LOWER(status) = 'returned' OR LOWER(order_status) = 'returned')::int AS returned,
-        COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM order_items oi_c WHERE oi_c.order_id = orders.id AND oi_c.cost_price IS NULL))::int AS cost_pending
+        COUNT(*) FILTER (WHERE LOWER(COALESCE(order_status, status, '')) <> 'cancelled' AND EXISTS (SELECT 1 FROM order_items oi_c WHERE oi_c.order_id = orders.id AND oi_c.cost_price IS NULL))::int AS cost_pending
       FROM orders
     `);
     return result.rows[0];

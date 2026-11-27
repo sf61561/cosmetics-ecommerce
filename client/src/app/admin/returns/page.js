@@ -45,14 +45,17 @@ const reasonLabels = {
 };
 
 export default function AdminReturnsPage() {
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "all",
-    reason: "all",
-    sortBy: "date",
-    sortOrder: "desc",
-    page: 1,
-    limit: 10,
+  const [filters, setFilters] = useState(() => {
+    const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    return {
+      search: "",
+      status: params?.get("status") || "all",
+      reason: params?.get("reason") || "all",
+      sortBy: "date",
+      sortOrder: "desc",
+      page: 1,
+      limit: 10,
+    };
   });
 
   const [data, setData] = useState(null);
@@ -73,8 +76,24 @@ export default function AdminReturnsPage() {
   }, [filters]);
 
   useEffect(() => {
-    loadReturns();
-  }, [loadReturns]);
+    let active = true;
+    adminReturnService
+      .list(filters)
+      .then((res) => {
+        if (!active) return;
+        setData(res);
+        setError("");
+      })
+      .catch((err) => {
+        if (active) setError(err.message || "Failed to load returns.");
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [filters]);
 
   const summary = data?.summary || {};
 
@@ -204,6 +223,51 @@ export default function AdminReturnsPage() {
           </select>
         </div>
       </div>
+
+      {/* Visible Active Filter Chips */}
+      {(filters.status !== "all" || filters.reason !== "all" || filters.search) && (
+        <div className="flex flex-wrap items-center gap-2" aria-label="Active return filters">
+          {filters.status !== "all" && (
+            <button
+              type="button"
+              onClick={() => handleStatusTab("all")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200 cursor-pointer"
+            >
+              <span>
+                Status: {filters.status === "REQUESTED" ? "Pending Review (REQUESTED)" : filters.status.replace(/_/g, " ")}
+              </span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          {filters.reason !== "all" && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, reason: "all", page: 1 }))}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
+            >
+              <span>Reason: {reasonLabels[filters.reason] || filters.reason}</span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          {filters.search && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, search: "", page: 1 }))}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
+            >
+              <span>Search: {filters.search}</span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setFilters((prev) => ({ ...prev, search: "", status: "all", reason: "all", page: 1 }))}
+            className="text-xs font-medium text-gray-500 hover:text-gray-900 underline dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">

@@ -5,7 +5,8 @@ const auditService = require("../services/auditService");
 const { getSessionCookieOptions } = require("../utils/cookieHelper");
 
 async function logDenied(req, reason) {
-  if (!String(req.originalUrl || req.path || "").startsWith("/api/admin")) return;
+  const targetUrl = String(req.originalUrl || req.path || "");
+  if (!targetUrl.startsWith("/api/admin") && !targetUrl.startsWith("/api/superadmin") && !targetUrl.startsWith("/superadmin")) return;
   await auditService.recordBestEffort({
     actor: req.user || { role: "ANONYMOUS" },
     action: "ACCESS_DENIED",
@@ -57,7 +58,13 @@ async function authenticate(req, res, next) {
           });
         }
 
-        req.user = decoded;
+        req.user = {
+          ...decoded,
+          role: user.role,
+          status: user.status,
+          email: user.email,
+          name: user.name,
+        };
         return next();
       } catch (tokenErr) {
         if (tokenErr.name !== "TokenExpiredError") {
@@ -80,7 +87,12 @@ async function authenticate(req, res, next) {
         res.cookie("refreshToken", result.refreshToken, getSessionCookieOptions(result.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000));
 
         const decoded = verifyAccessToken(result.accessToken);
-        req.user = decoded;
+        req.user = {
+          ...decoded,
+          role: result.user?.role || decoded.role,
+          email: result.user?.email || decoded.email,
+          name: result.user?.name || decoded.name,
+        };
         return next();
       } catch {
         // Refresh token was invalid or expired
@@ -116,11 +128,6 @@ function requireRole(...allowedRoles) {
         success: false,
         message: "Authentication required.",
       });
-    }
-
-    // Super Admin automatically inherits and satisfies all admin checks
-    if (req.user.role === "SUPERADMIN") {
-      return next();
     }
 
     if (!allowedRoles.includes(req.user.role)) {

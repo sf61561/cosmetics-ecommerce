@@ -27,13 +27,19 @@ export default function ProfileLayout({ title, description, children }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect if session expired naturally; skip if an explicit logout is in progress
-    if (!isLoading && !user && !isLoggingOut) {
-      router.replace(`/auth/login?redirect=${encodeURIComponent(pathname || "/profile")}`);
+    // Only redirect if session expired naturally or user is not a CUSTOMER; skip if logout is in progress
+    if (!isLoading && !isLoggingOut) {
+      if (!user) {
+        router.replace(`/auth/login?redirect=${encodeURIComponent(pathname || "/profile")}`);
+      } else if (user.role === "SUPERADMIN") {
+        router.replace("/superadmin");
+      } else if (user.role === "ADMIN") {
+        router.replace("/admin");
+      }
     }
   }, [isLoading, isLoggingOut, pathname, router, user]);
 
-  if (isLoading || !user || isLoggingOut) {
+  if (isLoading || !user || user.role !== "CUSTOMER" || isLoggingOut) {
     return (
       <div className="min-h-screen bg-[#F7F4FA]">
         <Navbar />

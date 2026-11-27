@@ -11,6 +11,7 @@ const AuthContext = createContext({
   isAuthenticated: false,
   isSuperAdmin: false,
   isAdmin: false,
+  isCustomer: false,
   hasPermission: () => false,
   login: async () => {},
   logout: async () => {},
@@ -219,7 +220,8 @@ export function AuthProvider({ children }) {
   );
 
   const isSuperAdmin = user?.role === "SUPERADMIN";
-  const isAdmin = user?.role === "ADMIN" || isSuperAdmin;
+  const isAdmin = user?.role === "ADMIN";
+  const isCustomer = user?.role === "CUSTOMER";
 
   return (
     <AuthContext.Provider
@@ -230,6 +232,7 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(user),
         isSuperAdmin,
         isAdmin,
+        isCustomer,
         hasPermission,
         login,
         logout,

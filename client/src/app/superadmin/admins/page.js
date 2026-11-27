@@ -5,23 +5,22 @@ import { useAuth } from "@/context/AuthContext";
 import superadminService from "@/services/superadminService";
 import InviteAdminModal from "@/components/admin/admins/InviteAdminModal";
 import EditPermissionsModal from "@/components/admin/admins/EditPermissionsModal";
+import Pagination from "@/components/admin/Pagination";
 import {
   IoShieldCheckmarkOutline,
   IoPersonAddOutline,
   IoSearchOutline,
   IoEllipsisVertical,
-  IoMailOutline,
   IoCheckmarkCircle,
   IoCloseCircle,
   IoTimeOutline,
-  IoLockClosedOutline,
   IoLogOutOutline,
   IoRefreshOutline,
   IoKeyOutline,
 } from "react-icons/io5";
 
 export default function SuperadminAdminsPage() {
-  const { user, isSuperAdmin, isLoading: authLoading } = useAuth();
+  const { isSuperAdmin, isLoading: authLoading } = useAuth();
 
   const [admins, setAdmins] = useState([]);
   const [counts, setCounts] = useState({ all: 0, active: 0, invited: 0, disabled: 0 });
@@ -30,12 +29,18 @@ export default function SuperadminAdminsPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Filters
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(() => {
+    if (typeof window !== "undefined") {
+      const s = new URLSearchParams(window.location.search).get("status");
+      if (s && ["ALL", "ACTIVE", "INVITED", "DISABLED"].includes(s.toUpperCase())) {
+        return s.toUpperCase();
+      }
+    }
+    return "ALL";
+  });
   const [activeMenuId, setActiveMenuId] = useState(null);
 
-  // Modals
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editPermissionsModalOpen, setEditPermissionsModalOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
@@ -52,7 +57,14 @@ export default function SuperadminAdminsPage() {
         limit: pagination.limit,
       });
       setAdmins(data.admins || []);
-      setCounts(data.counts || { all: 0, active: 0, invited: 0, disabled: 0 });
+      setCounts(
+        data.counts || {
+          all: data.summary?.total_admins || 0,
+          active: data.summary?.active_admins || 0,
+          invited: data.summary?.invited_admins || 0,
+          disabled: data.summary?.disabled_admins || 0,
+        }
+      );
       setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
     } catch (err) {
       setError(err.message || "Failed to load administrator accounts.");
@@ -62,10 +74,40 @@ export default function SuperadminAdminsPage() {
   }, [isSuperAdmin, search, statusFilter, pagination.page, pagination.limit]);
 
   useEffect(() => {
-    fetchAdmins();
-  }, [fetchAdmins]);
+    if (!isSuperAdmin) return;
+    let active = true;
+    superadminService
+      .listAdmins({
+        search,
+        status: statusFilter,
+        page: pagination.page,
+        limit: pagination.limit,
+      })
+      .then((data) => {
+        if (!active) return;
+        setAdmins(data.admins || []);
+        setCounts(
+          data.counts || {
+            all: data.summary?.total_admins || 0,
+            active: data.summary?.active_admins || 0,
+            invited: data.summary?.invited_admins || 0,
+            disabled: data.summary?.disabled_admins || 0,
+          }
+        );
+        setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
+        setError("");
+      })
+      .catch((err) => {
+        if (active) setError(err.message || "Failed to load administrator accounts.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isSuperAdmin, search, statusFilter, pagination.page, pagination.limit]);
 
-  // Close actions menu on outside click
   useEffect(() => {
     const handleOutsideClick = () => setActiveMenuId(null);
     window.addEventListener("click", handleOutsideClick);
@@ -144,34 +186,15 @@ export default function SuperadminAdminsPage() {
     );
   }
 
-  if (!isSuperAdmin) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 p-8 shadow-xl border border-gray-100 dark:border-gray-800 text-center space-y-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-[#8B5CF6] mx-auto">
-            <IoShieldCheckmarkOutline className="h-6 w-6" />
-          </div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            Super Administrator Restricted
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Only Super Administrators hold governance access to administrator management and privilege assignment.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Top Header */}
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-              Administrators & Privileges
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+              Administrators &amp; Privileges
             </h1>
-            <span className="rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#A46377] px-2.5 py-0.5 text-[10px] font-semibold text-white shadow-2xs">
+            <span className="rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] px-2.5 py-0.5 text-[10px] font-semibold text-white shadow-2xs">
               Super Admin
             </span>
           </div>
@@ -183,14 +206,13 @@ export default function SuperadminAdminsPage() {
         <button
           type="button"
           onClick={() => setInviteModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#A46377] px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:opacity-95 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:opacity-95 transition-all cursor-pointer w-fit"
         >
           <IoPersonAddOutline className="h-4 w-4" />
           <span>Invite Administrator</span>
         </button>
       </div>
 
-      {/* Success Notification Alert */}
       {successMessage && (
         <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in duration-150">
           <IoCheckmarkCircle className="h-4 w-4 shrink-0" />
@@ -198,7 +220,6 @@ export default function SuperadminAdminsPage() {
         </div>
       )}
 
-      {/* Error Alert */}
       {error && (
         <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-600 dark:text-red-400 flex items-center justify-between">
           <span>{error}</span>
@@ -208,45 +229,34 @@ export default function SuperadminAdminsPage() {
         </div>
       )}
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-xs">
           <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
             Total Staff
           </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">
-            {counts.all}
-          </p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">{counts.all}</p>
         </div>
         <div className="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-xs">
           <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
             Active Accounts
           </p>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
-            {counts.active}
-          </p>
+          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">{counts.active}</p>
         </div>
         <div className="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-xs">
           <p className="text-[11px] font-medium text-amber-500 dark:text-amber-400 uppercase tracking-wider">
             Pending Invites
           </p>
-          <p className="text-2xl font-bold text-amber-500 dark:text-amber-400 mt-2">
-            {counts.invited}
-          </p>
+          <p className="text-2xl font-bold text-amber-500 dark:text-amber-400 mt-2">{counts.invited}</p>
         </div>
         <div className="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-xs">
           <p className="text-[11px] font-medium text-rose-500 dark:text-rose-400 uppercase tracking-wider">
             Disabled Accounts
           </p>
-          <p className="text-2xl font-bold text-rose-500 dark:text-rose-400 mt-2">
-            {counts.disabled}
-          </p>
+          <p className="text-2xl font-bold text-rose-500 dark:text-rose-400 mt-2">{counts.disabled}</p>
         </div>
       </div>
 
-      {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
-        {/* Status Filter Tabs */}
         <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/80 w-fit">
           {[
             { id: "ALL", label: "All", count: counts.all },
@@ -272,7 +282,6 @@ export default function SuperadminAdminsPage() {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative w-full sm:w-72">
           <input
             type="text"
@@ -288,7 +297,49 @@ export default function SuperadminAdminsPage() {
         </div>
       </div>
 
-      {/* Administrators Table */}
+      {/* Visible Active Filter Chips */}
+      {(statusFilter !== "ALL" || search) && (
+        <div className="flex flex-wrap items-center gap-2" aria-label="Active administrator filters">
+          {statusFilter !== "ALL" && (
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("ALL");
+                setPagination((p) => ({ ...p, page: 1 }));
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 px-3 py-1 text-xs font-semibold text-[#6D28D9] dark:text-[#C4B5FD] cursor-pointer"
+            >
+              <span>Status: {statusFilter}</span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          {search && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setPagination((p) => ({ ...p, page: 1 }));
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
+            >
+              <span>Search: {search}</span>
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("ALL");
+              setSearch("");
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="text-xs font-medium text-gray-500 hover:text-gray-900 underline dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       <div className="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">
@@ -326,7 +377,6 @@ export default function SuperadminAdminsPage() {
                       key={admin.id}
                       className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition-colors"
                     >
-                      {/* Name & Email */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#EED9DC] to-[#DACCEF] dark:from-purple-950 dark:to-pink-950 text-[#3B2C58] dark:text-purple-200 text-xs font-bold uppercase shadow-2xs">
@@ -343,7 +393,6 @@ export default function SuperadminAdminsPage() {
                         </div>
                       </td>
 
-                      {/* Role */}
                       <td className="px-6 py-4">
                         {isCurrentSuper ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/60 px-2.5 py-0.5 text-[10px] font-semibold text-purple-700 dark:text-purple-300">
@@ -356,7 +405,6 @@ export default function SuperadminAdminsPage() {
                         )}
                       </td>
 
-                      {/* Status */}
                       <td className="px-6 py-4">
                         {admin.status === "ACTIVE" && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
@@ -378,11 +426,10 @@ export default function SuperadminAdminsPage() {
                         )}
                       </td>
 
-                      {/* Permissions */}
                       <td className="px-6 py-4">
                         {isCurrentSuper ? (
                           <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
-                            Full Access (Unrestricted)
+                            Governance Authority
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] text-gray-600 dark:text-gray-400">
@@ -394,7 +441,6 @@ export default function SuperadminAdminsPage() {
                         )}
                       </td>
 
-                      {/* Last Active */}
                       <td className="px-6 py-4 text-[11px] text-gray-400 dark:text-gray-500">
                         {admin.last_login_at
                           ? new Date(admin.last_login_at).toLocaleDateString("en-US", {
@@ -408,7 +454,6 @@ export default function SuperadminAdminsPage() {
                           : "Not recorded"}
                       </td>
 
-                      {/* Actions Menu */}
                       <td className="px-6 py-4 text-right relative">
                         <button
                           type="button"
@@ -421,13 +466,11 @@ export default function SuperadminAdminsPage() {
                           <IoEllipsisVertical className="h-4 w-4" />
                         </button>
 
-                        {/* Dropdown Menu */}
                         {activeMenuId === admin.id && (
                           <div
                             onClick={(e) => e.stopPropagation()}
                             className="absolute right-6 top-12 z-30 w-52 rounded-2xl bg-white dark:bg-gray-900 py-1.5 shadow-xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-100 text-left"
                           >
-                            {/* Invited Actions */}
                             {admin.status === "INVITED" && (
                               <>
                                 <button
@@ -455,7 +498,6 @@ export default function SuperadminAdminsPage() {
                               </>
                             )}
 
-                            {/* Active or Disabled Actions */}
                             {admin.status !== "INVITED" && (
                               <>
                                 {!isCurrentSuper && (
@@ -497,7 +539,6 @@ export default function SuperadminAdminsPage() {
                                   <span>Force Logout</span>
                                 </button>
 
-                                {/* Toggle Disable / Activate */}
                                 {!isCurrentSuper && (
                                   <div className="border-t border-gray-100 dark:border-gray-800 pt-1 mt-1">
                                     <button
@@ -539,35 +580,20 @@ export default function SuperadminAdminsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500">
-            <span>
-              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-              {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-              {pagination.total} administrators
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={pagination.page <= 1}
-                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-              >
-                Previous
-              </button>
-              <button
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.total}
+          limit={pagination.limit}
+          onPageChange={(p) => setPagination((prev) => ({ ...prev, page: p }))}
+          onLimitChange={(l) => setPagination((prev) => ({ ...prev, limit: l, page: 1 }))}
+          limitOptions={[10, 20, 50]}
+          itemLabel="administrators"
+          isLoading={loading}
+          variant="attached"
+        />
       </div>
 
-      {/* Invite Admin Modal */}
       <InviteAdminModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
@@ -577,7 +603,6 @@ export default function SuperadminAdminsPage() {
         }}
       />
 
-      {/* Edit Permissions Modal */}
       <EditPermissionsModal
         isOpen={editPermissionsModalOpen}
         admin={selectedAdmin}
