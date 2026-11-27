@@ -1,4 +1,4 @@
-import { API_BASE } from "./apiConfig";
+import { API_BASE, withPreviewParam, getPublicFetchOptions } from "./apiConfig";
 
 /**
  * Handle API response and extract JSON or error
@@ -142,11 +142,10 @@ export const collectionService = {
    * Public storefront: Fetch top most sales collections
    */
   async getTopCollections(limit = 3) {
-    const res = await fetch(`${API_BASE}/api/collections/top?limit=${limit}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/collections/top?limit=${limit}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 
@@ -169,11 +168,10 @@ export const collectionService = {
     if (search.trim()) params.append("search", search.trim());
     if (tag && tag.trim() && tag !== "all") params.append("tag", tag.trim());
 
-    const res = await fetch(`${API_BASE}/api/collections?${params.toString()}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/collections?${params.toString()}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 
@@ -181,11 +179,10 @@ export const collectionService = {
    * Public storefront: Fetch single collection with its products by slug
    */
   async getPublicCollectionBySlug(slug) {
-    const res = await fetch(`${API_BASE}/api/collections/${slug}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/collections/${slug}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 };

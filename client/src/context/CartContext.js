@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { cartService } from "@/services/cartService";
+import { useStorefrontPreview } from "@/context/StorefrontPreviewContext";
 
 const CartContext = createContext(null);
 
@@ -17,13 +18,27 @@ const DEFAULT_CART = {
 };
 
 export function CartProvider({ children }) {
+  const { isPreviewMode } = useStorefrontPreview();
   const [cart, setCart] = useState(DEFAULT_CART);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch cart on initial mount
+  // Fetch cart on initial mount (suppressed in Storefront Preview so admin never mutates/loads real cart)
   useEffect(() => {
+    if (isPreviewMode) {
+      let active = true;
+      Promise.resolve().then(() => {
+        if (!active) return;
+        setCart(DEFAULT_CART);
+        setIsLoading(false);
+        setError(null);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
     let isSubscribed = true;
 
     async function loadCart() {
@@ -49,9 +64,10 @@ export function CartProvider({ children }) {
     return () => {
       isSubscribed = false;
     };
-  }, []);
+  }, [isPreviewMode]);
 
   const refreshCart = useCallback(async () => {
+    if (isPreviewMode) return;
     try {
       const res = await cartService.getCart();
       if (res?.success && res.data) {
@@ -61,12 +77,18 @@ export function CartProvider({ children }) {
     } catch (err) {
       setError(err.message || "Failed to load shopping cart.");
     }
-  }, []);
+  }, [isPreviewMode]);
 
   /**
    * Add a product to the cart
    */
   const addToCart = async (productId, quantity = 1, variantId = null) => {
+    if (isPreviewMode) {
+      return {
+        success: false,
+        message: "Cart & checkout are disabled in Storefront Preview mode.",
+      };
+    }
     setIsUpdating(true);
     try {
       const res = await cartService.addItem(productId, quantity, variantId);

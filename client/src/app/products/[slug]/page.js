@@ -1,14 +1,18 @@
+import { cookies } from "next/headers";
 import { productService } from "@/services/productService";
 import ProductDetailsView from "@/components/product/ProductDetailsView";
 import ProductNotFoundState from "@/components/product/ProductNotFoundState";
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata({ params, searchParams }) {
   const resolvedParams = await params;
+  const resolvedSearch = await searchParams;
   const slug = resolvedParams?.slug;
   if (!slug) return { title: "Product | Elourá" };
 
   try {
-    const res = await productService.getProductBySlug(slug);
+    const preview = resolvedSearch?.preview === "1" || resolvedSearch?.preview === "true";
+    const cookieHeader = preview ? (await cookies()).toString() : "";
+    const res = await productService.getProductBySlug(slug, { preview, cookieHeader });
     if (!res?.success || !res?.data) {
       return {
         title: "Product Not Found | Elourá",
@@ -48,15 +52,18 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function ProductDetailPage({ params }) {
+export default async function ProductDetailPage({ params, searchParams }) {
   const resolvedParams = await params;
+  const resolvedSearch = await searchParams;
   const slug = resolvedParams?.slug;
+  const preview = resolvedSearch?.preview === "1" || resolvedSearch?.preview === "true";
 
   let product = null;
   let fetchError = null;
 
   try {
-    const res = await productService.getProductBySlug(slug);
+    const cookieHeader = preview ? (await cookies()).toString() : "";
+    const res = await productService.getProductBySlug(slug, { preview, cookieHeader });
     if (res?.success && res?.data) {
       product = res.data;
     } else {

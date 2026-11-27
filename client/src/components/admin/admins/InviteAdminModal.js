@@ -75,8 +75,17 @@ export default function InviteAdminModal({ isOpen, onClose, onSuccess }) {
   const handleTogglePermission = (key) => {
     setSelectedPermissionKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+        if (key === "storefront.view") {
+          next.delete("storefront.preview_drafts");
+        }
+      } else {
+        next.add(key);
+        if (key === "storefront.preview_drafts") {
+          next.add("storefront.view");
+        }
+      }
       return next;
     });
   };

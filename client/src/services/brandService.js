@@ -1,4 +1,4 @@
-import { API_BASE } from "./apiConfig";
+import { API_BASE, withPreviewParam, getPublicFetchOptions } from "./apiConfig";
 
 /**
  * Handle API response and extract JSON or error
@@ -144,11 +144,10 @@ export const brandService = {
    * Public storefront: Fetch brands ranked by units sold in delivered orders.
    */
   async getTopBrands(limit = 3) {
-    const res = await fetch(`${API_BASE}/api/brands/top?limit=${limit}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/brands/top?limit=${limit}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 
@@ -171,11 +170,10 @@ export const brandService = {
     if (limit) params.append("limit", limit.toString());
     if (page) params.append("page", page.toString());
 
-    const res = await fetch(`${API_BASE}/api/brands?${params.toString()}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/brands?${params.toString()}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 
@@ -183,11 +181,10 @@ export const brandService = {
    * Public storefront: Fetch single brand by slug
    */
   async getPublicBrandBySlug(slug) {
-    const res = await fetch(`${API_BASE}/api/brands/${slug}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/brands/${slug}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 };

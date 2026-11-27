@@ -13,6 +13,7 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 import { promotionService } from "@/services/promotionService";
+import { useStorefrontPreview } from "@/context/StorefrontPreviewContext";
 
 const DEFAULT_DELIVERY_RATES = {
   INSIDE_DHAKA: { charge: 70, time: "2-3 business days" },
@@ -20,6 +21,7 @@ const DEFAULT_DELIVERY_RATES = {
 };
 
 export default function CartSummary({ cart = {}, onNotify }) {
+  const { isPreviewMode } = useStorefrontPreview();
   const [deliveryZone, setDeliveryZone] = useState("dhaka");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -328,7 +330,16 @@ export default function CartSummary({ cart = {}, onNotify }) {
         </div>
 
         {/* Checkout Button */}
-        {isCheckoutDisabled ? (
+        {isPreviewMode ? (
+          <button
+            type="button"
+            disabled
+            className="w-full py-4 px-6 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-sm cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <FaLock className="text-xs" />
+            <span>Checkout Disabled in Preview</span>
+          </button>
+        ) : isCheckoutDisabled ? (
           <div>
             <button
               type="button"

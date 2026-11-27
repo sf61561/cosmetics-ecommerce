@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FaTimes, FaLock, FaLockOpen, FaSpinner, FaExclamationTriangle } from "react-icons/fa";
+import { FaTimes, FaLock, FaLockOpen, FaSpinner, FaExclamationTriangle, FaEye } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
+import StorefrontPreviewDrawer from "@/components/admin/preview/StorefrontPreviewDrawer";
 import CollectionImageUpload from "./CollectionImageUpload";
 
 function slugify(text) {
@@ -21,6 +23,10 @@ function CollectionFormContent({
   serverError,
 }) {
   const isEditMode = Boolean(collection);
+  const { isSuperAdmin, hasPermission } = useAuth();
+  const canPreviewStorefront = isSuperAdmin || hasPermission("storefront.view");
+  const canPreviewDrafts = isSuperAdmin || hasPermission("storefront.preview_drafts");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Initialize state directly from props (re-mounted on key change)
   const [name, setName] = useState(collection?.name || "");
@@ -304,31 +310,55 @@ function CollectionFormContent({
         </div>
 
         {/* Footer Actions */}
-        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/80 px-6 py-3.5">
-          <button
-            type="button"
-            onClick={handleSafeClose}
-            disabled={isSubmitting}
-            className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center gap-2 rounded-full bg-[#9B4F5E] px-6 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#843f4e] disabled:opacity-60 transition-colors cursor-pointer"
-          >
-            {isSubmitting && <FaSpinner className="h-3 w-3 animate-spin" />}
-            {isSubmitting
-              ? isEditMode
-                ? "Saving Changes..."
-                : "Creating..."
-              : isEditMode
-              ? "Update Collection"
-              : "Create Collection"}
-          </button>
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/80 px-6 py-3.5">
+          <div>
+            {isEditMode && canPreviewStorefront && (slug || collection?.slug) && (
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                <FaEye className="h-3.5 w-3.5 text-[#9B4F5E]" aria-hidden="true" />
+                <span>Preview</span>
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSafeClose}
+              disabled={isSubmitting}
+              className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 rounded-full bg-[#9B4F5E] px-6 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#843f4e] disabled:opacity-60 transition-colors cursor-pointer"
+            >
+              {isSubmitting && <FaSpinner className="h-3 w-3 animate-spin" />}
+              {isSubmitting
+                ? isEditMode
+                  ? "Saving Changes..."
+                  : "Creating..."
+                : isEditMode
+                ? "Update Collection"
+                : "Create Collection"}
+            </button>
+          </div>
         </div>
       </form>
+
+      {isEditMode && canPreviewStorefront && (slug || collection?.slug) && (
+        <StorefrontPreviewDrawer
+          isOpen={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          title={`Preview: ${name || collection?.name || "Collection"}`}
+          path={`/collections/${slug || collection?.slug}`}
+          canPreviewDrafts={canPreviewDrafts}
+        />
+      )}
 
       {/* Discard Changes Prompt */}
       {showDiscardConfirm && (

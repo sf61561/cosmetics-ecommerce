@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { Geist, Geist_Mono, Bodoni_Moda } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { StorefrontPreviewProvider } from "@/context/StorefrontPreviewContext";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -37,16 +39,20 @@ export default function RootLayout({ children }) {
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#FBF0F0] text-gray-900">
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <NotificationProvider>
-                <ProductRequestProvider>
-                  <main className="flex-1">{children}</main>
-                  <FloatingChatButton />
-                </ProductRequestProvider>
-              </NotificationProvider>
-            </WishlistProvider>
-          </CartProvider>
+          <Suspense fallback={null}>
+            <StorefrontPreviewProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <NotificationProvider>
+                    <ProductRequestProvider>
+                      <main className="flex-1">{children}</main>
+                      <FloatingChatButton />
+                    </ProductRequestProvider>
+                  </NotificationProvider>
+                </WishlistProvider>
+              </CartProvider>
+            </StorefrontPreviewProvider>
+          </Suspense>
         </AuthProvider>
       </body>
     </html>

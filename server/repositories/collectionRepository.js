@@ -196,9 +196,9 @@ const collectionRepository = {
   },
 
   /**
-   * Find public collection with active products
+   * Find public collection with active products (or draft/inactive items when includeDrafts is verified)
    */
-  async findPublicBySlug(slug) {
+  async findPublicBySlug(slug, { includeDrafts = false } = {}) {
     const colSql = `
       SELECT 
         c.id,
@@ -213,7 +213,7 @@ const collectionRepository = {
         COUNT(pc.product_id)::int AS product_count
       FROM collections c
       LEFT JOIN product_collections pc ON pc.collection_id = c.id
-      WHERE LOWER(c.slug) = LOWER($1) AND c.is_active = true
+      WHERE LOWER(c.slug) = LOWER($1) ${includeDrafts ? "" : "AND c.is_active = true"}
       GROUP BY c.id
       LIMIT 1;
     `;
@@ -221,12 +221,14 @@ const collectionRepository = {
     const collection = colRes.rows[0];
     if (!collection) return null;
 
-    // Fetch associated active products
+    // Fetch associated active products (plus drafts in authorized draft-preview mode)
     const prodSql = `
       SELECT 
         p.id,
         p.name,
         p.slug,
+        p.status,
+        p.published_at,
         p.price,
         p.sale_price,
         p.stock_quantity,
@@ -235,7 +237,7 @@ const collectionRepository = {
       FROM products p
       JOIN product_collections pc ON pc.product_id = p.id
       LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = true
-      WHERE pc.collection_id = $1 AND p.status = 'ACTIVE'
+      WHERE pc.collection_id = $1 ${includeDrafts ? "" : "AND p.status = 'ACTIVE'"}
       ORDER BY p.created_at DESC
       LIMIT 24;
     `;
@@ -248,6 +250,8 @@ const collectionRepository = {
       description: collection.description || "",
       imageUrl: collection.image_url,
       imagePublicId: collection.image_public_id,
+      isActive: Boolean(collection.is_active),
+      isDraft: includeDrafts ? !collection.is_active : false,
       salesCount: parseInt(collection.sales_count, 10) || 0,
       productCount: parseInt(collection.product_count, 10) || 0,
       products: prodRes.rows.map((p) => ({
@@ -259,6 +263,9 @@ const collectionRepository = {
         stockQuantity: p.stock_quantity,
         skinType: p.skin_type,
         thumbnailUrl: p.thumbnail_url || null,
+        isDraft: includeDrafts
+          ? p.status !== "ACTIVE" || (p.published_at ? new Date(p.published_at) > new Date() : false)
+          : false,
       })),
     };
   },

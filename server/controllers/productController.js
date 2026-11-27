@@ -19,10 +19,12 @@ class ProductController {
         sortOrder = "DESC",
       } = req.query;
 
-      // Public catalog only shows ACTIVE products
+      const includeDrafts = Boolean(req.storefrontPreview?.canPreviewDrafts);
+
+      // Public catalog only shows ACTIVE products unless verified draft preview is enabled
       const result = await productService.getProducts({
         search,
-        status: "ACTIVE",
+        status: includeDrafts ? "all" : "ACTIVE",
         brandId,
         categoryId,
         collectionId,
@@ -33,9 +35,19 @@ class ProductController {
         sortOrder,
       });
 
+      const sanitized = (result.products || []).map((item) => {
+        const publicItem = productService.stripPublicPrivateFields(item);
+        if (includeDrafts) {
+          publicItem.isDraft =
+            item.status !== "ACTIVE" ||
+            (item.publishedAt ? new Date(item.publishedAt) > new Date() : false);
+        }
+        return publicItem;
+      });
+
       return res.status(200).json({
         success: true,
-        data: result.products,
+        data: sanitized,
         pagination: result.pagination,
       });
     } catch (error) {
@@ -67,7 +79,8 @@ class ProductController {
   async getBySlug(req, res, next) {
     try {
       const { slug } = req.params;
-      const product = await productService.getProductBySlug(slug);
+      const includeDrafts = Boolean(req.storefrontPreview?.canPreviewDrafts);
+      const product = await productService.getProductBySlug(slug, { includeDrafts });
 
       return res.status(200).json({
         success: true,

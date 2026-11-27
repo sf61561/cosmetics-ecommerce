@@ -6,6 +6,14 @@ const userRepository = require("../repositories/userRepository");
 const auditService = require("./auditService");
 const emailService = require("./emailService");
 
+function normalizePermissionDependencies(permissionKeys = []) {
+  const set = new Set((Array.isArray(permissionKeys) ? permissionKeys : []).filter(Boolean));
+  if (set.has("storefront.preview_drafts")) {
+    set.add("storefront.view");
+  }
+  return Array.from(set);
+}
+
 // High-speed in-memory permissions cache with 30s TTL
 const permissionsCache = new Map();
 const CACHE_TTL_MS = 30 * 1000;
@@ -107,8 +115,9 @@ class SuperadminService {
       }
 
       // 2. Set chosen permissions
+      const normalizedKeys = normalizePermissionDependencies(permissionKeys);
       await superadminRepository.setAdminPermissions(
-        { userId: newAdmin.id, permissionKeys, grantedBy: superadminUser.id },
+        { userId: newAdmin.id, permissionKeys: normalizedKeys, grantedBy: superadminUser.id },
         client
       );
 
@@ -327,13 +336,14 @@ class SuperadminService {
     }
 
     const previousPerms = (admin.permissions || []).map((p) => p.key);
+    const normalizedKeys = normalizePermissionDependencies(permissionKeys);
 
     const client = await getClient();
     try {
       await client.query("BEGIN");
 
       await superadminRepository.setAdminPermissions(
-        { userId: admin.id, permissionKeys, grantedBy: superadminUser.id },
+        { userId: admin.id, permissionKeys: normalizedKeys, grantedBy: superadminUser.id },
         client
       );
 
@@ -347,8 +357,8 @@ class SuperadminService {
           entityType: "USER",
           entityId: admin.id,
           previousValues: { permissions: previousPerms },
-          newValues: { permissions: permissionKeys },
-          metadata: { email: admin.email, permissionCount: permissionKeys.length },
+          newValues: { permissions: normalizedKeys },
+          metadata: { email: admin.email, permissionCount: normalizedKeys.length },
         },
         { client, request: auditRequest }
       );
@@ -364,7 +374,7 @@ class SuperadminService {
     return {
       success: true,
       message: "Permissions updated successfully.",
-      permissions: permissionKeys,
+      permissions: normalizedKeys,
     };
   }
 
@@ -538,12 +548,13 @@ class SuperadminService {
       throw err;
     }
 
+    const normalizedKeys = normalizePermissionDependencies(permissionKeys);
     const client = await getClient();
     let preset;
     try {
       await client.query("BEGIN");
       preset = await superadminRepository.createPreset(
-        { name, description, permissionKeys, createdBy: superadminUser.id },
+        { name, description, permissionKeys: normalizedKeys, createdBy: superadminUser.id },
         client
       );
 
@@ -553,7 +564,7 @@ class SuperadminService {
           action: "PRESET_CREATED",
           entityType: "SYSTEM",
           entityId: preset.id,
-          newValues: { name: preset.name, permissionKeys },
+          newValues: { name: preset.name, permissionKeys: normalizedKeys },
         },
         { client, request: auditRequest }
       );
@@ -575,11 +586,16 @@ class SuperadminService {
   }
 
   async updatePreset(presetId, { name, description, permissionKeys }, superadminUser, auditRequest = null) {
+    const normalizedKeys = permissionKeys !== undefined ? normalizePermissionDependencies(permissionKeys) : undefined;
     const client = await getClient();
     let updated;
     try {
       await client.query("BEGIN");
-      updated = await superadminRepository.updatePreset(presetId, { name, description, permissionKeys }, client);
+      updated = await superadminRepository.updatePreset(
+        presetId,
+        { name, description, permissionKeys: normalizedKeys },
+        client
+      );
 
       await auditService.record(
         {
@@ -587,7 +603,7 @@ class SuperadminService {
           action: "PRESET_UPDATED",
           entityType: "SYSTEM",
           entityId: presetId,
-          newValues: { name, permissionKeys },
+          newValues: { name, permissionKeys: normalizedKeys },
         },
         { client, request: auditRequest }
       );

@@ -40,6 +40,10 @@ const operationalPermissions = [
   // Settings
   { key: "settings.store_view", label: "View Store Settings", group: "Settings", description: "View delivery rate settings and promotional coupons" },
   { key: "settings.store_edit", label: "Edit Store Settings", group: "Settings", description: "Update delivery rules, discounts, and promotional banners" },
+
+  // Storefront
+  { key: "storefront.view", label: "View storefront preview", group: "Storefront", description: "See the Storefront Preview page and preview published storefront pages inside admin" },
+  { key: "storefront.preview_drafts", label: "Preview draft items", group: "Storefront", description: "Preview unpublished, hidden, and draft products, collections, and brands (requires storefront.view)" },
 ];
 
 async function runMigration() {

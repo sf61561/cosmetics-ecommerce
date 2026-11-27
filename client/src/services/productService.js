@@ -1,4 +1,4 @@
-import { API_BASE } from "./apiConfig";
+import { API_BASE, withPreviewParam, getPublicFetchOptions } from "./apiConfig";
 
 /**
  * Handle API response and extract JSON or error
@@ -51,23 +51,34 @@ export const productService = {
     params.append("sortBy", sortBy);
     params.append("sortOrder", sortOrder);
 
-    const res = await fetch(`${API_BASE}/api/products?${params.toString()}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/products?${params.toString()}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 
   /**
    * Fetch public product by slug for Product Details Page
+   * Supports SSR preview forwarding ({ preview, cookieHeader }) when verified.
    */
-  async getProductBySlug(slug) {
-    const res = await fetch(`${API_BASE}/api/products/${slug}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+  async getProductBySlug(slug, { preview = false, cookieHeader = "" } = {}) {
+    const baseUrl = `${API_BASE}/api/products/${slug}`;
+    const targetUrl = preview
+      ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}preview=1`
+      : withPreviewParam(baseUrl);
+
+    const extraHeaders = cookieHeader ? { Cookie: cookieHeader } : {};
+    const options = preview
+      ? {
+          method: "GET",
+          cache: "no-store",
+          credentials: "include",
+          headers: { Accept: "application/json", "X-Storefront-Preview": "1", ...extraHeaders },
+        }
+      : getPublicFetchOptions({ method: "GET", headers: extraHeaders });
+
+    const res = await fetch(targetUrl, options);
     return handleResponse(res);
   },
 
@@ -75,10 +86,10 @@ export const productService = {
    * Fetch public storefront new arrivals (recently published products)
    */
   async getNewArrivals(limit = 8) {
-    const res = await fetch(`${API_BASE}/api/products/new-arrivals?limit=${limit}`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
+    const res = await fetch(
+      withPreviewParam(`${API_BASE}/api/products/new-arrivals?limit=${limit}`),
+      getPublicFetchOptions({ method: "GET" })
+    );
     return handleResponse(res);
   },
 

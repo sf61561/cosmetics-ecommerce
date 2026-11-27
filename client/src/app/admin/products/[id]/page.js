@@ -3,14 +3,20 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { FaArrowLeft, FaSpinner, FaExclamationTriangle } from "react-icons/fa";
+import { FaArrowLeft, FaSpinner, FaExclamationTriangle, FaEye } from "react-icons/fa";
 import { productService } from "@/services/productService";
+import { useAuth } from "@/context/AuthContext";
 import ProductForm from "@/components/admin/products/ProductForm";
+import StorefrontPreviewDrawer from "@/components/admin/preview/StorefrontPreviewDrawer";
 
 export default function EditProductPage() {
   const router = useRouter();
   const routeParams = useParams();
   const id = routeParams?.id;
+  const { isSuperAdmin, hasPermission } = useAuth();
+  const canPreviewStorefront = isSuperAdmin || hasPermission("storefront.view");
+  const canPreviewDrafts = isSuperAdmin || hasPermission("storefront.preview_drafts");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const [product, setProduct] = useState(null);
   const [brands, setBrands] = useState([]);
@@ -134,6 +140,19 @@ export default function EditProductPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      {canPreviewStorefront && product?.slug && (
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          >
+            <FaEye className="h-3.5 w-3.5 text-[#9B4F5E]" aria-hidden="true" />
+            <span>Preview</span>
+          </button>
+        </div>
+      )}
+
       <ProductForm
         initialProduct={product}
         brands={brands}
@@ -144,6 +163,16 @@ export default function EditProductPage() {
         isSubmitting={isSubmitting}
         serverError={serverError}
       />
+
+      {canPreviewStorefront && product?.slug && (
+        <StorefrontPreviewDrawer
+          isOpen={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          title={`Preview: ${product.name}`}
+          path={`/products/${product.slug}`}
+          canPreviewDrafts={canPreviewDrafts}
+        />
+      )}
     </div>
   );
 }

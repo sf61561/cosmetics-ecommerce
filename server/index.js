@@ -25,6 +25,7 @@ const tagRoutes = require("./routes/tagRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const returnRoutes = require("./routes/returnRoutes");
 const superadminRoutes = require("./routes/superadminRoutes");
+const storefrontPreviewRoutes = require("./routes/storefrontPreviewRoutes");
 const notificationWorker = require("./services/notificationWorker");
 const errorHandler = require("./middlewares/errorHandler");
 const requestContext = require("./middlewares/requestContext");
@@ -140,6 +141,7 @@ app.use("/api/product-requests", productRequestRoutes);
 app.use("/api/tags", tagRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/returns", returnRoutes);
+app.use("/api/storefront-preview", noCache, storefrontPreviewRoutes);
 
 // 404 Not Found Handler
 app.use((req, res) => {

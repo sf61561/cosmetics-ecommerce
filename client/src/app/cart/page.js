@@ -5,12 +5,14 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontPreview } from "@/context/StorefrontPreviewContext";
 import CartItemList from "@/components/cart/CartItemList";
 import CartSummary from "@/components/cart/CartSummary";
 import EmptyCartView from "@/components/cart/EmptyCartView";
 import { FaChevronRight, FaArrowLeft, FaLock, FaSpinner } from "react-icons/fa";
 
 export default function CartPage() {
+  const { isPreviewMode } = useStorefrontPreview();
   const {
     cart = {},
     isLoading,
@@ -154,7 +156,15 @@ export default function CartPage() {
               </span>
             </div>
 
-            {cart?.hasBlockingIssues ? (
+            {isPreviewMode ? (
+              <button
+                type="button"
+                disabled
+                className="py-3 px-5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold cursor-not-allowed"
+              >
+                Checkout Disabled
+              </button>
+            ) : cart?.hasBlockingIssues ? (
               <button
                 type="button"
                 disabled

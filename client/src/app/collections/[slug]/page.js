@@ -107,9 +107,16 @@ export default function SingleCollectionPage() {
                 <span className="text-gray-800 font-medium">{collection.name}</span>
               </nav>
 
-              <span className="inline-block text-[11px] font-semibold tracking-[0.2em] text-[#9B4F5E] uppercase bg-white px-3 py-1 rounded-full border border-gray-100 shadow-2xs">
-                Curated Routine
-              </span>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="inline-block text-[11px] font-semibold tracking-[0.2em] text-[#9B4F5E] uppercase bg-white px-3 py-1 rounded-full border border-gray-100 shadow-2xs">
+                  Curated Routine
+                </span>
+                {collection.isDraft && (
+                  <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-900">
+                    Draft
+                  </span>
+                )}
+              </div>
 
               <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-gray-900 tracking-tight">
                 {collection.name}
@@ -169,6 +176,11 @@ export default function SingleCollectionPage() {
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
                     {product.name}
                   </h3>
+                  {product.isDraft && (
+                    <span className="mt-1 inline-flex w-fit items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
+                      Draft
+                    </span>
+                  )}
 
                   <div className="mt-3 flex items-center justify-between pt-2 border-t border-gray-50">
                     <div className="flex flex-col">

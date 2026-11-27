@@ -17,6 +17,7 @@ const adminTagRoutes = require("./adminTagRoutes");
 const adminReviewRoutes = require("./adminReviewRoutes");
 const adminReturnRoutes = require("./adminReturnRoutes");
 const adminProfileController = require("../controllers/adminProfileController");
+const storefrontPreviewController = require("../controllers/storefrontPreviewController");
 
 // Protect ALL routes under /api/admin with authentication + explicit ADMIN or SUPERADMIN role requirement
 router.use(authenticate, requireRole("ADMIN", "SUPERADMIN"));
@@ -44,6 +45,13 @@ router.use("/collections", adminCollectionRoutes);
 
 // Brands Management API
 router.use("/brands", adminBrandRoutes);
+
+// Storefront Preview Context API (Super Admin automatic, Admin requires storefront.view)
+router.get(
+  "/storefront-preview/context",
+  requirePermission("storefront.view"),
+  (req, res, next) => storefrontPreviewController.getAdminContext(req, res, next)
+);
 router.use("/hero-sliders", adminHeroSliderRoutes);
 router.use("/sliders", adminHeroSliderRoutes);
 router.use("/orders", adminOrderRoutes);

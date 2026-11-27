@@ -9,6 +9,7 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { useProductRequest } from "@/context/ProductRequestContext";
+import { useStorefrontPreview } from "@/context/StorefrontPreviewContext";
 import HeaderSearchBox from "./HeaderSearchBox";
 
 const navLinks = [
@@ -36,6 +37,7 @@ export default function Navbar() {
   const { wishlistCount = 0 } = useWishlist();
   const { notifications = [], unreadCount = 0, markAsRead, markAllAsRead } = useNotifications();
   const { openProductRequest } = useProductRequest();
+  const { isPreviewMode } = useStorefrontPreview();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -179,7 +181,7 @@ export default function Navbar() {
                 {/* Dropdown Menu */}
                 {profileDropdownOpen && (
                   <div className="absolute right-0 top-10 w-56 rounded-xl bg-white shadow-xl border border-pink-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-100">
-                    {user ? (
+                    {user && !isPreviewMode ? (
                       // ── CUSTOMER / ADMIN LOGGED IN MENU ──
                       <>
                         <div className="px-4 py-2 border-b border-gray-100">
@@ -541,7 +543,7 @@ export default function Navbar() {
 
             {/* Mobile Account links */}
             <div className="mt-3 flex flex-col gap-1">
-              {user ? (
+              {user && !isPreviewMode ? (
                 <>
                   {user.role === "SUPERADMIN" && (
                     <Link

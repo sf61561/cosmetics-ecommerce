@@ -8,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontPreview } from "@/context/StorefrontPreviewContext";
 import { orderService } from "@/services/orderService";
 import { API_BASE } from "@/services/apiConfig";
 
@@ -18,6 +19,7 @@ import AddressSummaryCard from "@/components/checkout/AddressSummaryCard";
 export default function CheckoutPage() {
   const { user, isLoading: authLoading, isLoggingOut } = useAuth();
   const { cart, isLoading: cartLoading, refreshCart } = useCart();
+  const { isPreviewMode } = useStorefrontPreview();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState([]);
@@ -178,6 +180,9 @@ export default function CheckoutPage() {
 
   // Place order submission
   const placeOrder = async () => {
+    if (isPreviewMode) {
+      return setMessage("Order placement is disabled in Storefront Preview mode.");
+    }
     if (!selectedAddressId) {
       return setMessage("Please select or add a delivery address to proceed.");
     }
@@ -409,11 +414,11 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={() => setReviewOpen(true)}
-                disabled={isPlacing || cart.hasBlockingIssues || !cart.items?.length || !selectedAddressId}
+                disabled={isPreviewMode || isPlacing || cart.hasBlockingIssues || !cart.items?.length || !selectedAddressId}
                 className="mt-6 w-full rounded-full bg-[#9B4F5E] hover:bg-[#843F4E] px-5 py-3.5 text-xs sm:text-sm font-semibold text-white shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <FaLock className="text-xs" />
-                <span>Confirm Order</span>
+                <span>{isPreviewMode ? "Orders Disabled in Preview" : "Confirm Order"}</span>
               </button>
 
               {/* Modal / Drawer Confirmation Prompt */}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useStorefrontPreview } from "@/context/StorefrontPreviewContext";
 import {
   IoChatbubbleEllipses,
   IoClose,
@@ -18,6 +19,7 @@ export default function FloatingChatButton({
 }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isPreviewMode } = useStorefrontPreview();
   const [isOpen, setIsOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const containerRef = useRef(null);
@@ -71,8 +73,8 @@ export default function FloatingChatButton({
     };
   }, [isOpen]);
 
-  // Don't render on admin routes or if auth condition is not met
-  if (isAdminRoute || shouldHideForAuth) {
+  // Don't render on admin routes, in Storefront Preview mode, or if auth condition is not met
+  if (isAdminRoute || isPreviewMode || shouldHideForAuth) {
     return null;
   }
 

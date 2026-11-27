@@ -210,9 +210,21 @@ function PresetsIcon() {
   );
 }
 
+function StorefrontPreviewIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
 // ─── Sidebar Menu Configuration ───
 const navItems = [
   { label: "Dashboard", href: "/admin", superadminHref: "/superadmin", icon: DashboardIcon },
+  { label: "Storefront Preview", href: "/admin/storefront-preview", icon: StorefrontPreviewIcon, permission: "storefront.view" },
   { label: "Products", href: "/admin/products", icon: ProductsIcon, permission: "products.view" },
   { label: "Tags", href: "/admin/tags", icon: TagsIcon, permission: "products.view" },
   { label: "Product Requests", href: "/admin/product-requests", icon: ProductRequestsIcon, permission: "products.view" },

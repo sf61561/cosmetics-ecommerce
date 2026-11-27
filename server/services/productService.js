@@ -427,33 +427,53 @@ class ProductService {
   }
 
   /**
-   * Get product by Slug (for public storefront)
-   * Strictly enforces active status, published_at <= NOW(), and strips private costPrice
+   * Strip admin-only fields (costPrice / cost_price) from product and variant objects
    */
-  async getProductBySlug(slug) {
+  stripPublicPrivateFields(product) {
+    if (!product || typeof product !== "object") return product;
+    const { costPrice, cost_price, ...rest } = product;
+    if (Array.isArray(rest.variants)) {
+      rest.variants = rest.variants.map((v) => {
+        if (!v || typeof v !== "object") return v;
+        const { costPrice: vc, cost_price: vcp, ...variantRest } = v;
+        return variantRest;
+      });
+    }
+    return rest;
+  }
+
+  /**
+   * Get product by Slug (for public storefront & authorized draft preview)
+   * Strictly enforces active status + published_at <= NOW() unless includeDrafts is verified.
+   * Always strips private costPrice fields.
+   */
+  async getProductBySlug(slug, { includeDrafts = false } = {}) {
     if (!slug) {
       const error = new Error("Product slug is required.");
       error.status = 400;
       throw error;
     }
     const product = await productRepository.findBySlug(slug);
-    if (!product || product.status !== "ACTIVE") {
+    const isFuturePublish = product?.published_at && new Date(product.published_at) > new Date();
+    const isDraftOrHidden = !product || product.status !== "ACTIVE" || isFuturePublish;
+
+    if (!product || (!includeDrafts && isDraftOrHidden)) {
       const error = new Error("Product not found or is currently unavailable.");
       error.status = 404;
       throw error;
     }
-    if (product.published_at && new Date(product.published_at) > new Date()) {
-      const error = new Error("Product not found or is currently unavailable.");
-      error.status = 404;
-      throw error;
-    }
+
     const full = await productRepository.findById(product.id);
-    if (!full || full.status !== "ACTIVE") {
+    if (!full || (!includeDrafts && full.status !== "ACTIVE")) {
       const error = new Error("Product not found or is currently unavailable.");
       error.status = 404;
       throw error;
     }
-    const { costPrice, ...publicProduct } = full;
+
+    const publicProduct = this.stripPublicPrivateFields(full);
+    if (includeDrafts) {
+      publicProduct.isDraft = Boolean(isDraftOrHidden);
+    }
     return publicProduct;
   }
 

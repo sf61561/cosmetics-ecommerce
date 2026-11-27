@@ -160,6 +160,11 @@ export default function ProductDetailsView({ initialProduct }) {
             >
               {product.name}
             </span>
+            {product.isDraft && (
+              <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
+                Draft
+              </span>
+            )}
           </nav>
         </div>
 

@@ -1,12 +1,14 @@
-import { API_BASE } from "./apiConfig";
+import { API_BASE, isStorefrontPreviewActive } from "./apiConfig";
 
 export const interactionService = {
   /**
    * Record customer interaction (VIEW, ADD_TO_CART, WISHLIST)
-   * Non-blocking and fail-safe: failures never break UI navigation or shopping flows
+   * Non-blocking and fail-safe: failures never break UI navigation or shopping flows.
+   * Suppressed automatically in Storefront Preview mode so admin browsing does not skew analytics.
    */
   async recordInteraction({ productId, type }) {
     if (!productId || !type) return null;
+    if (isStorefrontPreviewActive()) return null;
 
     try {
       const res = await fetch(`${API_BASE}/api/interactions`, {
